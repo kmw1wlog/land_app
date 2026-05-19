@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Landload App</string>
+    <string name="title_activity_main">Landload App</string>
+    <string name="package_name">com.kmw1wlog.landloadapp</string>
+    <string name="custom_url_scheme">com.kmw1wlog.landloadapp</string>
+</resources>

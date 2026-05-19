@@ -1,0 +1,611 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model LegalDongCode {
+  id        String   @id @default(cuid())
+  code10    String   @unique
+  lawdCode5 String
+  sido      String?
+  sigungu   String?
+  eupmyeon  String?
+  ri        String?
+  fullName  String
+  isActive  Boolean  @default(true)
+  raw       Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([lawdCode5])
+  @@index([fullName])
+}
+
+model NormalizedAddress {
+  id              String   @id @default(cuid())
+  source          String   @default("manual")
+  inputAddress    String
+  roadAddress     String?
+  jibunAddress    String?
+  legalDongCode10 String?
+  lawdCode5       String?
+  mountainFlag    String?
+  bun             String?
+  ji              String?
+  pnu             String?
+  lat             Float?
+  lng             Float?
+  raw             Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([pnu])
+  @@index([lawdCode5])
+}
+
+model RealTransaction {
+  id           String   @id @default(cuid())
+  externalKey  String   @unique
+  sourceType   String
+  propertyType String
+  dealType     String
+
+  lawdCode5    String
+  legalDongCode10 String?
+  pnu          String?
+  legalDong    String?
+  jibun        String?
+  complexName  String?
+  buildingName String?
+  floor        Int?
+  areaM2       Float?
+
+  dealYear     Int?
+  dealMonth    Int?
+  dealDay      Int?
+
+  dealAmount   Float?
+  deposit      Float?
+  monthlyRent  Float?
+
+  builtYear    Int?
+  raw          Json?
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([lawdCode5])
+  @@index([pnu])
+  @@index([legalDongCode10])
+  @@index([complexName])
+  @@index([buildingName])
+  @@index([dealYear, dealMonth])
+  @@index([propertyType, dealType])
+}
+
+model Property {
+  id                  String   @id
+  name                String
+  address             String
+  region              String
+  lawdCode5           String?
+  legalDongCode10     String?
+  pnu                 String?
+  propertyType        String
+  salePrice           BigInt
+  jeonsePrice         BigInt
+  expectedMonthlyRent BigInt
+  expectedDeposit     BigInt
+  areaM2              Float
+  floor               Int
+  builtYear           Int
+  pricePerM2          Int
+  previousHighPrice   BigInt
+  drawdownFromHigh    Float
+  jeonseRatio         Float
+  supplyRiskScore     Int
+  vacancyRiskScore    Int
+  growthScore         Int
+  stabilityScore      Int
+  communityHeatScore  Int
+  isDirectListing     Boolean  @default(false)
+  isPartnerListing    Boolean  @default(false)
+  isAd                Boolean  @default(false)
+  valuationSnapshotId String?
+  source              String   @default("seed")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([region])
+  @@index([lawdCode5])
+  @@index([pnu])
+  @@index([propertyType])
+  @@index([isAd])
+  @@index([isDirectListing])
+}
+
+model ApiCallLog {
+  id         String   @id @default(cuid())
+  provider   String
+  endpoint   String
+  paramsHash String?
+  status     String
+  statusCode Int?
+  resultCode String?
+  message    String?
+  durationMs Int?
+  rawPreview String?
+  createdAt  DateTime @default(now())
+
+  @@index([provider])
+  @@index([endpoint])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model BuildingLedger {
+  id              String   @id @default(cuid())
+  ledgerType      String   @default("title")
+  pnu             String?
+  sigunguCd       String
+  bjdongCd        String
+  bun             String
+  ji              String
+
+  buildingName    String?
+  mainUse         String?
+  approvalDate    String?
+  platArea        Float?
+  archArea        Float?
+  totalFloorArea  Float?
+  bcRat           Float?
+  vlRat           Float?
+  householdCount  Int?
+  familyCount     Int?
+  parkingCount    Int?
+  raw             Json?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([pnu])
+  @@index([ledgerType])
+  @@index([sigunguCd, bjdongCd, bun, ji])
+}
+
+model LandInfo {
+  id                        String   @id @default(cuid())
+  pnu                       String   @unique
+  landCategory              String?
+  landArea                  Float?
+  useDistrict               String?
+  officialLandPrice         Int?
+  officialLandPriceBaseDate String?
+  raw                       Json?
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+}
+
+model PropertyValuationSnapshot {
+  id                    String   @id @default(cuid())
+  normalizedAddressId   String?
+  pnu                   String?
+  lawdCode5             String?
+  propertyType          String?
+
+  estimatedPrice        Int?
+  estimatedJeonsePrice  Int?
+  jeonseRatio           Float?
+  drawdownFromHigh      Float?
+  recentTradeCount      Int?
+  nearbyDiscount        Float?
+
+  method                String
+  comparableIds         Json?
+  warnings              Json?
+  createdAt             DateTime @default(now())
+
+  @@index([pnu])
+  @@index([lawdCode5])
+}
+
+model Broker {
+  id                  String   @id @default(cuid())
+  userId              String?
+  officeName          String
+  representative      String?
+  licenseNumber       String
+  businessNumber      String?
+  region              String
+  address             String?
+  phone               String?
+  isVerified          Boolean  @default(false)
+  verificationStatus  String   @default("pending")
+  responseRate        Float    @default(0)
+  rating              Float    @default(0)
+  falseListingPenalty Int      @default(0)
+  specialties         Json?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([region])
+  @@index([isVerified])
+}
+
+model Listing {
+  id                     String   @id @default(cuid())
+  propertyId             String?
+  brokerId               String?
+  listingType            String
+  title                  String
+  description            String?
+  address                String?
+  region                 String?
+  propertyType           String?
+  transactionType        String?
+  exclusiveAreaM2        Float?
+  supplyAreaM2           Float?
+  floor                  Int?
+  totalFloors            Int?
+  direction              String?
+  moveInDate             String?
+  managementFee          BigInt?
+  roomCount              Int?
+  bathroomCount          Int?
+  parkingInfo            String?
+  isViolationBuilding    Boolean?
+  ownerMandateStatus     String   @default("pending")
+  salePrice              BigInt
+  deposit                BigInt?
+  monthlyRent            BigInt?
+  status                 String   @default("active")
+  verificationStatus     String   @default("pending")
+  isAd                   Boolean  @default(false)
+  adProduct              String?
+  adPriority             Int      @default(0)
+  ownerConsentConfirmed  Boolean  @default(false)
+  brokerDisplayName      String?
+  requiredDisplayInfo    Json?
+  riskWarnings           Json?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  @@index([brokerId])
+  @@index([region])
+  @@index([listingType])
+  @@index([status])
+  @@index([isAd])
+}
+
+model ListingPhoto {
+  id                 String   @id @default(cuid())
+  listingId          String
+  storageKey         String
+  url                String?
+  thumbnailUrl       String?
+  roomType           String?
+  caption            String?
+  sortOrder          Int      @default(0)
+  sourceType         String
+  copyrightOwner     String?
+  licenseStatus      String   @default("declared")
+  consentStatus      String   @default("pending")
+  moderationStatus   String   @default("pending")
+  width              Int?
+  height             Int?
+  phash              String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([listingId])
+  @@index([moderationStatus])
+}
+
+model ListingDisplayCompliance {
+  id                         String   @id @default(cuid())
+  listingId                  String   @unique
+  hasBrokerOfficeName        Boolean  @default(false)
+  hasBrokerRegistrationNo    Boolean  @default(false)
+  hasBrokerAddress           Boolean  @default(false)
+  hasBrokerPhone             Boolean  @default(false)
+  hasAddress                 Boolean  @default(false)
+  hasArea                    Boolean  @default(false)
+  hasPrice                   Boolean  @default(false)
+  hasPropertyType            Boolean  @default(false)
+  hasTransactionType         Boolean  @default(false)
+  hasFloorInfo               Boolean  @default(false)
+  hasMoveInDate              Boolean  @default(false)
+  hasManagementFee           Boolean  @default(false)
+  hasDirection               Boolean  @default(false)
+  hasRoomBathInfo            Boolean  @default(false)
+  hasParkingInfo             Boolean  @default(false)
+  hasViolationBuildingFlag   Boolean  @default(false)
+  status                     String   @default("incomplete")
+  missingFields              Json?
+  createdAt                  DateTime @default(now())
+  updatedAt                  DateTime @updatedAt
+
+  @@index([status])
+}
+
+model Lead {
+  id                String   @id @default(cuid())
+  userId            String
+  brokerId          String?
+  listingId         String?
+  propertyId        String?
+  leadType          String
+  consentGiven      Boolean  @default(false)
+  consentText       String?
+  userBudget        BigInt?
+  userCash          BigInt?
+  userMonthlyIncome BigInt?
+  budgetBand        String?
+  contactInfo       String?
+  targetRegion      String?
+  targetPrice       BigInt?
+  currentHomeSummary Json?
+  message           String?
+  routingScore      Float?
+  status            String   @default("new")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([brokerId])
+  @@index([leadType])
+  @@index([status])
+}
+
+model SellerIntent {
+  id                String   @id @default(cuid())
+  userId            String
+  currentHomeId     String?
+  address           String
+  region            String?
+  expectedPrice     BigInt?
+  message           String?
+  photoCount        Int      @default(0)
+  status            String   @default("new")
+  assignedBrokerId  String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([userId])
+  @@index([region])
+  @@index([status])
+}
+
+model DirectVerificationChecklist {
+  id                       String   @id @default(cuid())
+  listingId                String   @unique
+  ownerMandateChecked      String   @default("pending")
+  photoRightsChecked       String   @default("pending")
+  buildingLedgerChecked    String   @default("pending")
+  registryChecked          String   @default("pending")
+  valuationChecked         String   @default("pending")
+  priceReasonableness      String   @default("pending")
+  riskDisclosureChecked    String   @default("pending")
+  assignedReviewerId       String?
+  notes                    Json?
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+}
+
+model RealTransactionAudit {
+  id          String   @id @default(cuid())
+  externalKey String
+  action      String
+  before      Json?
+  after       Json?
+  createdAt   DateTime @default(now())
+
+  @@index([externalKey])
+  @@index([action])
+  @@index([createdAt])
+}
+
+model PublicDataSeedJob {
+  id        String   @id @default(cuid())
+  status    String   @default("queued")
+  mode      String
+  request   Json
+  summary   Json?
+  results   Json?
+  error     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+model ApiQuotaDaily {
+  id         String   @id @default(cuid())
+  provider   String
+  date       String
+  callCount  Int      @default(0)
+  errorCount Int      @default(0)
+  quotaLimit Int?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([provider, date])
+  @@index([provider])
+  @@index([date])
+}
+
+model CommunityPostDb {
+  id                String   @id @default(cuid())
+  roomId            String?
+  userId            String
+  propertyId        String?
+  region            String?
+  category          String
+  title             String
+  content           String
+  authorBadge       String?
+  verificationLabel String?
+  isHidden          Boolean  @default(false)
+  moderationStatus  String   @default("visible")
+  reportCount       Int      @default(0)
+  likes             Int      @default(0)
+  dislikes          Int      @default(0)
+  commentCount      Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([roomId])
+  @@index([propertyId])
+  @@index([region])
+  @@index([category])
+  @@index([isHidden])
+}
+
+model CommunityRoom {
+  id          String   @id @default(cuid())
+  roomType    String
+  propertyId  String?
+  region      String?
+  name        String
+  description String?
+  visibility  String   @default("public")
+  writePolicy String   @default("all")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([propertyId])
+  @@index([region])
+  @@index([roomType])
+}
+
+model CommunityMembership {
+  id                  String   @id @default(cuid())
+  roomId              String
+  userId              String
+  role                String
+  status              String   @default("pending")
+  verificationBadgeId String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@unique([roomId, userId])
+  @@index([userId])
+}
+
+model CommunityEvidence {
+  id                 String   @id @default(cuid())
+  postId             String?
+  userId             String
+  evidenceType       String
+  title              String?
+  url                String?
+  storageKey         String?
+  verificationStatus String   @default("pending")
+  createdAt          DateTime @default(now())
+
+  @@index([postId])
+  @@index([userId])
+}
+
+model CommunityCommentDb {
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String
+  content   String
+  isHidden  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([postId])
+}
+
+model CommunityReport {
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String
+  reason    String?
+  createdAt DateTime @default(now())
+
+  @@index([postId])
+  @@index([userId])
+}
+
+model PredictionPoll {
+  id        String   @id @default(cuid())
+  postId    String?
+  region    String?
+  question  String
+  closesAt  DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([postId])
+  @@index([region])
+}
+
+model PredictionVote {
+  id        String   @id @default(cuid())
+  pollId    String
+  userId    String
+  choice    String
+  createdAt DateTime @default(now())
+
+  @@unique([pollId, userId])
+  @@index([pollId])
+}
+
+model UserVerificationBadge {
+  id        String   @id @default(cuid())
+  userId    String
+  badge     String
+  status    String   @default("pending")
+  source    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([badge])
+}
+
+model ConsentRecord {
+  id          String   @id @default(cuid())
+  userId      String
+  consentType String
+  consentText String
+  granted     Boolean
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([consentType])
+}
+
+model AccessAuditLog {
+  id          String   @id @default(cuid())
+  actorId     String?
+  actorType   String
+  action      String
+  targetType  String
+  targetId    String?
+  purpose     String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  @@index([actorType])
+  @@index([targetType])
+  @@index([createdAt])
+}
+
+model UserDeletionRequest {
+  id        String   @id @default(cuid())
+  userId    String
+  status    String   @default("requested")
+  reason    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
