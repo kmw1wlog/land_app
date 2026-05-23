@@ -2,10 +2,20 @@ import fs from "node:fs";
 import path from "node:path";
 
 const outDir = path.join(process.cwd(), "capacitor-web");
-const targetUrl =
-  process.env.CAPACITOR_APP_URL?.trim() ||
-  process.env.NEXT_PUBLIC_APP_URL?.trim() ||
-  "http://localhost:3000";
+const defaultRemoteUrl = "https://land-app-mu.vercel.app/";
+const configuredCapacitorUrl = process.env.CAPACITOR_APP_URL?.trim();
+const nextPublicAppUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
+const targetUrl = configuredCapacitorUrl || nextPublicAppUrl || defaultRemoteUrl;
+
+if (configuredCapacitorUrl && !configuredCapacitorUrl.startsWith("https://")) {
+  throw new Error("CAPACITOR_APP_URL must start with https://");
+}
+
+if (!configuredCapacitorUrl) {
+  console.warn(
+    `[capacitor-web] CAPACITOR_APP_URL is not set. Falling back to ${targetUrl}. Release builds should inject a public HTTPS deployment URL.`
+  );
+}
 
 fs.rmSync(outDir, { recursive: true, force: true });
 fs.mkdirSync(outDir, { recursive: true });
@@ -80,7 +90,7 @@ const html = `<!doctype html>
   <body>
     <main class="card">
       <h1>Landload App를 여는 중입니다</h1>
-      <p>자동으로 연결되지 않으면 아래 버튼으로 현재 배포 주소를 열 수 있습니다.</p>
+      <p>자동으로 연결되지 않으면 아래 버튼으로 현재 공개 배포 주소를 열 수 있습니다.</p>
       <a id="open-link" href="${targetUrl}">웹앱 열기</a>
     </main>
     <script>

@@ -11,6 +11,7 @@
     "cap:prepare": "node scripts/create-capacitor-web.mjs",
     "cap:sync": "npm run cap:prepare && npm run android:init && npx cap sync android",
     "android:debug-apk": "cd android && ./gradlew assembleDebug",
+    "android:release-aab": "cd android && ./gradlew bundleRelease",
     "lint": "next lint",
     "test": "vitest run",
     "test:e2e": "playwright test",

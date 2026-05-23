@@ -46,7 +46,7 @@
 - Prisma + SQLite 개발 DB
 - Vitest / Playwright
 - Capacitor Android
-- GitHub Actions APK artifact 업로드
+- GitHub Actions APK/AAB artifact 업로드
 - Python/PyTorch 기반 시계열 Transformer 프로토타입
 
 ## 로컬 실행
@@ -54,9 +54,18 @@
 ```bash
 npm install
 npm run build
-npm run cap:sync
+CAPACITOR_APP_URL=https://land-app-mu.vercel.app/ npm run cap:sync
 npm run android:debug-apk
 ```
+
+release AAB 로컬 빌드는 아래 스크립트를 사용합니다.
+
+```bash
+CAPACITOR_APP_URL=https://land-app-mu.vercel.app/ npm run cap:sync
+npm run android:release-aab
+```
+
+`CAPACITOR_APP_URL`이 없으면 Capacitor는 로컬 launcher page로 fallback 되며, release workflow에서는 반드시 공개 HTTPS URL을 주입해야 합니다.
 
 ## AI 프로토타입 재현
 
@@ -99,21 +108,36 @@ python3 scripts/ai/real_estate_transformer_model.py \
 - `npm run build`: Next.js production build
 - `npm run test`: Vitest unit test
 - `npm run test:e2e`: Playwright test
+- `npm run cap:sync`: Capacitor launcher page 생성 후 Android 프로젝트 sync
+- `npm run android:debug-apk`: debug APK 빌드
+- `npm run android:release-aab`: Play Store용 release AAB 빌드
 - `npm run record:demo`: 제출용 데모 녹화 스크립트
 - `npm run create:demo-voiceover`: 제출용 보이스오버 생성 보조 스크립트
 - `npm run ai:transformer:export`: `prisma/dev.db` 실거래 데이터를 월별 feature CSV로 변환
 - `npm run ai:transformer:train`: 공공 실거래 feature 기반 Transformer 모델 학습 프로토타입
 
+## Android Wrapper / Play Store
+
+- `land_app`는 웹앱과 Capacitor Android wrapper를 같은 레포에서 함께 관리합니다.
+- Android `applicationId`는 `com.kmw1wlog.landloadapp`으로 고정합니다.
+- APK/AAB는 `CAPACITOR_APP_URL`에 지정된 공개 HTTPS 배포 주소를 WebView 시작 URL로 사용합니다.
+- 현재 기본 공개 URL은 `https://land-app-mu.vercel.app/` 입니다.
+- `https://land-app-git-main-kmw1wlog-4554s-projects.vercel.app` 와 `https://land-nkitby9bk-kmw1wlog-4554s-projects.vercel.app` 는 `2026-05-24` 확인 시점 기준 Vercel deployment protection 때문에 `401`이므로 앱 기본 URL로 쓰면 안 됩니다.
+- release 서명은 기존 공용 keystore를 재사용하며, keystore/base64/password/key.properties는 절대 커밋하지 않습니다.
+- Play Console 업로드 파일은 `android/app/build/outputs/bundle/release/app-release.aab` 입니다.
+- 새 AAB를 올릴 때마다 `versionCode`를 반드시 증가시켜야 합니다.
+
 ## Android 빌드 다운로드 방법
 
-1. GitHub 레포 `kmw1wlog/land_app`에 접속합니다.
-2. `Actions` 탭에서 `Build Debug APK` 또는 `Build Release AAB` 실행을 엽니다.
+1. GitHub 레포 `kmw1wlog/land_app`의 `Actions` 탭으로 이동합니다.
+2. `Build Debug APK` 또는 `Build Release AAB` workflow를 실행하거나 `main` 브랜치 push로 생성된 run을 엽니다.
 3. `Artifacts`에서 `land-app-debug-apk` 또는 `land-app-release-aab`를 다운로드합니다.
 
 ## 주의 사항
 
 - 웹앱 본체는 Vercel에 배포된 Next.js 앱입니다.
-- APK는 Capacitor Android shell이며, 실행 시 `CAPACITOR_APP_URL`에 지정된 웹앱 주소를 엽니다.
-- 현재 Vercel 배포 보호가 켜져 있으면 APK와 외부 브라우저에서 `401`이 발생할 수 있습니다. 이 경우 Vercel 쪽 배포 보호 설정 또는 공개 도메인 설정이 필요합니다.
+- APK/AAB는 Capacitor Android shell이며, 실행 시 `CAPACITOR_APP_URL`에 지정된 웹앱 주소를 엽니다.
+- Vercel 배포 보호가 켜진 프로젝트 도메인은 WebView에서 로그인 화면이나 `401`을 만들 수 있습니다. 공개 접근 가능한 production URL을 사용해야 합니다.
 - 저장소에는 현재 앱 소스가 직접 포함되어 있습니다.
 - release AAB를 쓰려면 GitHub Secrets에 `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`를 설정해야 합니다.
+- Android release `versionCode`는 현재 `1`이며, `versionName`은 기존 scaffold 값인 `1.0`을 유지합니다. 다음 AAB부터는 `versionCode`를 `2`, `3`처럼 계속 올리면 됩니다.

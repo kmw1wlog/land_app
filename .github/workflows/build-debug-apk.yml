@@ -6,7 +6,7 @@ on:
       capacitor_app_url:
         description: "HTTPS URL of deployed land app web app"
         required: false
-        default: "https://landload-app-kmw1wlog-4554s-projects.vercel.app"
+        default: "https://land-app-mu.vercel.app/"
         type: string
   push:
     branches:
@@ -56,7 +56,7 @@ jobs:
           elif [ -n "${{ vars.CAPACITOR_APP_URL }}" ]; then
             echo "CAPACITOR_APP_URL=${{ vars.CAPACITOR_APP_URL }}" >> "$GITHUB_ENV"
           else
-            echo "CAPACITOR_APP_URL=https://landload-app-kmw1wlog-4554s-projects.vercel.app" >> "$GITHUB_ENV"
+            echo "CAPACITOR_APP_URL=https://land-app-mu.vercel.app/" >> "$GITHUB_ENV"
           fi
 
       - name: Validate URL
