@@ -1,0 +1,48 @@
+{
+  "features": [
+    "median_price",
+    "weighted_price",
+    "trade_count",
+    "rent_count",
+    "jeonse_median",
+    "jeonse_ratio",
+    "drawdown_from_high",
+    "transaction_heat",
+    "reacceleration_score",
+    "liquidity_score",
+    "leader_score"
+  ],
+  "standardization": {
+    "mean": [
+      559047169.8113208,
+      557017295.5974842,
+      1.519916142557652,
+      1.4675052410901468,
+      159524234.80083856,
+      24.818035358253823,
+      -0.6699480978849852,
+      1.2327051635967652,
+      0.9410249634444969,
+      66.13996573114528,
+      61.096980501522594
+    ],
+    "std": [
+      423608826.35342574,
+      419427262.61159146,
+      1.8559557916946037,
+      1.7415542416466012,
+      181274719.5111564,
+      27.147939988412404,
+      2.2606620567529334,
+      1.6837881829643548,
+      0.4171048734838605,
+      34.21762172373427,
+      25.649106609945253
+    ]
+  },
+  "outputs": [
+    "prob_future_recovery",
+    "candidate_ai_score"
+  ],
+  "decision_use": "candidate ranking and explainable decision-support only; not investment advice"
+}

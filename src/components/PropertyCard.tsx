@@ -37,11 +37,11 @@ export function PropertyCard({ property, onNext }: PropertyCardProps) {
   const future10 = calculateFuturePurchasePower(profile, currentHome, financialPlan, 10) >= property.salePrice;
   const pathLabel: Record<typeof path.recommendedPath, string> = {
     save_more: "저축형",
-    sell_current_home: "갈아타기형",
+    sell_current_home: "정리 후 이동형",
     convert_to_jeonse: "전세전환형",
-    convert_to_monthly_rent: "월세현금흐름형",
+    convert_to_monthly_rent: "주거비조정형",
     additional_purchase: "현재가능형",
-    not_feasible: "상상형"
+    not_feasible: "조건재설계형"
   };
 
   const next = (action: "pass" | "save" | "calculate" | "community" | "contact") => {
@@ -89,7 +89,7 @@ export function PropertyCard({ property, onNext }: PropertyCardProps) {
           <p className="text-sm font-bold opacity-85">{property.region}</p>
           <h2 className="mt-1 text-3xl font-black leading-tight">{property.name}</h2>
           <p className="mt-2 text-sm font-bold text-white/82">
-            {analysis.isAffordableNow ? "현재 가능" : analysis.isAffordableAfterSale ? "현재 집 팔면 가능" : `${Math.ceil(analysis.monthsToReach / 12)}년 준비 후보`}
+            {analysis.isAffordableNow ? "현재 가능" : analysis.isAffordableAfterSale ? "현재 기준점 정리 시 가능" : `${Math.ceil(analysis.monthsToReach / 12)}년 준비 후보`}
           </p>
         </div>
       </div>
@@ -98,7 +98,7 @@ export function PropertyCard({ property, onNext }: PropertyCardProps) {
         <div className="grid grid-cols-3 gap-2">
           <Metric label="매매가" value={formatKRW(property.salePrice)} />
           <Metric label="전세가" value={formatKRW(property.jeonsePrice)} />
-          <Metric label="실투자금" value={formatKRW(analysis.investmentAmount)} />
+          <Metric label="필요 현금" value={formatKRW(analysis.investmentAmount)} />
         </div>
 
         <div className="rounded-md bg-ink p-4 text-white">
@@ -107,7 +107,7 @@ export function PropertyCard({ property, onNext }: PropertyCardProps) {
             {analysis.isAffordableNow
               ? "현재 현금/대출 여력으로 가능"
               : analysis.isAffordableAfterSale
-                ? "현재 집 매도 시 갈아타기 가능"
+                ? "현재 기준점 정리 시 접근 가능"
                 : `${Math.ceil(analysis.monthsToReach / 12)}년 안팎 준비 필요`}
           </p>
           <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
@@ -130,7 +130,7 @@ export function PropertyCard({ property, onNext }: PropertyCardProps) {
             <span className={`rounded py-2 ${future10 ? "bg-moss text-white" : "bg-black/5 text-black/55"}`}>10년 {future10 ? "가능" : "준비"}</span>
           </div>
           <p className="mt-2 text-xs leading-5 text-black/55">
-            목표 월세 기여도 {Math.max(0, (analysis.monthlyCashFlow / financialPlan.targetMonthlyCashFlow) * 100).toFixed(1)}% · 참고용 추정치
+            목표 주거비 완화 기여도 {Math.max(0, (analysis.monthlyCashFlow / financialPlan.targetMonthlyCashFlow) * 100).toFixed(1)}% · 참고용 추정치
           </p>
           <p className="mt-1 text-xs leading-5 text-black/45">
             필요 현금 {formatKRW(analysis.requiredCash)} · LTV {(analysis.ltvRate * 100).toFixed(0)}%
@@ -185,7 +185,7 @@ export function PropertyCard({ property, onNext }: PropertyCardProps) {
           <Link
             href="/community"
             className="flex h-12 items-center justify-center rounded-md bg-sky text-white"
-            title="종토방 보기"
+            title="커뮤니티 보기"
             onClick={() => next("community")}
           >
             <MessageCircle size={19} />

@@ -29,7 +29,9 @@
     "probe:building-ledger": "tsx scripts/probe-building-ledger.ts",
     "probe:vworld-land": "tsx scripts/probe-vworld-land.ts",
     "record:demo": "tsx scripts/record-demo.ts",
-    "create:demo-voiceover": "tsx scripts/create-demo-voiceover.ts"
+    "create:demo-voiceover": "tsx scripts/create-demo-voiceover.ts",
+    "ai:transformer:export": "python3 scripts/ai/build_real_estate_feature_dataset.py --db-path prisma/dev.db --output-path artifacts/complex_monthly_features.csv",
+    "ai:transformer:train": "python3 scripts/ai/real_estate_transformer_model.py --input-path artifacts/complex_monthly_features.csv --output-dir artifacts/model_outputs"
   },
   "dependencies": {
     "@capacitor/android": "^6.1.2",

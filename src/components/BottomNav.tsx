@@ -6,10 +6,10 @@ import { Home, House, MessageCircle, Route, WalletCards } from "lucide-react";
 
 const tabs = [
   { href: "/feed", label: "홈", icon: Home },
-  { href: "/my-home", label: "내 집", icon: House },
-  { href: "/goal-path", label: "사다리", icon: Route },
+  { href: "/my-home", label: "내 기준", icon: House },
+  { href: "/goal-path", label: "경로", icon: Route },
   { href: "/portfolio", label: "가상", icon: WalletCards },
-  { href: "/community", label: "종토방", icon: MessageCircle }
+  { href: "/community", label: "커뮤니티", icon: MessageCircle }
 ];
 
 export function BottomNav() {

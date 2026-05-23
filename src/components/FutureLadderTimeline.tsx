@@ -21,13 +21,13 @@ export function FutureLadderTimeline({ profile, currentHome, financialPlan }: Fu
     <section className="rounded-lg border border-black/10 bg-white p-4">
       <div>
         <p className="text-xs font-bold text-moss">미래에 어디까지 갈 수 있나</p>
-        <h2 className="mt-1 text-xl font-black text-ink">내 부동산 사다리</h2>
-        <p className="mt-1 text-xs leading-5 text-black/55">현재 집, 3년 뒤, 5년 뒤, 10년 뒤 구매능력을 같은 선 위에 놓고 봅니다.</p>
+        <h2 className="mt-1 text-xl font-black text-ink">내 주거 경로</h2>
+        <p className="mt-1 text-xs leading-5 text-black/55">현재 기준점, 3년 뒤, 5년 뒤, 10년 뒤 구매력을 같은 선 위에 놓고 봅니다.</p>
       </div>
       <div className="mt-4 grid grid-cols-4 gap-2">
         {powers.map((item) => (
           <div key={item.year} className="rounded-md bg-black/5 p-3 text-center">
-            <p className="text-[10px] font-bold text-black/45">{item.year === 0 ? "현재" : `${item.year}년 뒤`}</p>
+            <p className="text-[10px] font-bold text-black/45">{item.year === 0 ? "현재 기준" : `${item.year}년 뒤`}</p>
             <p className="mt-1 text-sm font-black text-ink">{formatKRW(item.value)}</p>
           </div>
         ))}
