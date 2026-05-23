@@ -7,7 +7,7 @@ vi.mock("@/server/external-links/naverRealEstateLinkResolver", () => ({
     url: "https://search.naver.com/search.naver?query=test",
     accuracyLevel: "complex_name_search",
     source: "generated_search",
-    label: "네이버에서 현재 매물 보기"
+    label: "외부 사이트에서 매물 확인"
   }))
 }));
 

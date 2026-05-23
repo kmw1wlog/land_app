@@ -67,9 +67,9 @@ export function DiscoveryCard({ card, onNext }: DiscoveryCardProps) {
           <h2 className="mt-2 text-3xl font-black leading-tight">{card.complexName}</h2>
           <p className="mt-3 text-sm font-bold text-white/78">
             {card.userFit.possibleAfterSellingCurrentHome
-              ? "현재 집 매도 시 접근 가능한 단지/면적대"
+              ? "현재 기준점 정리 시 접근 가능한 단지/면적대"
               : card.userFit.yearsToReach !== null
-                ? `${card.userFit.yearsToReach}년 저축 루트 후보`
+                ? `${card.userFit.yearsToReach}년 준비 루트 후보`
                 : "관심지역 거래 집중 후보"}
           </p>
         </div>
@@ -94,7 +94,7 @@ export function DiscoveryCard({ card, onNext }: DiscoveryCardProps) {
         </div>
 
         <div className="rounded-md border border-black/10 bg-white p-3">
-          <p className="text-[11px] font-bold text-black/45">상급지 사다리</p>
+          <p className="text-[11px] font-bold text-black/45">주거 경로 밴드</p>
           <p className="mt-1 text-sm font-black text-ink">{card.moveUp?.priceBandLabel ?? "목표 가격대 계산 전"}</p>
           <div className="mt-2 grid grid-cols-3 gap-2 text-center">
             <Metric label="유동성" value={`${Math.round(card.moveUp?.liquidityScore ?? 0)}점`} />
@@ -119,7 +119,7 @@ export function DiscoveryCard({ card, onNext }: DiscoveryCardProps) {
           <p className="text-[11px] font-bold text-black/45">내 상황</p>
           <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
             <span>현재 {card.userFit.possibleNow ? "가능" : "부족"}</span>
-            <span>매도 시 {card.userFit.possibleAfterSellingCurrentHome ? "접근 가능" : "추가 준비"}</span>
+            <span>정리 후 {card.userFit.possibleAfterSellingCurrentHome ? "접근 가능" : "추가 준비"}</span>
             <span>부족액 {formatKRW(card.userFit.shortageNow ?? analysis.shortage)}</span>
             <span>월부담 {formatMonthly(card.userFit.monthlyBurdenDelta ?? analysis.monthlyDebtPayment)}</span>
             <span>DSR {(card.userFit.dsrRatio ?? analysis.dsrRatio).toFixed(1)}%</span>
@@ -149,7 +149,7 @@ export function DiscoveryCard({ card, onNext }: DiscoveryCardProps) {
         <p className="rounded-md bg-black/5 p-3 text-xs leading-5 text-black/55">{card.disclaimer}</p>
 
         <div className="rounded-md bg-moss/10 p-3 text-xs leading-5 text-moss">
-          <p className="font-black">갈아타기 체크리스트</p>
+          <p className="font-black">주거 이동 체크리스트</p>
           <p>{mark(card.moveUp?.checklist.priceBandPass)} 1.3/1.5/2.0배 목표 가격대</p>
           <p>{mark(card.moveUp?.checklist.liquidityPass)} 최근 월 1건 이상 거래 또는 400세대 이상</p>
           <p>{mark(card.moveUp?.checklist.leaderPass)} 지역 대장성 65점 이상</p>
@@ -174,7 +174,7 @@ export function DiscoveryCard({ card, onNext }: DiscoveryCardProps) {
           <Link href={`/compare-price-band?candidate=${card.id}`} className="flex h-12 items-center justify-center rounded-md bg-ink text-white" title="같은 돈 비교" onClick={() => setActiveCandidate(card)}>
             <Scale size={19} />
           </Link>
-          <Link href={`/community?room=${encodeURIComponent(`${card.lawdCode5}:${card.propertyType}:${card.complexName}`)}`} className="flex h-12 items-center justify-center rounded-md bg-sky text-white" title="종토방" onClick={() => next("community")}>
+          <Link href={`/community?room=${encodeURIComponent(`${card.lawdCode5}:${card.propertyType}:${card.complexName}`)}`} className="flex h-12 items-center justify-center rounded-md bg-sky text-white" title="커뮤니티" onClick={() => next("community")}>
             <MessageCircle size={19} />
           </Link>
           <a
@@ -182,13 +182,13 @@ export function DiscoveryCard({ card, onNext }: DiscoveryCardProps) {
             target="_blank"
             rel="noopener noreferrer"
             className="flex h-12 items-center justify-center rounded-md bg-gold text-ink"
-            title="네이버에서 현재 매물 보기"
+            title="외부 사이트에서 매물 확인"
           >
             <ExternalLink size={19} />
           </a>
         </div>
         <Link
-          href={`/community?room=${encodeURIComponent(`${card.lawdCode5}:${card.propertyType}:${card.complexName}`)}&draft=1&title=${encodeURIComponent(`${card.region} ${card.complexName} ${areaBucketText(card.areaBucket)}, 갈아타기 후보로 어떤가요?`)}&body=${encodeURIComponent(`최근 실거래 기준가: ${card.referencePrice ? formatKRW(card.referencePrice) : "미상"}\n최근 90일 거래: ${card.volume90d}건\n거래 집중도: ${card.transactionHeat.toFixed(1)}배\n전고점 대비: ${card.drawdownFromHigh?.toFixed(1) ?? "미상"}%\n전세가율: ${card.jeonseRatio?.toFixed(1) ?? "미상"}%\n현재 집 매도 시 접근 가능 여부: ${card.userFit.possibleAfterSellingCurrentHome ? "가능" : "추가 준비"}\n\n비슷한 가격대 후보와 비교하면 어떻게 보시나요?`)}`}
+          href={`/community?room=${encodeURIComponent(`${card.lawdCode5}:${card.propertyType}:${card.complexName}`)}&draft=1&title=${encodeURIComponent(`${card.region} ${card.complexName} ${areaBucketText(card.areaBucket)}, 주거 이동 후보로 어떤가요?`)}&body=${encodeURIComponent(`최근 실거래 기준가: ${card.referencePrice ? formatKRW(card.referencePrice) : "미상"}\n최근 90일 거래: ${card.volume90d}건\n거래 집중도: ${card.transactionHeat.toFixed(1)}배\n전고점 대비: ${card.drawdownFromHigh?.toFixed(1) ?? "미상"}%\n전세가율: ${card.jeonseRatio?.toFixed(1) ?? "미상"}%\n현재 기준점 정리 시 접근 가능 여부: ${card.userFit.possibleAfterSellingCurrentHome ? "가능" : "추가 준비"}\n\n비슷한 가격대 후보와 비교하면 어떻게 보시나요?`)}`}
           className="flex h-11 items-center justify-center rounded-md bg-sky/10 text-sm font-black text-sky"
           onClick={() => setActiveCandidate(card)}
         >
@@ -202,7 +202,7 @@ export function DiscoveryCard({ card, onNext }: DiscoveryCardProps) {
           className="flex h-11 items-center justify-center gap-2 rounded-md border border-black/10 bg-white text-sm font-black text-ink"
         >
           <Bookmark size={16} />
-          네이버에서 현재 매물 보기
+          외부 사이트에서 매물 확인
         </a>
         <div className="grid grid-cols-2 gap-2">
           <p className="rounded-md bg-black/5 p-3 text-xs font-bold text-black/55">

@@ -35,10 +35,10 @@ interface PublicDataPanelState {
 const nodes: Array<{ label: string; key: ScenarioResult["scenarioType"]; x: string; y: string }> = [
   { label: "추가 매수", key: "additional_purchase", x: "50%", y: "4%" },
   { label: "월세 전환", key: "convert_to_monthly_rent", x: "5%", y: "35%" },
-  { label: "지금 매도", key: "sell_now", x: "67%", y: "29%" },
+  { label: "현재 집 정리", key: "sell_now", x: "67%", y: "29%" },
   { label: "전세 전환", key: "convert_to_jeonse", x: "13%", y: "72%" },
-  { label: "계속 보유", key: "hold", x: "49%", y: "82%" },
-  { label: "갈아타기", key: "move_up", x: "72%", y: "68%" }
+  { label: "현재 주거 유지", key: "hold", x: "49%", y: "82%" },
+  { label: "주거 이동", key: "move_up", x: "72%", y: "68%" }
 ];
 
 export default function MyHomePage() {
@@ -121,8 +121,8 @@ export default function MyHomePage() {
 
   return (
     <AppShell
-      title="내 집 기준점"
-      subtitle="모든 후보는 지금 집을 팔거나 버틸 때 어디까지 갈 수 있는지를 기준으로 계산됩니다."
+      title="내 주거 기준점"
+      subtitle="보유 주택, 전세 보증금, 월세 기준을 현재 조건으로 환산해 주거 이동 가능성을 계산합니다."
     >
       <div className="space-y-4">
         <EstimateNotice />
@@ -171,7 +171,7 @@ export default function MyHomePage() {
             </select>
           </div>
           <button className="mt-3 h-12 w-full rounded-md bg-ink text-sm font-black text-white" onClick={analyzeHome}>
-            내 집 분석하기
+            주거 기준점 분석하기
           </button>
           <button
             className="mt-2 h-10 w-full rounded-md bg-black/5 text-xs font-black text-ink"
@@ -338,13 +338,13 @@ export default function MyHomePage() {
         <section className="rounded-lg border border-black/10 bg-white p-4">
           <div className="flex items-center gap-2">
             <Home size={18} className="text-moss" />
-            <h2 className="text-base font-black text-ink">{currentHome.region} 내 집</h2>
+            <h2 className="text-base font-black text-ink">{currentHome.region} 현재 기준점</h2>
           </div>
           <div className="mt-3 grid grid-cols-2 gap-2">
-            <Metric label="현재 추정가" value={formatKRW(currentHome.estimatedCurrentPrice)} />
+            <Metric label="현재 기준 추정가" value={formatKRW(currentHome.estimatedCurrentPrice)} />
             <Metric label="대출잔액" value={formatKRW(currentHome.loanBalance)} />
             <Metric
-              label="매도 후 현금"
+              label="정리 후 현금"
               value={formatKRW(calculateNetCashAfterSellingHome(currentHome))}
             />
             <Metric label="금리" value={`${currentHome.interestRate.toFixed(1)}%`} />
@@ -353,7 +353,7 @@ export default function MyHomePage() {
 
         <section className="relative h-[390px] overflow-hidden rounded-lg border border-black/10 bg-[#fdfbf7]">
           <div className="absolute left-1/2 top-1/2 z-10 w-36 -translate-x-1/2 -translate-y-1/2 rounded-lg bg-ink p-4 text-center text-white shadow-soft">
-            <p className="text-xs font-bold text-white/55">현재 집</p>
+            <p className="text-xs font-bold text-white/55">현재 주거 기준</p>
             <p className="mt-1 text-xl font-black">{currentHome.region}</p>
             <p className="mt-1 text-sm">{formatKRW(currentHome.estimatedCurrentPrice)}</p>
           </div>
@@ -406,7 +406,7 @@ export default function MyHomePage() {
             ))}
           </ul>
           <div className="mt-3 rounded-md bg-black/5 p-3 text-xs leading-5 text-black/60">
-            다음 행동: 후보 카드 3개를 비교하고, 목표 집 도달 경로에서 저축/매도/전세/월세 루트를 확인하세요.
+            다음 행동: 후보 카드 3개를 비교하고, 목표 주거 경로에서 저축/정리/전세/월세 루트를 확인하세요.
             리스크: 세금, 대출한도, 공실, 전세가 변동은 실제 조건과 다를 수 있습니다.
           </div>
         </section>

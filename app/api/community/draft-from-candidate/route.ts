@@ -8,14 +8,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "candidate가 필요합니다." }, { status: 400 });
   }
 
-  const title = `${candidate.region} ${candidate.complexName} ${areaBucketText(candidate.areaBucket)}, 갈아타기 후보로 어떤가요?`;
+  const title = `${candidate.region} ${candidate.complexName} ${areaBucketText(candidate.areaBucket)}, 주거 이동 후보로 어떤가요?`;
   const content = [
     `최근 실거래 기준가: ${candidate.referencePriceLabel ?? "미상"}`,
     `최근 90일 거래: ${candidate.volume90d}건`,
     `거래 집중도: ${candidate.transactionHeat.toFixed(1)}배`,
     `전고점 대비: ${candidate.drawdownFromHigh?.toFixed(1) ?? "미상"}%`,
     `전세가율: ${candidate.jeonseRatio?.toFixed(1) ?? "미상"}%`,
-    `현재 집 매도 시 접근 가능 여부: ${candidate.userFit.possibleAfterSellingCurrentHome ? "가능" : "추가 준비"}`,
+    `현재 기준점 정리 시 접근 가능 여부: ${candidate.userFit.possibleAfterSellingCurrentHome ? "가능" : "추가 준비"}`,
     "",
     "비슷한 가격대 후보와 비교하면 어떻게 보시나요?"
   ].join("\n");

@@ -1,7 +1,9 @@
 export const allowedImageTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
 export const maxImageBytes = 6 * 1024 * 1024;
 
-export function validateListingPhotoUpload(file: File) {
+type ListingPhotoUpload = Pick<File, "type" | "size">;
+
+export function validateListingPhotoUpload(file: ListingPhotoUpload) {
   const errors: string[] = [];
   if (!allowedImageTypes.has(file.type)) {
     errors.push("jpg, png, webp 이미지만 업로드할 수 있습니다.");

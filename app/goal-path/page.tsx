@@ -14,12 +14,12 @@ import { useAppStore } from "@/store/useAppStore";
 import type { Property } from "@/types";
 
 const routeLabels = {
-  save_more: "저축 루트",
-  sell_current_home: "현재 집 매도 루트",
-  convert_to_jeonse: "전세 전환 루트",
-  convert_to_monthly_rent: "월세 현금흐름 루트",
-  additional_purchase: "현재 가능 루트",
-  not_feasible: "조건 변경 필요"
+  save_more: "저축 준비 루트",
+  sell_current_home: "현재 집 정리 루트",
+  convert_to_jeonse: "전세 기준 전환 루트",
+  convert_to_monthly_rent: "월부담 조정 루트",
+  additional_purchase: "현재 조건 가능 루트",
+  not_feasible: "조건 재설계 필요"
 };
 
 export default function GoalPathPage() {
@@ -66,8 +66,8 @@ export default function GoalPathPage() {
 
   return (
     <AppShell
-      title="내 부동산 사다리"
-      subtitle={activeCandidate ? `${activeCandidate.complexName} ${activeCandidate.areaBucket} 가격대까지 가는 경로입니다.` : "현재, 3년 뒤, 5년 뒤 내가 어디까지 갈 수 있는지 봅니다."}
+      title="내 주거 경로"
+      subtitle={activeCandidate ? `${activeCandidate.complexName} ${activeCandidate.areaBucket} 가격대에 접근하는 경로입니다.` : "현재·정리 후·미래 구매력 안에서 어디까지 가능한지 봅니다."}
     >
       <div className="space-y-4">
         <FutureLadderTimeline profile={profile} currentHome={currentHome} financialPlan={financialPlan} />
@@ -75,10 +75,10 @@ export default function GoalPathPage() {
         <EstimateNotice />
 
         <section className="rounded-lg bg-ink p-4 text-white">
-          <p className="text-xs font-bold text-white/55">추천 경로</p>
+          <p className="text-xs font-bold text-white/55">주거 경로 안내</p>
           <h2 className="mt-1 text-2xl font-black">{routeLabels[path.recommendedPath]}</h2>
           <p className="mt-2 text-sm leading-6 text-white/70">
-            현재 가능: {path.possibleNow ? "가능" : "준비 필요"} · 현재 집 매도 시:{" "}
+            현재 가능: {path.possibleNow ? "가능" : "준비 필요"} · 현재 집 정리 시:{" "}
             {path.possibleAfterSellingCurrentHome ? "가능" : "부족"}
           </p>
           {activeCandidate ? (
@@ -98,36 +98,36 @@ export default function GoalPathPage() {
           <Metric label="목표 가격" value={formatKRW(path.targetPrice)} />
           <Metric label="현재 부족액" value={formatKRW(path.shortageNow)} />
           <Metric label="구매 시 월부담" value={formatMonthly(path.monthlyPaymentAtPurchase)} />
-          <Metric label="도달 경로" value={routeLabels[path.recommendedPath]} />
+          <Metric label="추천 경로" value={routeLabels[path.recommendedPath]} />
           <Metric label="필요 월저축" value={formatMonthly(requiredSavings)} />
           <Metric label="조건 변경" value={requiredSavings > profile.monthlySavings ? "저축/가격 조정" : "현 조건 유지"} />
         </div>
 
         <section className="space-y-3">
           <RouteCard
-            title="저축만 하는 루트"
+            title="저축만으로 가는 루트"
             value={path.yearsToReachBySavingOnly === null ? "20년 이상" : `${path.yearsToReachBySavingOnly}년`}
             body="현금과 월 저축액, 소득상승률만 반영한 보수적 경로입니다."
           />
           <RouteCard
-            title="현재 집 매도 루트"
+            title="현재 집 정리 루트"
             value={path.yearsToReachWithHomeSale === null ? "추가 준비 필요" : `${path.yearsToReachWithHomeSale}년`}
             body="세후 매도 현금과 미래 대출 여력을 합산해 봅니다."
           />
           <RouteCard
-            title="현재 집 전세 전환 루트"
+            title="현재 집 전세 기준 전환 루트"
             value={path.yearsToReachWithJeonseStrategy === null ? "리스크 확인 필요" : `${path.yearsToReachWithJeonseStrategy}년`}
             body="전세보증금 활용 가능성과 역전세 리스크를 같이 봅니다."
           />
           <RouteCard
-            title="월세 현금흐름 루트"
+            title="월부담 조정 루트"
             value={`${Math.max(0, (target.expectedMonthlyRent / financialPlan.targetMonthlyCashFlow) * 100).toFixed(1)}% 기여`}
             body="목표 월세 현금흐름에 이 후보가 얼마나 기여하는지 보는 경로입니다."
           />
         </section>
 
         <section className="rounded-lg border border-black/10 bg-white p-4">
-          <h2 className="text-base font-black text-ink">{activeCandidate ? "같은 가격대 단지/면적대 후보 3개" : "경로별 후보 3개"}</h2>
+          <h2 className="text-base font-black text-ink">{activeCandidate ? "같은 가격대 단지/면적대 후보 3개" : "경로별 분석 후보 3개"}</h2>
           <div className="mt-3 space-y-2">
             {candidates.map((item) => (
               <div key={item.property.id} className="rounded-md bg-black/5 p-3">
@@ -150,7 +150,7 @@ export default function GoalPathPage() {
         </section>
 
         <section className="rounded-lg border border-black/10 bg-white p-4">
-          <h2 className="text-base font-black text-ink">설명</h2>
+          <h2 className="text-base font-black text-ink">설명 가능한 근거</h2>
           <ul className="mt-2 space-y-1 text-sm leading-6 text-black/60">
             {path.explanation.map((item) => (
               <li key={item}>{item}</li>

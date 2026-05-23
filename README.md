@@ -58,6 +58,42 @@ npm run cap:sync
 npm run android:debug-apk
 ```
 
+## AI 프로토타입 재현
+
+Python 기반 Transformer 프로토타입은 별도 의존성을 사용합니다.
+
+```bash
+python3 -m venv .venv-ai
+source .venv-ai/bin/activate
+pip install -r scripts/ai/requirements.txt
+```
+
+실거래 feature CSV를 먼저 생성한 뒤 학습합니다.
+
+```bash
+npm run ai:transformer:export
+npm run ai:transformer:train
+```
+
+로컬 `prisma/dev.db`에 들어 있는 실거래 샘플은 현재 `2026-01`부터 `2026-04`까지 4개월치라서,
+짧은 horizon prototype 학습은 아래처럼 실행하는 것이 맞습니다.
+
+```bash
+python3 scripts/ai/real_estate_transformer_model.py \
+  --input-path artifacts/complex_monthly_features.csv \
+  --output-dir artifacts/model_outputs \
+  --sequence-length 3 \
+  --horizon-months 1 \
+  --epochs 12
+```
+
+출력 파일:
+
+- `artifacts/complex_monthly_features.csv`
+- `artifacts/model_outputs/transformer_predictions.csv`
+- `artifacts/model_outputs/transformer_metrics.json`
+- `artifacts/model_outputs/feature_manifest.json`
+
 ## 주요 스크립트
 
 - `npm run build`: Next.js production build
@@ -65,6 +101,7 @@ npm run android:debug-apk
 - `npm run test:e2e`: Playwright test
 - `npm run record:demo`: 제출용 데모 녹화 스크립트
 - `npm run create:demo-voiceover`: 제출용 보이스오버 생성 보조 스크립트
+- `npm run ai:transformer:export`: `prisma/dev.db` 실거래 데이터를 월별 feature CSV로 변환
 - `npm run ai:transformer:train`: 공공 실거래 feature 기반 Transformer 모델 학습 프로토타입
 
 ## Android 빌드 다운로드 방법

@@ -22,14 +22,14 @@ export function MoveUpLadderSummary({ profile, currentHome, financialPlan, compa
     <section className="rounded-lg border border-black/10 bg-white p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-bold text-moss">내 집 기준 다음 집</p>
-          <h2 className="mt-1 text-xl font-black leading-tight text-ink">내 사다리 요약</h2>
+          <p className="text-xs font-bold text-moss">현재 기준점에서 다음 경로</p>
+          <h2 className="mt-1 text-xl font-black leading-tight text-ink">내 구매력 요약</h2>
           <p className="mt-1 text-xs leading-5 text-black/55">
-            호갱노노/아실에서 단지를 봤다면, 여기서는 내 집을 팔고 어디까지 갈 수 있는지 계산합니다.
+            단지를 보기 전에 현재 구매력, 정리 후 구매력, 5년 뒤 구매력을 먼저 계산합니다.
           </p>
         </div>
         <div className="rounded-md bg-ink px-3 py-2 text-right text-white">
-          <p className="text-[10px] font-bold text-white/55">현재 집</p>
+          <p className="text-[10px] font-bold text-white/55">현재 기준점</p>
           <p className="text-base font-black">{formatKRW(currentHome.estimatedCurrentPrice)}</p>
         </div>
       </div>
@@ -47,7 +47,7 @@ export function MoveUpLadderSummary({ profile, currentHome, financialPlan, compa
       {!compact ? (
         <div className="mt-3 grid grid-cols-3 gap-2">
           <Metric label="현재 매수 여력" value={formatKRW(purchasePowerNow)} />
-          <Metric label="매도 시 여력" value={formatKRW(moveUpPower)} />
+          <Metric label="정리 후 구매력" value={formatKRW(moveUpPower)} />
           <Metric label="5년 뒤 예상" value={formatKRW(futureFiveYearPower)} />
         </div>
       ) : null}

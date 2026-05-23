@@ -11,19 +11,19 @@ import type { CommunityCategory } from "@/types";
 const categories: Array<{ key: CommunityCategory; label: string }> = [
   { key: "resident_review", label: "실거주 후기" },
   { key: "owner_opinion", label: "보유자 의견" },
-  { key: "buyer_question", label: "매수 질문" },
+  { key: "buyer_question", label: "구매 준비 질문" },
   { key: "broker_comment", label: "중개사 의견" },
-  { key: "deal_report", label: "급매 제보" },
-  { key: "good_news", label: "호재" },
-  { key: "bad_news", label: "악재" },
-  { key: "prediction", label: "가격 예측" },
-  { key: "move_up_consulting", label: "갈아타기" },
-  { key: "cash_flow_investment", label: "월세 투자" }
+  { key: "deal_report", label: "거래 제보" },
+  { key: "good_news", label: "생활 호재" },
+  { key: "bad_news", label: "생활 리스크" },
+  { key: "prediction", label: "경로 점검" },
+  { key: "move_up_consulting", label: "주거 이동 질문" },
+  { key: "cash_flow_investment", label: "주거비 절감" }
 ];
 
 export default function CommunityPage() {
   return (
-    <Suspense fallback={<AppShell title="부동산판 종토방" subtitle="단지방을 불러오는 중입니다."><div /></AppShell>}>
+    <Suspense fallback={<AppShell title="데이터 기반 커뮤니티" subtitle="단지방을 불러오는 중입니다."><div /></AppShell>}>
       <CommunityPageContent />
     </Suspense>
   );
@@ -87,14 +87,14 @@ function CommunityPageContent() {
   }, [firstPost?.id]);
 
   return (
-    <AppShell title="부동산판 종토방" subtitle="단지, 지역, 매물별 이야기에 데이터를 같이 붙여 봅니다.">
+    <AppShell title="데이터 기반 커뮤니티" subtitle="단지, 지역, 실거주 맥락에 실거래 데이터를 함께 붙여 질문과 검증을 이어갑니다.">
       <div className="space-y-4">
         {roomContext ? (
           <section className="rounded-lg bg-ink p-4 text-white">
             <p className="text-xs font-bold text-white/55">데이터가 붙은 단지방</p>
             <h2 className="mt-1 text-xl font-black leading-tight">{roomContext.title}</h2>
             <p className="mt-2 text-xs leading-5 text-white/60">
-              실거래 카드에서 넘어온 문맥을 유지합니다. 이 방에서는 “내 집 팔고 이 가격대가 맞는지”를 중심으로 이야기합니다.
+              실거래 카드에서 넘어온 문맥을 유지합니다. 이 방에서는 현재 조건에서 무리 없는 선택인지, 실거주 관점에서 어떤 리스크가 있는지 중심으로 이야기합니다.
             </p>
             <div className="mt-3 grid grid-cols-3 gap-2 rounded-md bg-white/10 p-3 text-center">
               <DataPoint tone="dark" label="기준가" value={roomContext.referencePrice} />
@@ -114,9 +114,9 @@ function CommunityPageContent() {
               ["verified_property", "인증방"],
               ["owner_only", "보유자방"],
               ["resident_only", "실거주 후기"],
-              ["public_property", "갈아타기 질문"],
+              ["public_property", "주거 이동 질문"],
               ["broker_qna", "중개사 Q&A"],
-              ["prediction", "예측게임"]
+              ["prediction", "경로 점검"]
             ].map(([key, label]) => (
               <button
                 key={key}
@@ -215,7 +215,7 @@ function CommunityPageContent() {
               <h2 className="mt-3 text-lg font-black leading-6 text-ink">{post.title}</h2>
               <p className="mt-2 text-sm leading-6 text-black/60">{post.content}</p>
               <div className="mt-3 rounded-md bg-gold/10 p-3 text-xs leading-5 text-black/62">
-                연결된 실거래 카드의 기준가, 거래량, 전세가율을 본문에 붙여 토론할 수 있습니다.
+                연결된 실거래 카드의 기준가, 거래량, 전세가율을 본문에 붙여 실거주 리스크와 접근 가능성을 함께 토론할 수 있습니다.
               </div>
               <div className="mt-2 flex flex-wrap gap-2 text-xs font-bold text-black/52">
                 <span>출처/근거 첨부 가능</span>
