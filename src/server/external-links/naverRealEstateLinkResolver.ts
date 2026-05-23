@@ -33,7 +33,7 @@ export async function resolveNaverRealEstateLink(input: {
       url: mapping.externalUrl,
       accuracyLevel: "exact_mapped_complex",
       source: mapping.matchType === "manual_admin" ? "manual_mapping" : "user_mapping",
-      label: "네이버에서 현재 매물 보기"
+      label: "외부 사이트에서 매물 확인"
     };
   }
 
@@ -48,7 +48,7 @@ export async function resolveNaverRealEstateLink(input: {
     url: `https://search.naver.com/search.naver?query=${encodeURIComponent(query)}`,
     accuracyLevel: input.address ? "address_search" : input.region ? "complex_name_search" : "region_search",
     source: "generated_search",
-    label: "네이버에서 현재 매물 보기"
+    label: "외부 사이트에서 매물 확인"
   };
 }
 

@@ -73,8 +73,8 @@ export default function FeedPage() {
 
   return (
     <AppShell
-      title="오늘의 부동산 For You"
-      subtitle="지도보다 먼저, 내 월급과 내 집 기준으로 후보를 넘겨봅니다."
+      title="오늘의 주거 구매력 피드"
+      subtitle="지도보다 먼저, 현재 조건과 정리 후 여력을 기준으로 실거래 분석 후보를 보여줍니다."
       action={
         <div className="rounded-md bg-white px-3 py-2 text-right shadow-sm">
           <p className="text-[11px] font-bold text-black/45">저장 후보</p>
@@ -87,7 +87,7 @@ export default function FeedPage() {
 
         <div className="grid grid-cols-2 gap-2">
           <Metric label="현재 매수 여력" value={formatKRW(calculatePurchasePower(profile))} />
-          <Metric label="매도 후 갈아타기" value={formatKRW(calculateMoveUpBudget(profile, currentHome))} />
+          <Metric label="정리 후 구매력" value={formatKRW(calculateMoveUpBudget(profile, currentHome))} />
         </div>
 
         <EstimateNotice />
@@ -112,21 +112,24 @@ export default function FeedPage() {
         <div className="flex items-center justify-between rounded-md bg-white/70 px-3 py-2">
           <div className="flex items-center gap-2 text-sm font-black text-ink">
             <Target size={17} className="text-coral" />
-            현실 후보 70%
+            현재 구매력 중심 70%
           </div>
           <div className="flex items-center gap-2 text-sm font-black text-ink">
             <Flame size={17} className="text-gold" />
-            상상 20% · 탐험 10%
+            정리 후·미래 접근 30%
           </div>
         </div>
 
         <div className="rounded-md border border-black/10 bg-white p-3">
-          <p className="text-[11px] font-bold text-black/45">이번 카드 분류</p>
+          <p className="text-[11px] font-bold text-black/45">이번 추천 근거</p>
           <p className="mt-1 text-sm font-black text-ink">{currentDiscovery?.cardType ?? current.feedCardType}</p>
           <p className="mt-1 text-xs leading-5 text-black/55">
-            {currentDiscovery ? "최근 실거래가 활발한 단지/면적대 추천" : current.reason} · source: {feedSource} · 표시 {filteredDiscoveryCards.length || ranked.length}개
+            {currentDiscovery ? "공공 실거래가를 바탕으로 현재 조건, 정리 후 여력, 미래 구매력을 함께 본 분석 후보입니다." : current.reason} · source: {feedSource} · 표시 {filteredDiscoveryCards.length || ranked.length}개
           </p>
           {warnings.length ? <p className="mt-1 text-xs leading-5 text-coral">{warnings[0]}</p> : null}
+          <p className="mt-1 text-xs leading-5 text-black/45">
+            본 서비스는 매수 추천이나 수익 보장이 아닌 의사결정 보조 도구입니다.
+          </p>
         </div>
 
         {currentDiscovery ? (
@@ -148,12 +151,12 @@ type FeedFilter = "all" | "now" | "after_sale" | "one_point_five" | "future_five
 const feedFilters: Array<{ key: FeedFilter; label: string }> = [
   { key: "all", label: "전체" },
   { key: "now", label: "지금 가능" },
-  { key: "after_sale", label: "매도하면 가능" },
-  { key: "one_point_five", label: "1.5배 후보" },
-  { key: "future_five", label: "5년 뒤 가능" },
-  { key: "hot", label: "거래 핫" },
-  { key: "discount", label: "전고점 대비 하락" },
-  { key: "cash_flow", label: "오피스텔 현금흐름" }
+  { key: "after_sale", label: "정리 후 가능" },
+  { key: "one_point_five", label: "조건 확장 후보" },
+  { key: "future_five", label: "5년 뒤 접근" },
+  { key: "hot", label: "거래 활발" },
+  { key: "discount", label: "리스크 점검" },
+  { key: "cash_flow", label: "주거비 완화" }
 ];
 
 function filterDiscoveryCards(cards: ComplexSignalCandidate[], filter: FeedFilter) {

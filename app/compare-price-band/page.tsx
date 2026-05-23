@@ -11,7 +11,7 @@ import type { PriceBandComparison } from "@/types";
 
 export default function ComparePriceBandPage() {
   return (
-    <Suspense fallback={<AppShell title="같은 돈이면 어디?" subtitle="비교 후보를 불러오는 중입니다."><div /></AppShell>}>
+    <Suspense fallback={<AppShell title="같은 예산이면 어디가 더 안전할까?" subtitle="비교 후보를 불러오는 중입니다."><div /></AppShell>}>
       <ComparePriceBandContent />
     </Suspense>
   );
@@ -49,7 +49,7 @@ function ComparePriceBandContent() {
   }, [candidateId, profile, currentHome]);
 
   return (
-    <AppShell title="같은 돈이면 어디?" subtitle="보고 있는 단지에 꽂히기 전에, 같은 가격대 인근 후보를 비교하세요.">
+    <AppShell title="같은 예산이면 어디가 더 안전할까?" subtitle="한 단지에 바로 꽂히기 전에, 같은 가격대 후보의 리스크와 접근성을 함께 비교하세요.">
       <div className="space-y-4">
         {error ? <p className="rounded-lg bg-coral/10 p-4 text-sm font-bold text-coral">{error}</p> : null}
         {comparison ? (
@@ -88,7 +88,7 @@ function ComparePriceBandContent() {
                     </div>
                   </div>
                   <a href={item.candidate.externalLinks.naverSearchUrl} target="_blank" rel="noopener noreferrer" className="mt-3 flex h-10 items-center justify-center rounded-md bg-black/5 text-sm font-black text-ink">
-                    네이버에서 현재 매물 보기
+                    외부 사이트에서 매물 확인
                   </a>
                 </article>
               ))}

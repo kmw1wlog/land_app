@@ -1,0 +1,9 @@
+{
+  "db_path": "prisma/dev.db",
+  "output_path": "artifacts/complex_monthly_features.csv",
+  "row_count": 1656,
+  "complex_count": 715,
+  "month_count": 4,
+  "month_min": "2026-01",
+  "month_max": "2026-04"
+}

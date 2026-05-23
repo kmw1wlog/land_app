@@ -9,10 +9,10 @@ import { formatKRW, formatMonthly } from "@/lib/format";
 const steps = [
   "Hero",
   "내 상황 입력",
-  "사다리 요약",
+  "구매력 요약",
   "실거래 후보 카드",
   "같은 돈 비교",
-  "종토방",
+  "커뮤니티",
   "Final"
 ];
 
@@ -88,23 +88,26 @@ function HeroStep() {
   return (
     <div className="grid items-center gap-10 lg:grid-cols-[1.1fr_.9fr]">
       <div>
-        <p className="text-lg font-black text-moss">실거래로 그리는 부동산 사다리 앱</p>
+        <p className="text-lg font-black text-moss">홈패스 · 공공데이터 기반 주거 구매력 진단</p>
         <h1 className="mt-5 text-7xl font-black leading-[1.04] tracking-normal text-ink">
-          내 집 팔고
+          지금 내 조건으로
           <br />
-          어디까지 갈 수 있을까?
+          어디까지 가능할까?
         </h1>
         <p className="mt-8 max-w-2xl text-2xl font-bold leading-10 text-black/60">
-          호갱노노·아실이 단지를 보여준다면, 우리는 그 단지가 내 상황에서 갈 수 있는 단지인지 계산합니다.
+          청년·사회초년생의 주거 구매력과 갈아타기 리스크를 공공 실거래 데이터로 설명 가능한 경로로 보여줍니다.
+        </p>
+        <p className="mt-5 max-w-2xl text-base font-bold leading-7 text-black/45">
+          본 서비스는 매수 추천이나 수익 보장이 아닌 의사결정 보조 도구입니다.
         </p>
       </div>
       <div className="rounded-[2rem] bg-white p-8 shadow-soft">
         <div className="grid gap-4 text-xl font-black">
-          {["실거래가", "거래량", "매물", "단지정보"].map((item) => (
+          {["실거래가", "거래량", "전세가율", "주거비 부담"].map((item) => (
             <div key={item} className="rounded-xl bg-black/5 p-5">{item}</div>
           ))}
         </div>
-        <p className="mt-6 rounded-xl bg-coral/10 p-5 text-2xl font-black text-coral">그래서 나는 어디까지 갈 수 있지?</p>
+        <p className="mt-6 rounded-xl bg-coral/10 p-5 text-2xl font-black text-coral">막연한 주거 고민을, 설명 가능한 경로로</p>
       </div>
     </div>
   );
@@ -112,10 +115,10 @@ function HeroStep() {
 
 function InputStep() {
   return (
-    <DemoPanel eyebrow="Step 1" title="내 상황을 입력합니다" icon={<Home size={34} />}>
+    <DemoPanel eyebrow="Step 1" title="내 주거 조건을 입력합니다" icon={<Home size={34} />}>
       <div className="grid grid-cols-2 gap-5">
-        <DemoMetric label="현재 집" value={`${demoCurrentHome.complexName} · ${formatKRW(demoCurrentHome.estimatedCurrentPrice)}`} />
-        <DemoMetric label="대출잔액" value={formatKRW(demoCurrentHome.loanBalance)} />
+        <DemoMetric label="현재 주거 기준점" value={`${demoCurrentHome.complexName} · ${formatKRW(demoCurrentHome.estimatedCurrentPrice)}`} />
+        <DemoMetric label="현재 대출잔액" value={formatKRW(demoCurrentHome.loanBalance)} />
         <DemoMetric label="월소득" value={formatMonthly(demoProfile.monthlyIncome)} />
         <DemoMetric label="보유현금" value={formatKRW(demoProfile.cashOnHand)} />
         <DemoMetric label="월저축" value={formatMonthly(demoProfile.monthlySavings)} />
@@ -127,17 +130,17 @@ function InputStep() {
 
 function LadderStep() {
   return (
-    <DemoPanel eyebrow="Step 2" title="현재·매도 후·5년 뒤 사다리를 계산합니다" icon={<Route size={34} />}>
+    <DemoPanel eyebrow="Step 2" title="현재·정리 후·5년 뒤 구매력을 계산합니다" icon={<Route size={34} />}>
       <div className="grid grid-cols-4 gap-4">
         <DemoMetric label="현재 구매력" value={formatKRW(demoLadder.purchasePowerNow)} dark />
-        <DemoMetric label="매도 시 구매력" value={formatKRW(demoLadder.purchasePowerAfterSale)} dark />
+        <DemoMetric label="정리 후 구매력" value={formatKRW(demoLadder.purchasePowerAfterSale)} dark />
         <DemoMetric label="5년 뒤 구매력" value={formatKRW(demoLadder.purchasePowerInFiveYears)} dark />
-        <DemoMetric label="1.5배 목표" value={formatKRW(demoLadder.onePointFiveTarget)} dark />
+        <DemoMetric label="주거 목표 기준" value={formatKRW(demoLadder.onePointFiveTarget)} dark />
       </div>
       <div className="mt-8 grid grid-cols-3 gap-5">
-        <Band label="1.3배 현실권" price={1_040_000_000} />
-        <Band label="1.5배 목표권" price={1_200_000_000} active />
-        <Band label="2.0배 장기권" price={1_600_000_000} />
+        <Band label="현재 접근권" price={demoLadder.purchasePowerNow} />
+        <Band label="정리 후 확장권" price={demoLadder.purchasePowerAfterSale} active />
+        <Band label="5년 뒤 목표권" price={demoLadder.purchasePowerInFiveYears} />
       </div>
     </DemoPanel>
   );
@@ -145,11 +148,11 @@ function LadderStep() {
 
 function CandidateStep() {
   return (
-    <DemoPanel eyebrow="Step 3" title="실거래 기반 후보 카드를 보여줍니다" icon={<Building2 size={34} />}>
+    <DemoPanel eyebrow="Step 3" title="공공 실거래 기반 분석 후보를 보여줍니다" icon={<Building2 size={34} />}>
       <div className="rounded-[1.5rem] bg-ink p-7 text-white">
         <div className="flex flex-wrap gap-3">
-          <Tag>1.5배 후보</Tag>
-          <Tag>거래 집중</Tag>
+          <Tag>{demoCandidate.label}</Tag>
+          <Tag>거래 집중 후보</Tag>
           <Tag>{demoCandidate.area}</Tag>
         </div>
         <h2 className="mt-8 text-5xl font-black">{demoCandidate.complexName}</h2>
@@ -161,6 +164,9 @@ function CandidateStep() {
           <DemoMetric label="전세가율" value={`${demoCandidate.jeonseRatio}%`} dark />
           <DemoMetric label="DSR/LTV" value={`${demoCandidate.dsr}% / ${demoCandidate.ltv}%`} dark />
         </div>
+        <p className="mt-6 text-sm font-bold leading-6 text-white/62">
+          실거래 기반 분석 후보입니다. 실제 매물은 외부 사이트에서 확인하세요.
+        </p>
       </div>
     </DemoPanel>
   );
@@ -168,7 +174,7 @@ function CandidateStep() {
 
 function CompareStep() {
   return (
-    <DemoPanel eyebrow="Step 4" title="같은 돈이면 어디가 나은지 비교합니다" icon={<BarChart3 size={34} />}>
+    <DemoPanel eyebrow="Step 4" title="같은 예산이면 어디가 더 안전한지 비교합니다" icon={<BarChart3 size={34} />}>
       <div className="overflow-hidden rounded-[1.5rem] bg-white shadow-soft">
         <div className="grid grid-cols-7 bg-ink px-5 py-4 text-sm font-black text-white">
           <span>단지</span>
@@ -197,12 +203,12 @@ function CompareStep() {
 
 function CommunityStep() {
   return (
-    <DemoPanel eyebrow="Step 5" title="데이터만으로 부족한 맥락은 단지방에서 확인합니다" icon={<MessageSquareText size={34} />}>
+    <DemoPanel eyebrow="Step 5" title="데이터만으로 부족한 맥락은 커뮤니티에서 확인합니다" icon={<MessageSquareText size={34} />}>
       <div className="grid gap-6 lg:grid-cols-[.75fr_1.25fr]">
         <div className="rounded-[1.5rem] bg-white p-6 shadow-soft">
           <p className="text-sm font-black text-moss">작성자 배지</p>
           <div className="mt-4 grid gap-3">
-            {["보유자", "실거주자", "매수대기자"].map((item) => (
+            {["실거주 경험자", "지역 경험자", "주거 이동 질문자"].map((item) => (
               <div key={item} className="flex items-center gap-3 rounded-xl bg-black/5 p-4 text-lg font-black">
                 <CheckCircle2 size={22} className="text-moss" />
                 {item}
@@ -225,11 +231,11 @@ function FinalStep() {
     <div className="mx-auto max-w-5xl text-center">
       <Sparkles size={54} className="mx-auto text-gold" />
       <h1 className="mt-8 text-7xl font-black leading-[1.06] tracking-normal">
-        부동산을 보는 앱이 아니라,
+        집을 추천하는 앱이 아니라,
         <br />
-        내 미래를 그리는 앱.
+        내 조건을 설명하는 앱.
       </h1>
-      <p className="mt-8 text-3xl font-black text-moss">실거래로 그리는 부동산 사다리 앱</p>
+      <p className="mt-8 text-3xl font-black text-moss">홈패스 · 공공데이터 기반 주거 구매력 진단</p>
     </div>
   );
 }

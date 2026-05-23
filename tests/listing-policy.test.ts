@@ -15,7 +15,7 @@ describe("listing display and photo policy", () => {
   });
 
   it("validates image upload type and size", () => {
-    const file = new File(["x"], "x.txt", { type: "text/plain" });
+    const file = { type: "text/plain", size: 1 };
     expect(validateListingPhotoUpload(file).length).toBeGreaterThan(0);
   });
 });

@@ -317,12 +317,12 @@ export const useAppStore = create<AppState>()(
 );
 
 export const goalLabels: Record<PrimaryGoal, string> = {
-  buy_home: "내 집 마련",
-  move_up: "갈아타기",
-  cash_flow: "월세 현금흐름",
-  multi_home: "다주택 포트폴리오",
-  commercial_real_estate: "상가/빌딩 투자",
-  just_browsing: "그냥 구경"
+  buy_home: "첫 주거 구매",
+  move_up: "현재 집 정리 후 이동",
+  cash_flow: "주거비 절감",
+  multi_home: "가족 확장 준비",
+  commercial_real_estate: "비주거 자산 검토",
+  just_browsing: "시장 둘러보기"
 };
 
 export const riskLabels: Record<RiskPreference, string> = {

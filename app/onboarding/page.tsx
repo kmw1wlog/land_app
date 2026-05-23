@@ -22,16 +22,16 @@ export default function OnboardingPage() {
       <div className="mb-6">
         <p className="text-xs font-black uppercase text-moss">시작하기</p>
         <h1 className="mt-2 text-3xl font-black leading-tight text-ink">
-          내 월급으로 어디까지 살 수 있을까?
+          지금 내 조건으로 어디까지 가능할까?
         </h1>
         <p className="mt-2 text-sm leading-6 text-black/60">
-          월급, 현금, 현재 집을 넣으면 팔기, 버티기, 월세, 전세, 갈아타기 시나리오를 바로 굴려봅니다.
+          청년·사회초년생과 1주택자의 주거 구매력, 정리 후 이동 가능성, 미래 경로를 공공데이터 기준으로 진단합니다.
         </p>
       </div>
 
       <section className="space-y-6">
         <div>
-          <h2 className="text-sm font-black text-ink">현재 목표</h2>
+          <h2 className="text-sm font-black text-ink">현재 주거 목표</h2>
           <div className="mt-3 grid grid-cols-2 gap-2">
             {goals.map(([key, label]) => (
               <button
@@ -94,7 +94,7 @@ export default function OnboardingPage() {
         <div className="rounded-lg border border-black/10 bg-white p-4">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="text-moss" size={18} />
-            <h2 className="text-sm font-black text-ink">현재 집 정보</h2>
+            <h2 className="text-sm font-black text-ink">현재 주거 기준점</h2>
           </div>
           <div className="mt-3 grid grid-cols-2 gap-3">
             <TextField
@@ -136,7 +136,7 @@ export default function OnboardingPage() {
         </div>
 
         <div className="rounded-lg border border-black/10 bg-white p-4">
-          <h2 className="text-sm font-black text-ink">미래 구매능력/목표</h2>
+          <h2 className="text-sm font-black text-ink">미래 구매력/목표</h2>
           <div className="mt-3 grid grid-cols-2 gap-3">
             <PercentField
               label="연소득 상승률"
@@ -182,7 +182,7 @@ export default function OnboardingPage() {
           className="flex h-14 w-full items-center justify-center gap-2 rounded-md bg-ink text-base font-black text-white"
           onClick={() => router.push("/feed")}
         >
-          부동산 피드 보기
+          주거 구매력 진단 보기
           <ArrowRight size={18} />
         </button>
       </section>

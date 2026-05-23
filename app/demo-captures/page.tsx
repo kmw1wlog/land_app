@@ -31,10 +31,10 @@ function MvpMiniScreens() {
   return (
     <div className="mt-7 grid grid-cols-4 gap-4">
       {[
-        ["갈아타기 피드", "1.5배 후보 · 거래 집중 3.1배"],
-        ["내 집 사다리", `현재 집 ${formatKRW(demoCurrentHome.estimatedCurrentPrice)}`],
+        ["주거 구매력 피드", "구매력 적합 후보 · 거래 집중 3.1배"],
+        ["내 주거 경로", `현재 기준점 ${formatKRW(demoCurrentHome.estimatedCurrentPrice)}`],
         ["같은 돈 비교", `${demoComparables.length}개 단지 비교`],
-        ["데이터 종토방", "자동 질문 템플릿"]
+        ["데이터 커뮤니티", "자동 질문 템플릿"]
       ].map(([title, body]) => (
         <div key={title} className="rounded-2xl bg-ink p-5 text-white">
           <p className="text-lg font-black">{title}</p>
@@ -52,7 +52,7 @@ function TechFlow() {
       <span className="text-4xl font-black text-moss">→</span>
       <FlowBox title="시그널 엔진" body="거래 집중도·전고점·전세가율" />
       <span className="text-4xl font-black text-moss">→</span>
-      <FlowBox title="개인화 계산" body="DSR/LTV·매도 후 여력·미래 구매력" />
+      <FlowBox title="개인화 계산" body="DSR/LTV·정리 후 여력·미래 구매력" />
     </div>
   );
 }
