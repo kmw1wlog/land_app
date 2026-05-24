@@ -21,6 +21,7 @@ export type HomePathChatInput = {
   currentHome?: CurrentHome;
   financialPlan?: UserFinancialPlan;
   activeCandidate?: ComplexSignalCandidate | null;
+  useRag?: boolean;
 };
 
 export async function buildHomePathRagContext(input: HomePathChatInput) {
@@ -28,6 +29,15 @@ export async function buildHomePathRagContext(input: HomePathChatInput) {
   const currentHome = input.currentHome ?? sampleHomes[0];
   const financialPlan = input.financialPlan ?? defaultFinancialPlan(profile);
   const intent = classifyIntent(input.message);
+  const calculations = buildCalculationSummary({ profile, currentHome, financialPlan, activeCandidate: input.activeCandidate });
+  if (input.useRag === false) {
+    return {
+      intent,
+      calculations,
+      retrieved: [],
+      contextText: buildContextText([], input.activeCandidate)
+    };
+  }
   const query = [
     input.message,
     input.activeCandidate?.complexName,
@@ -42,7 +52,7 @@ export async function buildHomePathRagContext(input: HomePathChatInput) {
 
   return {
     intent,
-    calculations: buildCalculationSummary({ profile, currentHome, financialPlan, activeCandidate: input.activeCandidate }),
+    calculations,
     retrieved: results,
     contextText: buildContextText(results, input.activeCandidate)
   };

@@ -1,0 +1,57 @@
+{
+  "checkedAt": "2026-05-24T11:29:59.756Z",
+  "question": "왜 이 후보가 떴어? 이 결과는 매수 추천이야?",
+  "localQwen": {
+    "ok": false,
+    "baseUrl": "http://localhost:11434/v1",
+    "model": "qwen3.5-0.8b-instruct",
+    "error": "fetch failed"
+  },
+  "rag": {
+    "chunkCount": 188,
+    "provider": "turbo_vector_sqlite",
+    "quantization": "turboquant_lite_uint8"
+  },
+  "withRag": {
+    "intent": "candidate_reason",
+    "sourceCount": 4,
+    "sources": [
+      {
+        "id": "faq:why-candidate",
+        "sourceType": "faq",
+        "title": "왜 후보가 떴나요?",
+        "score": 0.12036250186240217
+      },
+      {
+        "id": "model-signal:27110|달성파크푸르지오힐스테이트|apartment|59:2025-09-01",
+        "sourceType": "model_artifact",
+        "title": "Transformer AI signal 달성파크푸르지오힐스테이트",
+        "score": 0.09902976169316402
+      },
+      {
+        "id": "doc:docs/demo-recording-guide.md:0",
+        "sourceType": "doc",
+        "title": "docs/demo-recording-guide.md #1",
+        "score": 0.07626064425687537
+      },
+      {
+        "id": "safety:decision-support",
+        "sourceType": "safety_policy",
+        "title": "홈패스 안전 원칙",
+        "score": 0.06727994546993905
+      }
+    ],
+    "usedLocalModel": false,
+    "fallbackUsed": true,
+    "answer": "결론: 현재 답변은 홈패스 계산 결과와 검색된 공공데이터 근거를 바탕으로 한 설명입니다.\n\n근거 3개:\n1. 현재 구매력 1.6억, 현재 집 정리 후 예산 4.8억, 5년 뒤 추정 구매력 5.8억, 현재 집 정리 후 순현금 2.4억, 월소득 420만 원, 월저축 150만 원.\n2. [근거 1] 왜 후보가 떴나요?\n3. 후보는 최근 실거래 기준가, 거래량, 거래 집중도, 전고점 대비 하락률, 전세가율, 사용자 구매력, DSR/LTV 참고값, Transformer 회복/재활성화/하락 리스크 신호를 함께 보고 설명한다.\n\n주의점: [근거 2] Transformer AI signal 달성파크푸르지오힐스테이트\n\n다음 행동: 후보 카드의 실거래 기준가, 90일 거래량, 전세가율, DSR/LTV 참고값을 확인한 뒤 외부 매물 사이트에서 실제 매물을 검증하세요.\n\n참고용 추정이며 의사결정 보조입니다. 매수 추천, 수익 보장, 대출 승인 보장이 아닙니다.",
+    "error": "fetch failed"
+  },
+  "withoutRag": {
+    "intent": "candidate_reason",
+    "sourceCount": 0,
+    "usedLocalModel": false,
+    "fallbackUsed": true,
+    "answer": "결론: 현재 답변은 홈패스 계산 결과와 검색된 공공데이터 근거를 바탕으로 한 설명입니다.\n\n근거 3개:\n1. 현재 구매력 1.6억, 현재 집 정리 후 예산 4.8억, 5년 뒤 추정 구매력 5.8억, 현재 집 정리 후 순현금 2.4억, 월소득 420만 원, 월저축 150만 원.\n2. 검색된 근거가 부족해 일반적인 홈패스 안전 원칙만 설명합니다.\n3. 검색된 근거가 부족해 일반적인 홈패스 안전 원칙만 설명합니다.\n\n주의점: 실제 매물, 권리관계, 대출 조건은 별도 확인해야 합니다.\n\n다음 행동: 후보 카드의 실거래 기준가, 90일 거래량, 전세가율, DSR/LTV 참고값을 확인한 뒤 외부 매물 사이트에서 실제 매물을 검증하세요.\n\n참고용 추정이며 의사결정 보조입니다. 매수 추천, 수익 보장, 대출 승인 보장이 아닙니다.",
+    "error": "fetch failed"
+  }
+}

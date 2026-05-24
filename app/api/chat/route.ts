@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
   }
 
   let context = await buildHomePathRagContext({ ...body, message });
-  if (context.retrieved.length === 0) {
+  if (body.useRag !== false && context.retrieved.length === 0) {
     await reindexHomePathRag();
     context = await buildHomePathRagContext({ ...body, message });
   }
