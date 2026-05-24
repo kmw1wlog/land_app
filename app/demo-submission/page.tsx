@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, BarChart3, Building2, CheckCircle2, Home, MessageSquareText, Route, Sparkles } from "lucide-react";
+import { ArrowRight, BarChart3, Brain, Building2, CheckCircle2, Home, MessageSquareText, Route, Sparkles } from "lucide-react";
 import { demoCandidate, demoCommunityDraft, demoComparables, demoCurrentHome, demoLadder, demoProfile } from "@/lib/demoSubmissionData";
 import { formatKRW, formatMonthly } from "@/lib/format";
 
@@ -11,6 +11,7 @@ const steps = [
   "내 상황 입력",
   "구매력 요약",
   "실거래 후보 카드",
+  "AI 설명",
   "같은 돈 비교",
   "커뮤니티",
   "Final"
@@ -57,9 +58,10 @@ export default function DemoSubmissionPage() {
           {step === 1 ? <InputStep /> : null}
           {step === 2 ? <LadderStep /> : null}
           {step === 3 ? <CandidateStep /> : null}
-          {step === 4 ? <CompareStep /> : null}
-          {step === 5 ? <CommunityStep /> : null}
-          {step === 6 ? <FinalStep /> : null}
+          {step === 4 ? <AiExplanationStep /> : null}
+          {step === 5 ? <CompareStep /> : null}
+          {step === 6 ? <CommunityStep /> : null}
+          {step === 7 ? <FinalStep /> : null}
         </div>
       </section>
 
@@ -98,7 +100,7 @@ function HeroStep() {
           청년·사회초년생의 주거 구매력과 갈아타기 리스크를 공공 실거래 데이터로 설명 가능한 경로로 보여줍니다.
         </p>
         <p className="mt-5 max-w-2xl text-base font-bold leading-7 text-black/45">
-          본 서비스는 매수 추천이나 수익 보장이 아닌 의사결정 보조 도구입니다.
+          본 서비스는 공공데이터와 사용자 입력값을 바탕으로 한 의사결정 보조 도구입니다.
         </p>
       </div>
       <div className="rounded-[2rem] bg-white p-8 shadow-soft">
@@ -172,9 +174,41 @@ function CandidateStep() {
   );
 }
 
+function AiExplanationStep() {
+  const score = estimateDemoAiScore();
+  return (
+    <DemoPanel eyebrow="Step 4" title="AI가 후보가 뜬 이유를 설명합니다" icon={<Brain size={34} />}>
+      <div className="grid gap-6 lg:grid-cols-[.85fr_1.15fr]">
+        <div className="rounded-[1.5rem] bg-ink p-7 text-white">
+          <p className="text-sm font-black text-white/60">AI 분석 신호</p>
+          <h2 className="mt-3 text-6xl font-black">{score}점</h2>
+          <p className="mt-4 text-xl font-bold leading-8 text-white/75">
+            Transformer 프로토타입과 공공 실거래 지표를 함께 본 설명 가능한 보조 신호입니다.
+          </p>
+          <p className="mt-5 rounded-xl bg-white/10 p-4 text-sm font-bold leading-6 text-white/62">
+            complex-level holdout 기준 AUC 0.6741, accuracy 0.7692 모델 artifact를 제출 증빙으로 활용합니다.
+          </p>
+        </div>
+        <div className="rounded-[1.5rem] bg-white p-7 shadow-soft">
+          <p className="text-sm font-black text-moss">질문</p>
+          <h3 className="mt-2 text-3xl font-black">왜 이 후보가 떴나요?</h3>
+          <div className="mt-6 space-y-3 text-lg font-bold leading-8 text-black/65">
+            <p>1. 기준가 {formatKRW(demoCandidate.referencePrice)}와 현재·정리 후 구매력을 함께 비교했습니다.</p>
+            <p>2. 거래 집중도 {demoCandidate.transactionHeat}배, 전고점 대비 {demoCandidate.drawdownFromHigh}% 구간을 반영했습니다.</p>
+            <p>3. 전세가율 {demoCandidate.jeonseRatio}%, DSR/LTV {demoCandidate.dsr}%/{demoCandidate.ltv}%를 리스크 지표로 봅니다.</p>
+          </div>
+          <p className="mt-5 rounded-xl bg-coral/10 p-4 text-sm font-black leading-6 text-coral">
+            이 설명은 참고용 의사결정 보조이며, 실제 매물·대출·세금은 외부 기관 확인이 필요합니다.
+          </p>
+        </div>
+      </div>
+    </DemoPanel>
+  );
+}
+
 function CompareStep() {
   return (
-    <DemoPanel eyebrow="Step 4" title="같은 예산이면 어디가 더 안전한지 비교합니다" icon={<BarChart3 size={34} />}>
+    <DemoPanel eyebrow="Step 5" title="같은 예산이면 어디가 더 안전한지 비교합니다" icon={<BarChart3 size={34} />}>
       <div className="overflow-hidden rounded-[1.5rem] bg-white shadow-soft">
         <div className="grid grid-cols-7 bg-ink px-5 py-4 text-sm font-black text-white">
           <span>단지</span>
@@ -203,7 +237,7 @@ function CompareStep() {
 
 function CommunityStep() {
   return (
-    <DemoPanel eyebrow="Step 5" title="데이터만으로 부족한 맥락은 커뮤니티에서 확인합니다" icon={<MessageSquareText size={34} />}>
+    <DemoPanel eyebrow="Step 6" title="데이터만으로 부족한 맥락은 커뮤니티에서 확인합니다" icon={<MessageSquareText size={34} />}>
       <div className="grid gap-6 lg:grid-cols-[.75fr_1.25fr]">
         <div className="rounded-[1.5rem] bg-white p-6 shadow-soft">
           <p className="text-sm font-black text-moss">작성자 배지</p>
@@ -275,4 +309,12 @@ function Band({ label, price, active = false }: { label: string; price: number; 
 
 function Tag({ children }: { children: ReactNode }) {
   return <span className="rounded-full bg-white/15 px-4 py-2 text-sm font-black text-white">{children}</span>;
+}
+
+function estimateDemoAiScore() {
+  const heat = Math.min(demoCandidate.transactionHeat / 4, 1);
+  const drawdown = Math.min(Math.abs(demoCandidate.drawdownFromHigh) / 25, 1);
+  const jeonse = Math.min(demoCandidate.jeonseRatio / 75, 1);
+  const burdenPenalty = Math.max(0, Math.min((demoCandidate.dsr - 35) / 30, 0.35));
+  return Math.round((heat * 0.34 + drawdown * 0.22 + jeonse * 0.26 + 0.18 - burdenPenalty) * 100);
 }
