@@ -1,6 +1,6 @@
 # 홈패스(HomePath)
 
-**청년·사회초년생을 위한 공공데이터 기반 주거 구매력·갈아타기 리스크 진단 서비스**입니다.
+**청년·사회초년생을 위한 공공데이터 기반 주거 구매력·갈아타기 리스크 진단 서비스**입니다. HomePath는 **공공 실거래 데이터 → 구매력 계산 → Transformer AI 신호 → TurboVector RAG → Qwen 설명봇 → 사용자 행동** 흐름으로 후보가 왜 보였는지와 내 조건에서 무엇을 더 확인해야 하는지를 설명합니다.
 
 이 프로젝트는 기존 "부동산 사다리 앱"을 2026년 국토교통 데이터 활용 경진대회 제품·서비스 개발 부문 제출 방향에 맞춰 재정의한 Next.js 기반 프롭테크 MVP입니다. 서비스의 핵심은 매물 추천이나 투자 권유가 아니라, 공공 실거래 데이터와 사용자 입력값을 결합해 **현재 구매력, 미래 구매력, 현재 집 매도 후 이동 가능성, 갈아타기 리스크**를 설명 가능한 방식으로 보여주는 것입니다.
 
@@ -19,6 +19,7 @@
 - `app/goal-path`: 현재·3년·5년·10년 주거 구매력 및 도달 경로
 - `app/compare-price-band`: 같은 가격대 후보 비교
 - `app/community`: 지역별 단지 커뮤니티/댓글/랭킹
+- `app/chat`: TurboVector RAG + 로컬 Qwen 설명봇
 - `app/broker`: 중개사 리드/매물 관리
 - `app/demo-submission`: 국토교통 제출용 데모 플로우
 - `app/api/*`: discovery, brokerage, community, public-data, security API
@@ -39,6 +40,7 @@
 - `scripts/ai/real_estate_transformer_model.py`: 공공 실거래 월별 feature를 입력받아 단지·면적대별 미래 가격 회복/거래 재활성화 신호를 학습하는 PyTorch Transformer 프로토타입
 - 추천 엔진은 Transformer signal, DSR/LTV, 현재 집 매도 후 구매력, 관심지역 확장, 전세가율, 거래 집중도를 결합해 후보를 정렬합니다.
 - LLM/생성형 AI는 단순 검색이 아니라 `왜 이 후보가 떴는지`, `같은 돈 비교 요약`, `단지 토론 질문 템플릿`을 설명 가능한 문장으로 바꾸는 보조 역할로 정의합니다.
+- `/api/chat`은 OpenAI-compatible 로컬 Qwen endpoint(`LOCAL_LLM_BASE_URL`)를 호출하며, Qwen이 꺼져도 안전 fallback 답변으로 앱이 깨지지 않습니다.
 
 ## 기술 스택
 
@@ -115,6 +117,28 @@ python3 scripts/ai/real_estate_transformer_model.py \
 - `npm run create:demo-voiceover`: 제출용 보이스오버 생성 보조 스크립트
 - `npm run ai:transformer:export`: `prisma/dev.db` 실거래 데이터를 월별 feature CSV로 변환
 - `npm run ai:transformer:train`: 공공 실거래 feature 기반 Transformer 모델 학습 프로토타입
+- `npm run rag:reindex`: 문서, FAQ, 안전 정책, Transformer artifact, 단지 signal을 TurboVector-lite RAG index로 재생성
+- `npm run rag:verify:qwen`: RAG context와 로컬 Qwen 응답 여부를 검증하고 verification artifact를 갱신
+- `npm run llm:qwen:serve`: 이 PC에서 OpenAI-compatible Qwen endpoint를 실행
+
+## 로컬 Qwen/RAG 시연
+
+로컬 Qwen 서버와 Next API를 이 PC에서 띄우면, 공개 데모 화면에서도 `chatApi` 쿼리로 로컬 RAG 추론 endpoint를 지정할 수 있습니다.
+
+```bash
+npm run llm:qwen:install
+npm run llm:qwen:download
+npm run llm:qwen:serve
+```
+
+다른 터미널에서:
+
+```bash
+npm run rag:reindex
+npm run dev
+```
+
+공개 데모에서 로컬 API를 쓰려면 `/chat?chatApi=http://127.0.0.1:3000/api/chat` 형태로 열면 됩니다. 같은 설정은 브라우저 `localStorage.homepath.chatApiUrl`에 저장되어 이후 질문도 이 PC의 RAG/Qwen API로 전달됩니다.
 
 ## Android Wrapper / Play Store
 

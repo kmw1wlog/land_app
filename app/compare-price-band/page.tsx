@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Suspense } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
 import { Metric } from "@/components/Metric";
@@ -20,6 +21,7 @@ export default function ComparePriceBandPage() {
 function ComparePriceBandContent() {
   const params = useSearchParams();
   const activeCandidate = useAppStore((state) => state.activeCandidate);
+  const setActiveCandidate = useAppStore((state) => state.setActiveCandidate);
   const profile = useAppStore((state) => state.profile);
   const currentHome = useAppStore((state) => state.currentHome);
   const [comparison, setComparison] = useState<PriceBandComparison | null>(null);
@@ -58,6 +60,15 @@ function ComparePriceBandContent() {
               <p className="text-xs font-bold text-white/55">기준 후보</p>
               <h2 className="mt-1 text-2xl font-black">{comparison.base.complexName} {comparison.base.areaBucket}</h2>
               <p className="mt-2 text-sm text-white/70">기준가 {comparison.base.referencePrice ? formatKRW(comparison.base.referencePrice) : "미상"} · ±10% 가격대 비교</p>
+              {activeCandidate ? (
+                <Link
+                  href="/chat"
+                  className="mt-3 flex h-10 items-center justify-center rounded-md bg-white text-sm font-black text-ink"
+                  onClick={() => setActiveCandidate(activeCandidate)}
+                >
+                  같은 예산 비교를 AI로 요약
+                </Link>
+              ) : null}
             </section>
             <section className="space-y-3">
               {comparison.comparables.map((item) => (
@@ -90,6 +101,13 @@ function ComparePriceBandContent() {
                   <a href={item.candidate.externalLinks.naverSearchUrl} target="_blank" rel="noopener noreferrer" className="mt-3 flex h-10 items-center justify-center rounded-md bg-black/5 text-sm font-black text-ink">
                     외부 사이트에서 매물 확인
                   </a>
+                  <Link
+                    href="/chat"
+                    className="mt-2 flex h-10 items-center justify-center rounded-md bg-moss text-sm font-black text-white"
+                    onClick={() => setActiveCandidate(item.candidate)}
+                  >
+                    AI에게 이 후보 설명 받기
+                  </Link>
                 </article>
               ))}
             </section>

@@ -39,7 +39,7 @@ export class InMemoryTurboVectorStore implements VectorStore {
   }): Promise<SearchResult[]> {
     const query = quantizeVector(input.queryEmbedding);
     return [...this.rows.values()]
-      .filter(({ chunk }) => matchesFilters(chunk.metadata, input.filters))
+      .filter(({ chunk }) => matchesFilters(chunk, input.filters))
       .map(({ chunk, quantized }) => ({ ...chunk, score: cosineApproxFromQuantized(query, quantized) }))
       .sort((a, b) => b.score - a.score)
       .slice(0, input.topK);
@@ -118,7 +118,7 @@ export class TurboVectorSqliteStore implements VectorStore {
     const query = quantizeVector(input.queryEmbedding, TURBO_VECTOR_CONFIG);
     return rows
       .map(rowToChunk)
-      .filter(({ chunk }) => matchesFilters(chunk.metadata, input.filters))
+      .filter(({ chunk }) => matchesFilters(chunk, input.filters))
       .map(({ chunk, quantized }) => ({ ...chunk, score: cosineApproxFromQuantized(query, quantized) }))
       .sort((a, b) => b.score - a.score)
       .slice(0, Math.max(1, Math.min(input.topK, 20)));
@@ -149,7 +149,12 @@ function rowToChunk(row: RagChunkRow) {
   return { chunk, quantized };
 }
 
-function matchesFilters(metadata: RagMetadata, filters?: Record<string, string | number | boolean>) {
+function matchesFilters(chunk: RagChunk, filters?: Record<string, string | number | boolean>) {
   if (!filters) return true;
-  return Object.entries(filters).every(([key, value]) => metadata[key] === value);
+  return Object.entries(filters).every(([key, value]) => {
+    if (key === "id") return chunk.id === value;
+    if (key === "sourceType") return chunk.sourceType === value;
+    if (key === "sourceId") return chunk.sourceId === value;
+    return chunk.metadata[key] === value;
+  });
 }

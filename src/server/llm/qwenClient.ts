@@ -18,12 +18,17 @@ export async function generateHomePathChatAnswer(input: {
   });
 
   const baseUrl = process.env.LOCAL_LLM_BASE_URL ?? "http://localhost:11434/v1";
-  const model = process.env.LOCAL_LLM_MODEL ?? "Qwen/Qwen3.5-0.8B";
+  const model = process.env.LOCAL_LLM_MODEL ?? process.env.LOCAL_QWEN_MODEL_ID ?? "Qwen/Qwen3.5-0.8B";
+  const configuredMaxTokens = Number(process.env.LOCAL_LLM_MAX_TOKENS ?? 360);
+  const configuredTimeoutMs = Number(process.env.LOCAL_LLM_TIMEOUT_MS ?? 60_000);
+  const maxTokens = Number.isFinite(configuredMaxTokens) ? configuredMaxTokens : 360;
+  const timeoutMs = Number.isFinite(configuredTimeoutMs) ? configuredTimeoutMs : 60_000;
 
   try {
     const answer = await callOpenAiCompatibleChat({
       baseUrl,
       model,
+      maxTokens,
       messages: [
         { role: "system", content: HOMEPASS_SYSTEM_PROMPT },
         {
@@ -35,7 +40,7 @@ export async function generateHomePathChatAnswer(input: {
           ].join("\n\n")
         }
       ],
-      timeoutMs: input.timeoutMs ?? 20_000
+      timeoutMs: input.timeoutMs ?? timeoutMs
     });
     return {
       answer: ensureHomePathSafety(answer),
@@ -57,6 +62,7 @@ export async function generateHomePathChatAnswer(input: {
 async function callOpenAiCompatibleChat(input: {
   baseUrl: string;
   model: string;
+  maxTokens: number;
   messages: ChatMessage[];
   timeoutMs: number;
 }) {
@@ -70,7 +76,7 @@ async function callOpenAiCompatibleChat(input: {
       body: JSON.stringify({
         model: input.model,
         temperature: 0.15,
-        max_tokens: 600,
+        max_tokens: Math.max(64, Math.min(input.maxTokens, 600)),
         messages: input.messages
       })
     });

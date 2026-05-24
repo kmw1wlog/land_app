@@ -48,7 +48,15 @@ export async function buildHomePathRagContext(input: HomePathChatInput) {
     .filter(Boolean)
     .join(" ");
   const queryEmbedding = await embedText(query);
-  const results = await getDefaultVectorStore().search({ queryEmbedding, topK: 4 });
+  const store = getDefaultVectorStore();
+  const rawResults = await store.search({ queryEmbedding, topK: 12 });
+  const rankedResults = rankRagResults(rawResults, input.activeCandidate, intent);
+  const safetyResults = await store.search({
+    queryEmbedding,
+    topK: 1,
+    filters: { sourceType: "safety_policy" }
+  });
+  const results = mergeMandatoryResults(rankedResults, safetyResults, 4);
 
   return {
     intent,
@@ -109,9 +117,114 @@ function buildContextText(results: SearchResult[], activeCandidate?: ComplexSign
       ].join("\n")
     : "";
   const ragText = results
-    .map((result, index) => `[근거 ${index + 1}] ${result.title ?? result.id}\n${result.text}`)
+    .map((result, index) => `[${sourceTypeLabel(result.sourceType)} ${index + 1}] ${result.title ?? result.id}\n${result.text}`)
     .join("\n\n");
   return [candidateText, ragText].filter(Boolean).join("\n\n");
+}
+
+const INTENT_SOURCE_BOOST: Record<HomePathChatIntent, Partial<Record<SearchResult["sourceType"], number>>> = {
+  candidate_reason: {
+    complex_signal: 0.2,
+    model_artifact: 0.16,
+    faq: 0.08,
+    safety_policy: 0.04,
+    doc: -0.04
+  },
+  purchase_power: {
+    complex_signal: 0.1,
+    faq: 0.08,
+    safety_policy: 0.04
+  },
+  risk_check: {
+    complex_signal: 0.14,
+    model_artifact: 0.12,
+    safety_policy: 0.12,
+    faq: 0.06
+  },
+  data_source: {
+    faq: 0.16,
+    doc: 0.1,
+    model_artifact: 0.04,
+    safety_policy: 0.04
+  },
+  safety: {
+    safety_policy: 0.32,
+    faq: 0.08,
+    doc: 0.02
+  },
+  general: {
+    complex_signal: 0.08,
+    faq: 0.06,
+    model_artifact: 0.04,
+    safety_policy: 0.04
+  }
+};
+
+function rankRagResults(
+  results: SearchResult[],
+  activeCandidate: ComplexSignalCandidate | null | undefined,
+  intent: HomePathChatIntent
+) {
+  return results
+    .map((result) => ({
+      ...result,
+      score:
+        result.score +
+        (INTENT_SOURCE_BOOST[intent][result.sourceType] ?? 0) +
+        candidateMetadataBoost(result, activeCandidate)
+    }))
+    .sort((a, b) => b.score - a.score);
+}
+
+function candidateMetadataBoost(result: SearchResult, activeCandidate?: ComplexSignalCandidate | null) {
+  if (!activeCandidate) return 0;
+  let boost = 0;
+  const haystack = [
+    result.title,
+    result.text,
+    result.metadata.complexName,
+    result.metadata.region,
+    result.metadata.areaBucket
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  const complexName = activeCandidate.complexName.toLowerCase();
+  if (complexName && haystack.includes(complexName)) boost += 0.24;
+  if (activeCandidate.region && haystack.includes(activeCandidate.region.toLowerCase())) boost += 0.08;
+  if (activeCandidate.areaBucket && haystack.includes(activeCandidate.areaBucket.toLowerCase())) boost += 0.06;
+  return boost;
+}
+
+function mergeMandatoryResults(primary: SearchResult[], mandatory: SearchResult[], limit: number) {
+  const selected = dedupeResults(primary).slice(0, limit);
+  for (const item of mandatory) {
+    if (selected.some((result) => result.id === item.id)) continue;
+    if (selected.length < limit) {
+      selected.push(item);
+    } else {
+      selected[selected.length - 1] = item;
+    }
+  }
+  return dedupeResults(selected).slice(0, limit);
+}
+
+function dedupeResults(results: SearchResult[]) {
+  const seen = new Set<string>();
+  return results.filter((result) => {
+    if (seen.has(result.id)) return false;
+    seen.add(result.id);
+    return true;
+  });
+}
+
+function sourceTypeLabel(sourceType: SearchResult["sourceType"]) {
+  if (sourceType === "complex_signal") return "후보 실거래 지표";
+  if (sourceType === "model_artifact") return "Transformer AI 신호";
+  if (sourceType === "faq") return "FAQ 근거";
+  if (sourceType === "safety_policy") return "안전 정책";
+  return "문서 근거";
 }
 
 function defaultFinancialPlan(profile: UserProfile): UserFinancialPlan {

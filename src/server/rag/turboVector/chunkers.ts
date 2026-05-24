@@ -103,10 +103,12 @@ function buildAiArtifactChunks(): RagChunk[] {
 }
 
 async function buildComplexSignalChunks(): Promise<RagChunk[]> {
-  const snapshots = await prisma.complexSignalSnapshot.findMany({
-    orderBy: [{ recommendationScore: "desc" }, { transactionHeat: "desc" }],
-    take: 120
-  });
+  const snapshots = await prisma.complexSignalSnapshot
+    .findMany({
+      orderBy: [{ recommendationScore: "desc" }, { transactionHeat: "desc" }],
+      take: 120
+    })
+    .catch(() => []);
 
   return snapshots.map((snapshot) => ({
     id: `complex-signal:${snapshot.id}`,

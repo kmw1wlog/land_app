@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Home, Pencil } from "lucide-react";
+import Link from "next/link";
+import { Bot, Home, Pencil } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { EstimateNotice } from "@/components/EstimateNotice";
 import { Metric } from "@/components/Metric";
@@ -128,6 +129,14 @@ export default function MyHomePage() {
         <EstimateNotice />
 
         <MoveUpLadderSummary profile={profile} currentHome={currentHome} financialPlan={financialPlan} compact />
+
+        <Link
+          href="/chat"
+          className="flex h-12 items-center justify-center gap-2 rounded-md bg-moss text-sm font-black text-white"
+        >
+          <Bot size={17} />
+          내 구매력 설명 받기
+        </Link>
 
         <section className="rounded-lg border border-black/10 bg-white p-4">
           <h2 className="text-base font-black text-ink">공공데이터 연결</h2>

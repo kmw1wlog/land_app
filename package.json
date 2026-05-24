@@ -1,5 +1,5 @@
 {
-  "name": "landlord-scenario-app",
+  "name": "homepath-housing-power-app",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -42,9 +42,11 @@
     "llm:qwen:install": "python3 -m pip install --user --break-system-packages -r scripts/ai/requirements-local-qwen.txt",
     "llm:qwen:download": "python3 scripts/local_qwen_download.py",
     "llm:qwen:serve": "python3 scripts/local_qwen_server.py",
+    "llm:qwen:serve:gtx1060": "scripts/ai/run-with-gtx1060-driver-libs.sh env CUDA_VISIBLE_DEVICES=0 LOCAL_QWEN_DEVICE=cuda LOCAL_QWEN_HOST=127.0.0.1 LOCAL_QWEN_PORT=11434 python3 scripts/local_qwen_server.py",
     "llm:qwen:serve:vllm": "bash scripts/ai/serve-qwen35-vllm.sh",
     "llm:qwen:serve:sglang": "bash scripts/ai/serve-qwen35-sglang.sh",
-    "llm:qwen:smoke": "tsx scripts/local-qwen-smoke.ts"
+    "llm:qwen:smoke": "tsx scripts/local-qwen-smoke.ts",
+    "ai:gpu:check:gtx1060": "scripts/ai/run-with-gtx1060-driver-libs.sh python3 -c \"import torch; print(torch.__version__, torch.cuda.is_available(), torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'no-cuda')\""
   },
   "dependencies": {
     "@capacitor/android": "^6.1.2",

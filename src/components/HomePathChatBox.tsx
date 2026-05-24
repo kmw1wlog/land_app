@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { Bot, Send, ShieldCheck, Sparkles } from "lucide-react";
 import { useAppStore } from "@/store/useAppStore";
 
@@ -18,6 +18,7 @@ const SUGGESTED_QUESTIONS = [
   "이 결과는 매수 추천이야?",
   "데이터 출처는 뭐야?"
 ];
+const CHAT_API_STORAGE_KEY = "homepath.chatApiUrl";
 
 export function HomePathChatBox() {
   const profile = useAppStore((state) => state.profile);
@@ -33,6 +34,11 @@ export function HomePathChatBox() {
     }
   ]);
   const [loading, setLoading] = useState(false);
+  const [chatApiUrl, setChatApiUrl] = useState("/api/chat");
+
+  useEffect(() => {
+    setChatApiUrl(resolveChatApiUrl());
+  }, []);
 
   async function ask(message: string) {
     const text = message.trim();
@@ -41,7 +47,7 @@ export function HomePathChatBox() {
     setInput("");
     setLoading(true);
     try {
-      const response = await fetch("/api/chat", {
+      const response = await fetch(chatApiUrl, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
@@ -154,4 +160,20 @@ export function HomePathChatBox() {
       </form>
     </div>
   );
+}
+
+function resolveChatApiUrl() {
+  if (typeof window === "undefined") {
+    return process.env.NEXT_PUBLIC_HOMEPATH_CHAT_API_URL || "/api/chat";
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const queryValue = params.get("chatApi")?.trim();
+  if (queryValue) {
+    window.localStorage.setItem(CHAT_API_STORAGE_KEY, queryValue);
+    return queryValue;
+  }
+
+  const storedValue = window.localStorage.getItem(CHAT_API_STORAGE_KEY)?.trim();
+  return storedValue || process.env.NEXT_PUBLIC_HOMEPATH_CHAT_API_URL || "/api/chat";
 }

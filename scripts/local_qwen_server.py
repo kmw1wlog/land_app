@@ -17,16 +17,17 @@ import uuid
 from dataclasses import dataclass
 from typing import Any, Literal
 
-import torch
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-from transformers import AutoModelForImageTextToText, AutoProcessor
+import torch
+from transformers import AutoModelForCausalLM, AutoModelForImageTextToText, AutoProcessor, AutoTokenizer
 
 
 DEFAULT_MODEL_ID = "Qwen/Qwen3.5-0.8B"
 MODEL_ID = os.environ.get("LOCAL_QWEN_MODEL_ID") or os.environ.get("LOCAL_LLM_MODEL") or DEFAULT_MODEL_ID
 DEVICE = os.environ.get("LOCAL_QWEN_DEVICE", "auto")
+MODEL_CLASS = os.environ.get("LOCAL_QWEN_MODEL_CLASS", "auto").lower()
 MAX_CONTEXT_CHARS = int(os.environ.get("LOCAL_QWEN_MAX_CONTEXT_CHARS", "12000"))
 
 
@@ -46,8 +47,10 @@ class ChatCompletionRequest(BaseModel):
 @dataclass
 class ModelBundle:
     processor: Any
+    tokenizer: Any
     model: Any
     device: str
+    model_class: str
 
 
 app = FastAPI(title="HomePath Local Qwen", version="0.1.0")
@@ -95,15 +98,16 @@ def chat_completions(request: ChatCompletionRequest) -> dict[str, Any]:
         raise HTTPException(status_code=400, detail="messages is required")
 
     bundle = get_bundle()
-    prompt_messages = [normalize_message(message) for message in request.messages]
-    inputs = bundle.processor.apply_chat_template(
+    prompt_messages = [normalize_message(message, bundle.model_class) for message in request.messages]
+    template_runner = bundle.processor if bundle.model_class == "image-text-to-text" else bundle.tokenizer
+    inputs = template_runner.apply_chat_template(
         prompt_messages,
         add_generation_prompt=True,
         tokenize=True,
         return_dict=True,
         return_tensors="pt",
     )
-    inputs = {key: value.to(bundle.device) for key, value in inputs.items()}
+    inputs = inputs.to(bundle.device) if hasattr(inputs, "to") else {key: value.to(bundle.device) for key, value in inputs.items()}
 
     max_new_tokens = max(32, min(int(request.max_tokens), 800))
     do_sample = request.temperature > 0
@@ -111,8 +115,8 @@ def chat_completions(request: ChatCompletionRequest) -> dict[str, Any]:
         **inputs,
         "max_new_tokens": max_new_tokens,
         "do_sample": do_sample,
-        "pad_token_id": bundle.processor.tokenizer.eos_token_id,
-        "eos_token_id": bundle.processor.tokenizer.eos_token_id,
+        "pad_token_id": bundle.tokenizer.pad_token_id or bundle.tokenizer.eos_token_id,
+        "eos_token_id": bundle.tokenizer.eos_token_id,
     }
     if do_sample:
         generate_kwargs["temperature"] = max(float(request.temperature), 1e-5)
@@ -121,7 +125,7 @@ def chat_completions(request: ChatCompletionRequest) -> dict[str, Any]:
         outputs = bundle.model.generate(**generate_kwargs)
 
     prompt_len = inputs["input_ids"].shape[-1]
-    content = bundle.processor.decode(outputs[0][prompt_len:], skip_special_tokens=True).strip()
+    content = bundle.tokenizer.decode(outputs[0][prompt_len:], skip_special_tokens=True).strip()
     created = int(time.time())
     completion_id = f"chatcmpl-homepath-{uuid.uuid4().hex[:12]}"
     return {
@@ -151,26 +155,81 @@ def get_bundle() -> ModelBundle:
 
     device = resolve_device()
     dtype = torch.float16 if device == "cuda" else torch.float32
-    processor = AutoProcessor.from_pretrained(MODEL_ID, trust_remote_code=False)
-    model = AutoModelForImageTextToText.from_pretrained(
-        MODEL_ID,
-        dtype=dtype,
-        low_cpu_mem_usage=True,
-        trust_remote_code=False,
-    )
+
+    if MODEL_CLASS not in {"auto", "image-text-to-text", "causal-lm"}:
+        raise RuntimeError("LOCAL_QWEN_MODEL_CLASS must be one of auto, image-text-to-text, causal-lm.")
+
+    if MODEL_CLASS in {"auto", "image-text-to-text"}:
+        try:
+            processor = AutoProcessor.from_pretrained(MODEL_ID, trust_remote_code=False)
+            model = load_model(AutoModelForImageTextToText, dtype)
+            model.to(device)
+            model.eval()
+            _bundle = ModelBundle(
+                processor=processor,
+                tokenizer=processor.tokenizer,
+                model=model,
+                device=device,
+                model_class="image-text-to-text",
+            )
+            return _bundle
+        except Exception:
+            if MODEL_CLASS == "image-text-to-text":
+                raise
+
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_ID, trust_remote_code=False)
+    model = load_model(AutoModelForCausalLM, dtype)
     model.to(device)
     model.eval()
-    _bundle = ModelBundle(processor=processor, model=model, device=device)
+    _bundle = ModelBundle(
+        processor=None,
+        tokenizer=tokenizer,
+        model=model,
+        device=device,
+        model_class="causal-lm",
+    )
     return _bundle
 
 
-def normalize_message(message: ChatMessage) -> dict[str, Any]:
+def normalize_message(message: ChatMessage, model_class: str) -> dict[str, Any]:
     if isinstance(message.content, str):
+        text = message.content[:MAX_CONTEXT_CHARS]
+        if model_class == "causal-lm":
+            return {"role": message.role, "content": text}
         return {
             "role": message.role,
-            "content": [{"type": "text", "text": message.content[:MAX_CONTEXT_CHARS]}],
+            "content": [{"type": "text", "text": text}],
         }
+    if model_class == "causal-lm":
+        return {"role": message.role, "content": flatten_text_content(message.content)}
     return message.model_dump()
+
+
+def flatten_text_content(content: list[dict[str, Any]]) -> str:
+    parts: list[str] = []
+    for item in content:
+        if item.get("type") == "text" and isinstance(item.get("text"), str):
+            parts.append(item["text"])
+        elif isinstance(item.get("content"), str):
+            parts.append(item["content"])
+    return "\n".join(parts)[:MAX_CONTEXT_CHARS]
+
+
+def load_model(model_cls: Any, dtype: torch.dtype) -> Any:
+    try:
+        return model_cls.from_pretrained(
+            MODEL_ID,
+            dtype=dtype,
+            low_cpu_mem_usage=True,
+            trust_remote_code=False,
+        )
+    except TypeError:
+        return model_cls.from_pretrained(
+            MODEL_ID,
+            torch_dtype=dtype,
+            low_cpu_mem_usage=True,
+            trust_remote_code=False,
+        )
 
 
 def resolve_device() -> str:
