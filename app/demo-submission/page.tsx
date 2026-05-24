@@ -33,7 +33,7 @@ export default function DemoSubmissionPage() {
       if (event.key === "ArrowLeft") {
         setStep((value) => Math.max(value - 1, 0));
       }
-      if (event.key === "ArrowRight")") {
+      if (event.key === "ArrowRight") {
         setStep((value) => Math.min(value + 1, steps.length - 1));
       }
     };
