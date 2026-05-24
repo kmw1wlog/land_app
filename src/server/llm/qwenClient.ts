@@ -9,6 +9,7 @@ export async function generateHomePathChatAnswer(input: {
   userMessage: string;
   calculationSummary: string;
   contextText: string;
+  instructionContext?: string;
   timeoutMs?: number;
 }) {
   const fallback = buildSafeFallbackAnswer({
@@ -35,9 +36,12 @@ export async function generateHomePathChatAnswer(input: {
           role: "user",
           content: [
             `사용자 질문:\n${input.userMessage}`,
+            input.instructionContext ? `상황별 지침:\n${input.instructionContext.slice(0, 2200)}` : undefined,
             `계산 결과:\n${input.calculationSummary}`,
             `검색 context:\n${input.contextText.slice(0, 1800)}`
-          ].join("\n\n")
+          ]
+            .filter(Boolean)
+            .join("\n\n")
         }
       ],
       timeoutMs: input.timeoutMs ?? timeoutMs

@@ -3,6 +3,7 @@ import { buildHomePathRagContext, type HomePathChatInput } from "@/server/rag/co
 import { reindexHomePathRag } from "@/server/rag/reindex";
 import { generateHomePathChatAnswer } from "@/server/llm/qwenClient";
 import { HOMEPASS_SAFETY_NOTICE } from "@/server/llm/homepassSystemPrompt";
+import { buildHomePathInstructionContext } from "@/server/llm/homepathScenarioInstructions";
 
 export const runtime = "nodejs";
 
@@ -25,11 +26,20 @@ export async function POST(request: NextRequest) {
     await reindexHomePathRag();
     context = await buildHomePathRagContext({ ...body, message });
   }
+  const instructionContext = buildHomePathInstructionContext({
+    message,
+    intent: context.intent,
+    profile: body.profile,
+    currentHome: body.currentHome,
+    financialPlan: body.financialPlan,
+    activeCandidate: body.activeCandidate
+  });
 
   const generation = await generateHomePathChatAnswer({
     userMessage: message,
     calculationSummary: context.calculations.summary,
-    contextText: context.contextText
+    contextText: context.contextText,
+    instructionContext: instructionContext.text
   });
 
   return NextResponse.json(
@@ -49,6 +59,7 @@ export async function POST(request: NextRequest) {
         metadata: item.metadata
       })),
       safetyNotice: HOMEPASS_SAFETY_NOTICE,
+      instructionScenarios: instructionContext.scenarios,
       error: generation.error
     },
     { headers: chatCorsHeaders(request) }
