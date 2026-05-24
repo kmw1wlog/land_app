@@ -5,6 +5,7 @@ import {
   encodeCodes,
   quantizeVector,
   TURBO_VECTOR_CONFIG,
+  type QuantizedMethod,
   type QuantizedVector
 } from "./quantize";
 import type { EmbeddedChunk, RagChunk, RagMetadata, SearchResult, VectorStore } from "./types";
@@ -17,10 +18,15 @@ type RagChunkRow = {
   text: string;
   metadata_json: string | null;
   embedding_dim: number;
+  padded_dim: number | null;
   quant_method: string;
+  codebook_id: string | null;
   vector_min: number;
   vector_scale: number;
   vector_blob: Buffer | Uint8Array;
+  residual_norm: number | null;
+  residual_method: string | null;
+  residual_blob: Buffer | Uint8Array | null;
 };
 
 export class InMemoryTurboVectorStore implements VectorStore {
@@ -57,13 +63,23 @@ export class TurboVectorSqliteStore implements VectorStore {
         text TEXT NOT NULL,
         metadata_json TEXT,
         embedding_dim INTEGER NOT NULL,
+        padded_dim INTEGER,
         quant_method TEXT NOT NULL,
+        codebook_id TEXT,
         vector_min REAL NOT NULL,
         vector_scale REAL NOT NULL,
         vector_blob BLOB NOT NULL,
+        residual_norm REAL,
+        residual_method TEXT,
+        residual_blob BLOB,
         created_at TEXT NOT NULL
       )
     `);
+    await addColumnIfMissing("rag_chunks", "padded_dim", "INTEGER");
+    await addColumnIfMissing("rag_chunks", "codebook_id", "TEXT");
+    await addColumnIfMissing("rag_chunks", "residual_norm", "REAL");
+    await addColumnIfMissing("rag_chunks", "residual_method", "TEXT");
+    await addColumnIfMissing("rag_chunks", "residual_blob", "BLOB");
     await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS idx_rag_chunks_source_type ON rag_chunks(source_type)`);
     await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS idx_rag_chunks_source_id ON rag_chunks(source_id)`);
   }
@@ -87,8 +103,9 @@ export class TurboVectorSqliteStore implements VectorStore {
         `
         INSERT OR REPLACE INTO rag_chunks (
           id, source_type, source_id, title, text, metadata_json,
-          embedding_dim, quant_method, vector_min, vector_scale, vector_blob, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          embedding_dim, padded_dim, quant_method, codebook_id, vector_min, vector_scale, vector_blob,
+          residual_norm, residual_method, residual_blob, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `,
         chunk.id,
         chunk.sourceType,
@@ -97,10 +114,15 @@ export class TurboVectorSqliteStore implements VectorStore {
         chunk.text,
         JSON.stringify(chunk.metadata),
         quantized.dim,
+        quantized.paddedDim,
         quantized.method,
+        quantized.codebookId,
         quantized.min,
         quantized.scale,
         encodeCodes(quantized.codes),
+        quantized.residualNorm ?? null,
+        quantized.residualMethod ?? null,
+        quantized.residualSigns ? encodeCodes(quantized.residualSigns) : null,
         new Date().toISOString()
       );
     }
@@ -113,7 +135,7 @@ export class TurboVectorSqliteStore implements VectorStore {
   }): Promise<SearchResult[]> {
     await this.ensureSchema();
     const rows = await prisma.$queryRawUnsafe<RagChunkRow[]>(
-      `SELECT id, source_type, source_id, title, text, metadata_json, embedding_dim, quant_method, vector_min, vector_scale, vector_blob FROM rag_chunks`
+      `SELECT id, source_type, source_id, title, text, metadata_json, embedding_dim, padded_dim, quant_method, codebook_id, vector_min, vector_scale, vector_blob, residual_norm, residual_method, residual_blob FROM rag_chunks`
     );
     const query = quantizeVector(input.queryEmbedding, TURBO_VECTOR_CONFIG);
     return rows
@@ -139,14 +161,27 @@ function rowToChunk(row: RagChunkRow) {
     text: row.text,
     metadata
   };
+  const method = (row.quant_method as QuantizedMethod) || "turboquant_lite_uint8";
   const quantized: QuantizedVector = {
     dim: row.embedding_dim,
-    method: "turboquant_lite_uint8",
+    paddedDim: row.padded_dim ?? row.embedding_dim,
+    method,
     min: row.vector_min,
     scale: row.vector_scale,
-    codes: decodeCodes(row.vector_blob)
+    codebookId: row.codebook_id ?? (method === "turboquant_lite_uint8" ? "legacy_minmax" : "normal_clipped_8bit_rht_512"),
+    codes: decodeCodes(row.vector_blob),
+    residualNorm: row.residual_norm ?? undefined,
+    residualMethod: row.residual_method === "qjl_sign_rht" ? "qjl_sign_rht" : undefined,
+    residualSigns: row.residual_blob ? decodeCodes(row.residual_blob) : undefined
   };
   return { chunk, quantized };
+}
+
+async function addColumnIfMissing(tableName: string, columnName: string, definition: string) {
+  const columns = await prisma.$queryRawUnsafe<Array<{ name: string }>>(`PRAGMA table_info(${tableName})`);
+  if (!columns.some((column) => column.name === columnName)) {
+    await prisma.$executeRawUnsafe(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${definition}`);
+  }
 }
 
 function matchesFilters(metadata: RagMetadata, filters?: Record<string, string | number | boolean>) {
