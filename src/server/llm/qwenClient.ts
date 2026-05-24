@@ -18,18 +18,23 @@ export async function generateHomePathChatAnswer(input: {
     contextText: input.contextText
   });
 
-  const baseUrl = process.env.LOCAL_LLM_BASE_URL ?? "http://localhost:11434/v1";
-  const model = process.env.LOCAL_LLM_MODEL ?? process.env.LOCAL_QWEN_MODEL_ID ?? "Qwen/Qwen3.5-0.8B";
+  const baseUrl = process.env.LLM_BASE_URL ?? process.env.LOCAL_LLM_BASE_URL ?? "http://localhost:11434/v1";
+  const model = process.env.LLM_MODEL ?? process.env.LOCAL_LLM_MODEL ?? process.env.LOCAL_QWEN_MODEL_ID ?? "Qwen/Qwen3.5-0.8B";
+  const apiKey = process.env.LLM_API_KEY ?? process.env.LOCAL_LLM_API_KEY ?? process.env.DASHSCOPE_API_KEY ?? process.env.ALIBABA_CLOUD_API_KEY;
+  const endpointType = isLocalEndpoint(baseUrl) ? "local" : "remote";
   const configuredMaxTokens = Number(process.env.LOCAL_LLM_MAX_TOKENS ?? 360);
   const configuredTimeoutMs = Number(process.env.LOCAL_LLM_TIMEOUT_MS ?? 60_000);
   const maxTokens = Number.isFinite(configuredMaxTokens) ? configuredMaxTokens : 360;
   const timeoutMs = Number.isFinite(configuredTimeoutMs) ? configuredTimeoutMs : 60_000;
+  const enableThinking = process.env.LLM_ENABLE_THINKING === "true";
 
   try {
     const answer = await callOpenAiCompatibleChat({
       baseUrl,
       model,
+      apiKey,
       maxTokens,
+      enableThinking,
       messages: [
         { role: "system", content: HOMEPASS_SYSTEM_PROMPT },
         {
@@ -49,6 +54,8 @@ export async function generateHomePathChatAnswer(input: {
     return {
       answer: ensureHomePathSafety(answer),
       model,
+      endpointType,
+      usedConfiguredModel: true,
       usedLocalModel: true,
       fallbackUsed: false
     };
@@ -56,6 +63,8 @@ export async function generateHomePathChatAnswer(input: {
     return {
       answer: fallback,
       model,
+      endpointType,
+      usedConfiguredModel: false,
       usedLocalModel: false,
       fallbackUsed: true,
       error: error instanceof Error ? error.message : String(error)
@@ -63,10 +72,16 @@ export async function generateHomePathChatAnswer(input: {
   }
 }
 
+function isLocalEndpoint(baseUrl: string) {
+  return /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(?::|\/|$)/i.test(baseUrl);
+}
+
 async function callOpenAiCompatibleChat(input: {
   baseUrl: string;
   model: string;
+  apiKey?: string;
   maxTokens: number;
+  enableThinking: boolean;
   messages: ChatMessage[];
   timeoutMs: number;
 }) {
@@ -75,17 +90,22 @@ async function callOpenAiCompatibleChat(input: {
   try {
     const response = await fetch(`${input.baseUrl.replace(/\/$/, "")}/chat/completions`, {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: {
+        "content-type": "application/json",
+        ...(input.apiKey ? { authorization: `Bearer ${input.apiKey}` } : {})
+      },
       signal: controller.signal,
       body: JSON.stringify({
         model: input.model,
         temperature: 0.15,
         max_tokens: Math.max(64, Math.min(input.maxTokens, 600)),
+        enable_thinking: input.enableThinking,
+        extra_body: { enable_thinking: input.enableThinking },
         messages: input.messages
       })
     });
     if (!response.ok) {
-      throw new Error(`Local Qwen request failed: ${response.status} ${await response.text()}`);
+      throw new Error(`LLM request failed: ${response.status} ${await response.text()}`);
     }
     const payload = (await response.json()) as { choices?: Array<{ message?: { content?: string } }> };
     const content = payload.choices?.[0]?.message?.content?.trim();

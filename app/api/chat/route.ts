@@ -46,6 +46,8 @@ export async function POST(request: NextRequest) {
     {
       answer: generation.answer,
       model: generation.model,
+      endpointType: generation.endpointType,
+      usedConfiguredModel: generation.usedConfiguredModel,
       usedLocalModel: generation.usedLocalModel,
       fallbackUsed: generation.fallbackUsed,
       intent: context.intent,

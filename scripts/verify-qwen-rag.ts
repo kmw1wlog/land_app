@@ -3,25 +3,30 @@ import path from "path";
 import { buildHomePathRagContext } from "@/server/rag/contextBuilder";
 import { getDefaultVectorStore } from "@/server/rag/turboVector/store";
 import { generateHomePathChatAnswer } from "@/server/llm/qwenClient";
+import { buildHomePathInstructionContext } from "@/server/llm/homepathScenarioInstructions";
 
 const QUESTION = "왜 이 후보가 떴어? 이 결과는 매수 추천이야?";
 
 async function main() {
   const vectorStore = getDefaultVectorStore();
   const ragChunkCount = "count" in vectorStore ? await vectorStore.count() : null;
-  const qwenProbe = await probeLocalQwen();
+  const qwenProbe = await probeConfiguredQwen();
   const withRagContext = await buildHomePathRagContext({ message: QUESTION, useRag: true });
   const withoutRagContext = await buildHomePathRagContext({ message: QUESTION, useRag: false });
+  const withRagInstructions = buildHomePathInstructionContext({ message: QUESTION, intent: withRagContext.intent });
+  const withoutRagInstructions = buildHomePathInstructionContext({ message: QUESTION, intent: withoutRagContext.intent });
   const withRagAnswer = await generateHomePathChatAnswer({
     userMessage: QUESTION,
     calculationSummary: withRagContext.calculations.summary,
     contextText: withRagContext.contextText,
+    instructionContext: withRagInstructions.text,
     timeoutMs: 90_000
   });
   const withoutRagAnswer = await generateHomePathChatAnswer({
     userMessage: QUESTION,
     calculationSummary: withoutRagContext.calculations.summary,
     contextText: withoutRagContext.contextText,
+    instructionContext: withoutRagInstructions.text,
     timeoutMs: 90_000
   });
 
@@ -44,7 +49,10 @@ async function main() {
         score: source.score
       })),
       usedLocalModel: withRagAnswer.usedLocalModel,
+      usedConfiguredModel: withRagAnswer.usedConfiguredModel,
+      endpointType: withRagAnswer.endpointType,
       fallbackUsed: withRagAnswer.fallbackUsed,
+      instructionScenarios: withRagInstructions.scenarios,
       answer: withRagAnswer.answer,
       error: withRagAnswer.error
     },
@@ -52,7 +60,10 @@ async function main() {
       intent: withoutRagContext.intent,
       sourceCount: withoutRagContext.retrieved.length,
       usedLocalModel: withoutRagAnswer.usedLocalModel,
+      usedConfiguredModel: withoutRagAnswer.usedConfiguredModel,
+      endpointType: withoutRagAnswer.endpointType,
       fallbackUsed: withoutRagAnswer.fallbackUsed,
+      instructionScenarios: withoutRagInstructions.scenarios,
       answer: withoutRagAnswer.answer,
       error: withoutRagAnswer.error
     }
@@ -67,11 +78,15 @@ async function main() {
   console.log(JSON.stringify(record, null, 2));
 }
 
-async function probeLocalQwen() {
-  const baseUrl = process.env.LOCAL_LLM_BASE_URL ?? "http://localhost:11434/v1";
-  const model = process.env.LOCAL_LLM_MODEL ?? process.env.LOCAL_QWEN_MODEL_ID ?? "Qwen/Qwen3.5-0.8B";
+async function probeConfiguredQwen() {
+  const baseUrl = process.env.LLM_BASE_URL ?? process.env.LOCAL_LLM_BASE_URL ?? "http://localhost:11434/v1";
+  const model = process.env.LLM_MODEL ?? process.env.LOCAL_LLM_MODEL ?? process.env.LOCAL_QWEN_MODEL_ID ?? "Qwen/Qwen3.5-0.8B";
+  const apiKey = process.env.LLM_API_KEY ?? process.env.LOCAL_LLM_API_KEY ?? process.env.DASHSCOPE_API_KEY ?? process.env.ALIBABA_CLOUD_API_KEY;
   try {
     const response = await fetch(`${baseUrl.replace(/\/$/, "")}/models`, {
+      headers: {
+        ...(apiKey ? { authorization: `Bearer ${apiKey}` } : {})
+      },
       signal: AbortSignal.timeout(3000)
     });
     if (!response.ok) {
@@ -101,6 +116,8 @@ function toMarkdown(record: Awaited<ReturnType<typeof buildRecordShape>>) {
     "",
     `- sourceCount: ${record.withRag.sourceCount}`,
     `- usedLocalModel: ${record.withRag.usedLocalModel}`,
+    `- usedConfiguredModel: ${record.withRag.usedConfiguredModel}`,
+    `- endpointType: ${record.withRag.endpointType}`,
     `- fallbackUsed: ${record.withRag.fallbackUsed}`,
     `- error: ${record.withRag.error ?? "none"}`,
     "",
@@ -117,6 +134,8 @@ function toMarkdown(record: Awaited<ReturnType<typeof buildRecordShape>>) {
     "",
     `- sourceCount: ${record.withoutRag.sourceCount}`,
     `- usedLocalModel: ${record.withoutRag.usedLocalModel}`,
+    `- usedConfiguredModel: ${record.withoutRag.usedConfiguredModel}`,
+    `- endpointType: ${record.withoutRag.endpointType}`,
     `- fallbackUsed: ${record.withoutRag.fallbackUsed}`,
     `- error: ${record.withoutRag.error ?? "none"}`,
     "",
@@ -139,6 +158,8 @@ function buildRecordShape() {
       sourceCount: number;
       sources: Array<{ id: string; sourceType: string; title?: string; score: number }>;
       usedLocalModel: boolean;
+      usedConfiguredModel?: boolean;
+      endpointType?: string;
       fallbackUsed: boolean;
       answer: string;
       error?: string;
@@ -146,6 +167,8 @@ function buildRecordShape() {
     withoutRag: {
       sourceCount: number;
       usedLocalModel: boolean;
+      usedConfiguredModel?: boolean;
+      endpointType?: string;
       fallbackUsed: boolean;
       answer: string;
       error?: string;

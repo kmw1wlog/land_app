@@ -40,7 +40,8 @@
 - `scripts/ai/real_estate_transformer_model.py`: 공공 실거래 월별 feature를 입력받아 단지·면적대별 미래 가격 회복/거래 재활성화 신호를 학습하는 PyTorch Transformer 프로토타입
 - 추천 엔진은 Transformer signal, DSR/LTV, 현재 집 매도 후 구매력, 관심지역 확장, 전세가율, 거래 집중도를 결합해 후보를 정렬합니다.
 - LLM/생성형 AI는 단순 검색이 아니라 `왜 이 후보가 떴는지`, `같은 돈 비교 요약`, `단지 토론 질문 템플릿`을 설명 가능한 문장으로 바꾸는 보조 역할로 정의합니다.
-- `/api/chat`은 OpenAI-compatible 로컬 Qwen endpoint(`LOCAL_LLM_BASE_URL`)를 호출하며, Qwen이 꺼져도 안전 fallback 답변으로 앱이 깨지지 않습니다.
+- `/api/chat`은 OpenAI-compatible Qwen endpoint(`LLM_BASE_URL` 또는 `LOCAL_LLM_BASE_URL`)를 호출하며, Alibaba Cloud Model Studio 같은 remote endpoint와 로컬 Qwen endpoint를 모두 지원합니다. 모델이 응답하지 않아도 안전 fallback 답변으로 앱이 깨지지 않습니다.
+- RAG 근거와 별도로 집 입력 설명, 후보 설명, 같은 예산 비교, 리스크/매수 질문, 데이터 출처 질문에 대한 상황별 필수 지침을 주입해 답변 형식과 금지선을 고정합니다.
 
 ## 기술 스택
 

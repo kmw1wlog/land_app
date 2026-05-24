@@ -1,13 +1,20 @@
 async function main() {
-  const baseUrl = process.env.LOCAL_LLM_BASE_URL ?? "http://localhost:11434/v1";
-  const model = process.env.LOCAL_LLM_MODEL ?? process.env.LOCAL_QWEN_MODEL_ID ?? "Qwen/Qwen3.5-0.8B";
+  const baseUrl = process.env.LLM_BASE_URL ?? process.env.LOCAL_LLM_BASE_URL ?? "http://localhost:11434/v1";
+  const model = process.env.LLM_MODEL ?? process.env.LOCAL_LLM_MODEL ?? process.env.LOCAL_QWEN_MODEL_ID ?? "Qwen/Qwen3.5-0.8B";
+  const apiKey = process.env.LLM_API_KEY ?? process.env.LOCAL_LLM_API_KEY ?? process.env.DASHSCOPE_API_KEY ?? process.env.ALIBABA_CLOUD_API_KEY;
+  const enableThinking = process.env.LLM_ENABLE_THINKING === "true";
   const response = await fetch(`${baseUrl.replace(/\/$/, "")}/chat/completions`, {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: {
+      "content-type": "application/json",
+      ...(apiKey ? { authorization: `Bearer ${apiKey}` } : {})
+    },
     body: JSON.stringify({
       model,
       temperature: 0.1,
       max_tokens: 120,
+      enable_thinking: enableThinking,
+      extra_body: { enable_thinking: enableThinking },
       messages: [
         {
           role: "system",
@@ -21,7 +28,7 @@ async function main() {
     })
   });
   if (!response.ok) {
-    throw new Error(`local qwen smoke failed: ${response.status} ${await response.text()}`);
+    throw new Error(`qwen smoke failed: ${response.status} ${await response.text()}`);
   }
   const payload = await response.json();
   console.log(JSON.stringify(payload, null, 2));
