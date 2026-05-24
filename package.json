@@ -38,7 +38,13 @@
     "ai:gpu:check": "python3 -c \"import torch; print(torch.__version__, torch.version.cuda, torch.cuda.is_available(), torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'no-cuda')\"",
     "ai:upgrade": "npm run ai:data:seed-long && npm run ai:transformer:export && npm run ai:transformer:train-long",
     "rag:reindex": "tsx scripts/rag-reindex.ts",
-    "rag:verify:qwen": "tsx scripts/verify-qwen-rag.ts"
+    "rag:verify:qwen": "tsx scripts/verify-qwen-rag.ts",
+    "llm:qwen:install": "python3 -m pip install --user --break-system-packages -r scripts/ai/requirements-local-qwen.txt",
+    "llm:qwen:download": "python3 scripts/local_qwen_download.py",
+    "llm:qwen:serve": "python3 scripts/local_qwen_server.py",
+    "llm:qwen:serve:vllm": "bash scripts/ai/serve-qwen35-vllm.sh",
+    "llm:qwen:serve:sglang": "bash scripts/ai/serve-qwen35-sglang.sh",
+    "llm:qwen:smoke": "tsx scripts/local-qwen-smoke.ts"
   },
   "dependencies": {
     "@capacitor/android": "^6.1.2",

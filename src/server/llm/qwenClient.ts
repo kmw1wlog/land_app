@@ -18,7 +18,7 @@ export async function generateHomePathChatAnswer(input: {
   });
 
   const baseUrl = process.env.LOCAL_LLM_BASE_URL ?? "http://localhost:11434/v1";
-  const model = process.env.LOCAL_LLM_MODEL ?? "qwen3.5-0.8b-instruct";
+  const model = process.env.LOCAL_LLM_MODEL ?? "Qwen/Qwen3.5-0.8B";
 
   try {
     const answer = await callOpenAiCompatibleChat({

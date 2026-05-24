@@ -16,13 +16,13 @@ async function main() {
     userMessage: QUESTION,
     calculationSummary: withRagContext.calculations.summary,
     contextText: withRagContext.contextText,
-    timeoutMs: 6_000
+    timeoutMs: 30_000
   });
   const withoutRagAnswer = await generateHomePathChatAnswer({
     userMessage: QUESTION,
     calculationSummary: withoutRagContext.calculations.summary,
     contextText: withoutRagContext.contextText,
-    timeoutMs: 6_000
+    timeoutMs: 30_000
   });
 
   const record = {
@@ -69,7 +69,7 @@ async function main() {
 
 async function probeLocalQwen() {
   const baseUrl = process.env.LOCAL_LLM_BASE_URL ?? "http://localhost:11434/v1";
-  const model = process.env.LOCAL_LLM_MODEL ?? "qwen3.5-0.8b-instruct";
+  const model = process.env.LOCAL_LLM_MODEL ?? "Qwen/Qwen3.5-0.8B";
   try {
     const response = await fetch(`${baseUrl.replace(/\/$/, "")}/models`, {
       signal: AbortSignal.timeout(3000)
