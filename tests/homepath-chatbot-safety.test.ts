@@ -5,7 +5,7 @@ import {
   ensureHomePathSafety
 } from "@/server/llm/homepassSystemPrompt";
 import { buildHomePathInstructionContext } from "@/server/llm/homepathScenarioInstructions";
-import { classifyIntent } from "@/server/rag/contextBuilder";
+import { classifyIntent, getIntentRetrievalPlan } from "@/server/rag/contextBuilder";
 import { sampleHomes, sampleProfiles } from "@/data/dummy";
 
 describe("HomePath AI chatbot safety", () => {
@@ -32,6 +32,18 @@ describe("HomePath AI chatbot safety", () => {
   it("classifies candidate-reason and safety intents", () => {
     expect(classifyIntent("왜 이 후보가 떴어?")).toBe("candidate_reason");
     expect(classifyIntent("이거 사도 돼? 수익 보장돼?")).toBe("safety");
+    expect(classifyIntent("같은 예산이면 어디가 더 안전해?")).toBe("comparison");
+  });
+
+  it("uses intent-specific RAG source plans", () => {
+    const comparisonPlan = getIntentRetrievalPlan("comparison");
+    const dataSourcePlan = getIntentRetrievalPlan("data_source");
+
+    expect(comparisonPlan.resultLimit).toBeGreaterThanOrEqual(8);
+    expect(comparisonPlan.sourceMinimums.find((item) => item.sourceType === "complex_signal")?.minimum).toBeGreaterThanOrEqual(3);
+    expect(comparisonPlan.sourceMinimums.some((item) => item.sourceType === "model_artifact")).toBe(true);
+    expect(dataSourcePlan.sourceMinimums.some((item) => item.sourceType === "doc")).toBe(true);
+    expect(dataSourcePlan.sourceMinimums.some((item) => item.sourceType === "faq")).toBe(true);
   });
 
   it("injects scenario instructions for current-home explanations", () => {

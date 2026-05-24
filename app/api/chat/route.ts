@@ -51,6 +51,7 @@ export async function POST(request: NextRequest) {
       usedLocalModel: generation.usedLocalModel,
       fallbackUsed: generation.fallbackUsed,
       intent: context.intent,
+      retrievalPlan: context.retrievalPlan,
       calculations: context.calculations,
       sources: context.retrieved.map((item) => ({
         id: item.id,

@@ -107,7 +107,7 @@ function resolveInstructionScenarios(input: {
   if (input.intent === "purchase_power" || /구매력|월급|소득|예산|가능|어디까지/.test(text)) {
     scenarios.add("purchase_power");
   }
-  if (/같은\s*예산|비교|어디가\s*더|안전/.test(text)) {
+  if (input.intent === "comparison" || /같은\s*예산|비교|어디가\s*더|안전/.test(text)) {
     scenarios.add("same_budget_compare");
   }
   if (input.intent === "risk_check" || input.intent === "safety" || /리스크|위험|사도|추천|수익|dsr|ltv|하락/.test(text)) {

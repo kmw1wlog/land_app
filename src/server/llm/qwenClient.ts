@@ -24,8 +24,10 @@ export async function generateHomePathChatAnswer(input: {
   const endpointType = isLocalEndpoint(baseUrl) ? "local" : "remote";
   const configuredMaxTokens = Number(process.env.LOCAL_LLM_MAX_TOKENS ?? 360);
   const configuredTimeoutMs = Number(process.env.LOCAL_LLM_TIMEOUT_MS ?? 60_000);
+  const configuredContextChars = Number(process.env.RAG_CONTEXT_MAX_CHARS ?? 5200);
   const maxTokens = Number.isFinite(configuredMaxTokens) ? configuredMaxTokens : 360;
   const timeoutMs = Number.isFinite(configuredTimeoutMs) ? configuredTimeoutMs : 60_000;
+  const contextMaxChars = Number.isFinite(configuredContextChars) ? configuredContextChars : 5200;
   const enableThinking = process.env.LLM_ENABLE_THINKING === "true";
 
   try {
@@ -43,7 +45,7 @@ export async function generateHomePathChatAnswer(input: {
             `사용자 질문:\n${input.userMessage}`,
             input.instructionContext ? `상황별 지침:\n${input.instructionContext.slice(0, 2200)}` : undefined,
             `계산 결과:\n${input.calculationSummary}`,
-            `검색 context:\n${input.contextText.slice(0, 1800)}`
+            `검색 context:\n${input.contextText.slice(0, contextMaxChars)}`
           ]
             .filter(Boolean)
             .join("\n\n")
@@ -109,7 +111,7 @@ async function callOpenAiCompatibleChat(input: {
     }
     const payload = (await response.json()) as { choices?: Array<{ message?: { content?: string } }> };
     const content = payload.choices?.[0]?.message?.content?.trim();
-    if (!content) throw new Error("Local Qwen returned an empty response.");
+    if (!content) throw new Error("Configured Qwen endpoint returned an empty response.");
     return content;
   } finally {
     clearTimeout(timeout);
