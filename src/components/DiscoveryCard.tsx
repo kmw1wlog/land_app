@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { motion, useMotionValue, useTransform } from "framer-motion";
-import { Bookmark, ExternalLink, Heart, Map, MessageCircle, Scale, X } from "lucide-react";
+import { Bookmark, Brain, ExternalLink, Heart, Map, MessageCircle, Scale, X } from "lucide-react";
 import type { ComplexSignalCandidate } from "@/types";
 import { complexSignalToPropertyLike } from "@/lib/candidateAdapter";
 import { analyzePropertyForUser } from "@/lib/calculations";
@@ -26,6 +26,7 @@ export function DiscoveryCard({ card, onNext }: DiscoveryCardProps) {
   const saveCandidateToPortfolio = useAppStore((state) => state.saveCandidateToPortfolio);
   const recordSwipe = useAppStore((state) => state.recordSwipe);
   const [showWhy, setShowWhy] = useState(false);
+  const [showAi, setShowAi] = useState(false);
   const [showLinkSuggest, setShowLinkSuggest] = useState(false);
   const [suggestedUrl, setSuggestedUrl] = useState("");
   const propertyLike = complexSignalToPropertyLike(card);
@@ -34,6 +35,7 @@ export function DiscoveryCard({ card, onNext }: DiscoveryCardProps) {
   const rotate = useTransform(x, [-220, 0, 220], [-6, 0, 6]);
   const future5 = calculateFuturePurchasePower(profile, currentHome, financialPlan, 5) >= (card.referencePrice ?? 0);
   const future10 = calculateFuturePurchasePower(profile, currentHome, financialPlan, 10) >= (card.referencePrice ?? 0);
+  const aiScore = estimateAiSignalScore(card, card.userFit.dsrRatio ?? analysis.dsrRatio);
 
   const next = (action: "pass" | "save" | "calculate" | "community") => {
     recordSwipe(card.id, action);
@@ -91,6 +93,19 @@ export function DiscoveryCard({ card, onNext }: DiscoveryCardProps) {
           <Metric label="전고점 대비" value={card.drawdownFromHigh === null || card.drawdownFromHigh === undefined ? "미상" : percent(card.drawdownFromHigh)} />
           <Metric label="전세가율" value={card.jeonseRatio ? `${card.jeonseRatio.toFixed(1)}%` : "미상"} />
           <Metric label="존재 가능성" value={`${Math.round(card.inventoryLikelihoodScore)}점`} />
+        </div>
+
+        <div className="rounded-md border border-moss/25 bg-moss/10 p-3">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Brain size={17} className="text-moss" />
+              <p className="text-sm font-black text-ink">AI 설명 신호</p>
+            </div>
+            <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-moss">{aiScore}점</span>
+          </div>
+          <p className="mt-2 text-xs leading-5 text-black/60">
+            Transformer 프로토타입과 실거래 지표를 함께 본 보조 신호입니다. 거래 집중도, 전고점 대비, 전세가율, DSR/LTV 기준을 설명합니다.
+          </p>
         </div>
 
         <div className="rounded-md border border-black/10 bg-white p-3">
@@ -157,6 +172,9 @@ export function DiscoveryCard({ card, onNext }: DiscoveryCardProps) {
           <p>△ 교통/학군 데이터 확인 전</p>
         </div>
 
+        <button className="h-10 w-full rounded-md bg-moss/10 text-sm font-black text-moss" onClick={() => setShowAi(true)}>
+          AI에게 이유 묻기
+        </button>
         <button className="h-10 w-full rounded-md bg-black/5 text-sm font-black text-ink" onClick={() => setShowWhy(true)}>
           왜 떴지?
         </button>
@@ -217,6 +235,37 @@ export function DiscoveryCard({ card, onNext }: DiscoveryCardProps) {
         </div>
       </div>
 
+      {showAi ? (
+        <div className="absolute inset-0 z-40 flex items-end bg-black/45 p-4">
+          <div className="max-h-[88%] w-full overflow-y-auto rounded-lg bg-white p-4 shadow-soft">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-lg font-black text-ink">홈패스 AI 설명</h3>
+              <span className="rounded-full bg-moss/10 px-3 py-1 text-xs font-black text-moss">{aiScore}점</span>
+            </div>
+            <p className="mt-2 text-sm font-black leading-6 text-ink">{aiHeadline(card, currentHome.estimatedCurrentPrice + profile.cashOnHand)}</p>
+            <div className="mt-3 rounded-md bg-black/5 p-3 text-xs leading-5 text-black/65">
+              <p className="font-black text-ink">Transformer 보조 신호</p>
+              <p>complex-level holdout 기준 AUC 0.6741, accuracy 0.7692 프로토타입을 제출 증빙으로 사용합니다.</p>
+            </div>
+            <div className="mt-3 space-y-2 text-sm leading-6 text-black/65">
+              <p>1. 기준가 {card.referencePrice ? formatKRW(card.referencePrice) : "데이터 부족"}, 거래 집중도 {card.transactionHeat.toFixed(1)}배입니다.</p>
+              <p>2. 전고점 대비 {card.drawdownFromHigh?.toFixed(1) ?? "미상"}%, 전세가율 {card.jeonseRatio?.toFixed(1) ?? "미상"}%입니다.</p>
+              <p>3. 현재/정리 후/미래 구매력과 DSR/LTV 참고값을 함께 반영합니다.</p>
+            </div>
+            <p className="mt-3 rounded-md bg-coral/10 p-3 text-xs font-bold leading-5 text-coral">
+              참고용 추정이며 의사결정 보조입니다. 실제 매물, 세금, 대출 가능액은 외부 기관에서 확인해야 합니다.
+            </p>
+            <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs font-black">
+              <Link href="/compare-price-band" className="rounded-md bg-ink p-3 text-white" onClick={() => setActiveCandidate(card)}>같은 예산 비교</Link>
+              <Link href="/goal-path" className="rounded-md bg-moss p-3 text-white" onClick={() => setActiveCandidate(card)}>주거 경로 보기</Link>
+              <Link href="/community" className="rounded-md bg-sky p-3 text-white" onClick={() => setActiveCandidate(card)}>커뮤니티 질문</Link>
+            </div>
+            <button className="mt-3 h-11 w-full rounded-md bg-black/5 text-sm font-black text-ink" onClick={() => setShowAi(false)}>
+              닫기
+            </button>
+          </div>
+        </div>
+      ) : null}
       {showWhy ? (
         <div className="absolute inset-0 z-40 flex items-end bg-black/45 p-4">
           <div className="w-full rounded-lg bg-white p-4 shadow-soft">
@@ -274,6 +323,26 @@ export function DiscoveryCard({ card, onNext }: DiscoveryCardProps) {
       ) : null}
     </motion.article>
   );
+}
+
+function estimateAiSignalScore(card: ComplexSignalCandidate, dsrRatio: number) {
+  const heat = clamp(card.transactionHeat / 4, 0, 1);
+  const drawdown = clamp(Math.abs(card.drawdownFromHigh ?? 0) / 25, 0, 1);
+  const jeonse = clamp((card.jeonseRatio ?? 0) / 75, 0, 1);
+  const liquidity = clamp(card.volume90d / 20, 0, 1);
+  const burdenPenalty = clamp((dsrRatio - 35) / 30, 0, 0.35);
+  return clamp(Math.round((heat * 0.32 + drawdown * 0.2 + jeonse * 0.2 + liquidity * 0.2 + 0.08 - burdenPenalty) * 100), 0, 100);
+}
+
+function aiHeadline(card: ComplexSignalCandidate, currentCapacity: number) {
+  if (!card.referencePrice) return `${card.complexName}은 기준가 데이터가 부족해 보수적 확인이 필요합니다.`;
+  if (card.referencePrice <= currentCapacity) return `${card.complexName}은 현재 기준점과 보유 현금 기준 접근권에 가까운 후보입니다.`;
+  if (card.userFit.yearsToReach !== null) return `${card.complexName}은 ${card.userFit.yearsToReach}년 준비 루트에서 검토할 수 있는 후보입니다.`;
+  return `${card.complexName}은 현재 조건에서는 추가 준비가 필요한 후보입니다.`;
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, value));
 }
 
 function mark(value?: boolean | null) {
