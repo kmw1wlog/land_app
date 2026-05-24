@@ -2,14 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, House, MessageCircle, Route, WalletCards } from "lucide-react";
+import { Bot, Home, House, MessageCircle, Route, WalletCards } from "lucide-react";
 
 const tabs = [
   { href: "/feed", label: "홈", icon: Home },
   { href: "/my-home", label: "내 기준", icon: House },
   { href: "/goal-path", label: "경로", icon: Route },
   { href: "/portfolio", label: "가상", icon: WalletCards },
-  { href: "/community", label: "커뮤니티", icon: MessageCircle }
+  { href: "/community", label: "커뮤니티", icon: MessageCircle },
+  { href: "/chat", label: "AI", icon: Bot }
 ];
 
 export function BottomNav() {
@@ -17,7 +18,7 @@ export function BottomNav() {
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-50 mx-auto max-w-[480px] border-t border-black/10 bg-white/95 px-3 pb-[calc(0.55rem+var(--safe-bottom))] pt-2 backdrop-blur">
-      <div className="grid grid-cols-5 gap-1">
+      <div className="grid grid-cols-6 gap-1">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const active = pathname === tab.href || pathname.startsWith(`${tab.href}/`);

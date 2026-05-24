@@ -160,6 +160,13 @@ export function DiscoveryCard({ card, onNext }: DiscoveryCardProps) {
         <button className="h-10 w-full rounded-md bg-black/5 text-sm font-black text-ink" onClick={() => setShowWhy(true)}>
           왜 떴지?
         </button>
+        <Link
+          href="/chat"
+          className="flex h-10 w-full items-center justify-center rounded-md bg-moss text-sm font-black text-white"
+          onClick={() => setActiveCandidate(card)}
+        >
+          AI에게 이유 묻기
+        </Link>
 
         <div className="grid grid-cols-6 gap-2">
           <button className="flex h-12 items-center justify-center rounded-md bg-black/8 text-ink" title="넘기기" onClick={() => next("pass")}>

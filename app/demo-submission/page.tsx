@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, BarChart3, Building2, CheckCircle2, Home, MessageSquareText, Route, Sparkles } from "lucide-react";
+import { ArrowRight, BarChart3, Bot, Building2, CheckCircle2, Home, MessageSquareText, Route, Sparkles } from "lucide-react";
 import { demoCandidate, demoCommunityDraft, demoComparables, demoCurrentHome, demoLadder, demoProfile } from "@/lib/demoSubmissionData";
 import { formatKRW, formatMonthly } from "@/lib/format";
 
@@ -13,6 +13,7 @@ const steps = [
   "실거래 후보 카드",
   "같은 돈 비교",
   "커뮤니티",
+  "AI 설명봇",
   "Final"
 ];
 
@@ -59,7 +60,8 @@ export default function DemoSubmissionPage() {
           {step === 3 ? <CandidateStep /> : null}
           {step === 4 ? <CompareStep /> : null}
           {step === 5 ? <CommunityStep /> : null}
-          {step === 6 ? <FinalStep /> : null}
+          {step === 6 ? <AiChatStep /> : null}
+          {step === 7 ? <FinalStep /> : null}
         </div>
       </section>
 
@@ -220,6 +222,28 @@ function CommunityStep() {
           <p className="text-sm font-black text-moss">자동 질문 템플릿</p>
           <h2 className="mt-3 text-3xl font-black">{demoCommunityDraft.title}</h2>
           <pre className="mt-5 whitespace-pre-wrap rounded-xl bg-black/5 p-5 text-lg font-bold leading-8 text-black/65">{demoCommunityDraft.body}</pre>
+        </div>
+      </div>
+    </DemoPanel>
+  );
+}
+
+function AiChatStep() {
+  return (
+    <DemoPanel eyebrow="Step 6" title="TurboVector-RAG로 후보 이유를 설명합니다" icon={<Bot size={34} />}>
+      <div className="grid gap-6 lg:grid-cols-[.8fr_1.2fr]">
+        <div className="rounded-[1.5rem] bg-ink p-6 text-white shadow-soft">
+          <p className="text-sm font-black text-gold">질문</p>
+          <h2 className="mt-4 text-4xl font-black leading-tight">왜 이 후보가 떴나요?</h2>
+          <p className="mt-5 text-lg font-bold leading-8 text-white/65">
+            후보 단지, Transformer 회복 신호, 공공 실거래 근거, 안전 문구를 TurboVector-lite 압축 벡터로 검색합니다.
+          </p>
+        </div>
+        <div className="rounded-[1.5rem] bg-white p-6 shadow-soft">
+          <p className="text-sm font-black text-moss">AI 설명봇 답변 예시</p>
+          <div className="mt-4 whitespace-pre-wrap rounded-xl bg-moss/10 p-5 text-lg font-bold leading-8 text-black/65">
+            {`결론: 현재 조건에서는 조건부 가능 후보로 볼 수 있습니다.\n\n근거 3개:\n1. 최근 실거래 기준가와 정리 후 구매력의 간격이 비교적 작습니다.\n2. 거래 집중도와 90일 거래량이 후보 노출 기준을 통과했습니다.\n3. Transformer 분석에서 회복/거래 재활성화 신호가 함께 감지됐습니다.\n\n주의점: 실제 매물, 권리관계, 대출 조건은 별도 확인해야 합니다.\n\n다음 행동: 같은 예산 후보와 DSR/LTV, 전세가율, 최근 거래량을 비교하세요.\n\n참고용 추정이며 의사결정 보조입니다. 매수 추천, 수익 보장, 대출 승인 보장이 아닙니다.`}
+          </div>
         </div>
       </div>
     </DemoPanel>
