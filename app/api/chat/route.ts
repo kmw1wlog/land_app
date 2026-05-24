@@ -59,6 +59,8 @@ export async function POST(request: NextRequest) {
         sourceId: item.sourceId,
         title: item.title,
         score: item.score,
+        finalScore: item.finalScore ?? item.score,
+        boostReason: item.boostReason ?? [],
         metadata: item.metadata
       })),
       safetyNotice: HOMEPASS_SAFETY_NOTICE,

@@ -72,6 +72,11 @@ interface AppState {
 }
 
 const userId = "user-1";
+const PERSIST_KEY = "homepath-housing-risk-app";
+const LEGACY_PERSIST_KEY = "landlord-scenario-app";
+
+migrateLegacyPersistKey();
+
 const initialProfile: UserProfile = DEMO_MODE_ENABLED
   ? {
       ...sampleProfiles[0],
@@ -157,7 +162,7 @@ export const useAppStore = create<AppState>()(
             ...state.swipeEvents
           ]
         })),
-      saveToPortfolio: (propertyId, memo = "가상 매수 후보") =>
+      saveToPortfolio: (propertyId, memo = "관심 주거 후보") =>
         set((state) => {
           if (state.portfolioItems.some((item) => item.propertyId === propertyId)) {
             return state;
@@ -311,22 +316,33 @@ export const useAppStore = create<AppState>()(
         }))
     }),
     {
-      name: "landlord-scenario-app"
+      name: PERSIST_KEY
     }
   )
 );
 
 export const goalLabels: Record<PrimaryGoal, string> = {
   buy_home: "첫 주거 구매",
-  move_up: "현재 집 정리 후 이동",
-  cash_flow: "주거비 절감",
-  multi_home: "가족 확장 준비",
-  commercial_real_estate: "비주거 자산 검토",
+  move_up: "현재 주거 기준점 정리 후 이동",
+  cash_flow: "주거비 부담 줄이기",
+  multi_home: "가족 확장 대비",
+  commercial_real_estate: "생활권/직주근접 검토",
   just_browsing: "시장 둘러보기"
 };
 
 export const riskLabels: Record<RiskPreference, string> = {
-  stable: "안정형",
-  balanced: "균형형",
-  aggressive: "공격형"
+  stable: "안정 우선",
+  balanced: "균형 검토",
+  aggressive: "목표 확장"
 };
+
+function migrateLegacyPersistKey() {
+  if (typeof window === "undefined") return;
+  try {
+    if (window.localStorage.getItem(PERSIST_KEY)) return;
+    const legacyValue = window.localStorage.getItem(LEGACY_PERSIST_KEY);
+    if (legacyValue) window.localStorage.setItem(PERSIST_KEY, legacyValue);
+  } catch {
+    // Persist migration is best-effort; the app can still boot with defaults.
+  }
+}

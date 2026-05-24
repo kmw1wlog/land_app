@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { Bot } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { EstimateNotice } from "@/components/EstimateNotice";
 import { FutureLadderTimeline } from "@/components/FutureLadderTimeline";
@@ -74,6 +76,14 @@ export default function GoalPathPage() {
 
         <EstimateNotice />
 
+        <Link
+          href={`/chat?intent=purchase_power&prompt=${encodeURIComponent("현재, 정리 후, 5년 뒤 구매력 차이를 설명해줘.")}`}
+          className="flex h-12 items-center justify-center gap-2 rounded-md bg-moss text-sm font-black text-white"
+        >
+          <Bot size={17} />
+          AI가 5년 경로 요약
+        </Link>
+
         <section className="rounded-lg bg-ink p-4 text-white">
           <p className="text-xs font-bold text-white/55">주거 경로 안내</p>
           <h2 className="mt-1 text-2xl font-black">{routeLabels[path.recommendedPath]}</h2>
@@ -141,7 +151,7 @@ export default function GoalPathPage() {
                   <p className="text-sm font-black text-moss">{formatKRW(item.property.salePrice)}</p>
                 </div>
                 <p className="mt-2 text-xs leading-5 text-black/55">
-                  필요 월저축 {formatMonthly(item.requiredMonthlySavings)} · 포트폴리오 도달기간 단축 지표{" "}
+                  필요 월저축 {formatMonthly(item.requiredMonthlySavings)} · 관심 후보 도달기간 단축 지표{" "}
                   {Math.round(item.portfolioImpactMonths).toLocaleString("ko-KR")}개월
                 </p>
               </div>

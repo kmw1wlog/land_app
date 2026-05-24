@@ -34,7 +34,7 @@ interface PublicDataPanelState {
 }
 
 const nodes: Array<{ label: string; key: ScenarioResult["scenarioType"]; x: string; y: string }> = [
-  { label: "추가 매수", key: "additional_purchase", x: "50%", y: "4%" },
+  { label: "추가 주거 선택지", key: "additional_purchase", x: "50%", y: "4%" },
   { label: "월세 전환", key: "convert_to_monthly_rent", x: "5%", y: "35%" },
   { label: "현재 집 정리", key: "sell_now", x: "67%", y: "29%" },
   { label: "전세 전환", key: "convert_to_jeonse", x: "13%", y: "72%" },
@@ -131,11 +131,11 @@ export default function MyHomePage() {
         <MoveUpLadderSummary profile={profile} currentHome={currentHome} financialPlan={financialPlan} compact />
 
         <Link
-          href="/chat"
+          href={`/chat?intent=purchase_power&prompt=${encodeURIComponent("내 현재 주거 기준점과 소득으로 어디까지 가능한지 설명해줘.")}`}
           className="flex h-12 items-center justify-center gap-2 rounded-md bg-moss text-sm font-black text-white"
         >
           <Bot size={17} />
-          내 구매력 설명 받기
+          AI가 내 구매력 설명
         </Link>
 
         <section className="rounded-lg border border-black/10 bg-white p-4">
@@ -176,7 +176,7 @@ export default function MyHomePage() {
               <option value="officetel">오피스텔</option>
               <option value="villa">빌라</option>
               <option value="house">단독/다가구</option>
-              <option value="commercial">상가</option>
+              <option value="commercial">생활권/직주근접</option>
             </select>
           </div>
           <button className="mt-3 h-12 w-full rounded-md bg-ink text-sm font-black text-white" onClick={analyzeHome}>

@@ -59,7 +59,7 @@ function classifyFeedCard(
   if (property.communityHeatScore >= 82) {
     return { feedCardType: "community_hot", reason: "종토방 관심도가 높은 탐험 후보", recommendedPath: "not_feasible" };
   }
-  return { feedCardType: "dream", reason: "상상 포트폴리오에 담아볼 드림 후보", recommendedPath: "not_feasible" };
+  return { feedCardType: "dream", reason: "장기 주거 목표로 비교해볼 드림 후보", recommendedPath: "not_feasible" };
 }
 
 function mixByRatio(groups: Array<{ items: MixedFeedCard[]; take: number }>) {

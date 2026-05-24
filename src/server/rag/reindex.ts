@@ -18,7 +18,7 @@ export async function reindexHomePathRag() {
     }, {}),
     vector: {
       provider: "turbo_vector_sqlite",
-      quantization: "turboquant_lite_uint8"
+      quantization: "turboquant_rht_normal_uint8"
     }
   };
 }

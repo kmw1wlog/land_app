@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bot, Home, House, MessageCircle, Route, WalletCards } from "lucide-react";
+import { Bot, Home, House, MessageCircle, Route, Scale } from "lucide-react";
 
 const tabs = [
   { href: "/feed", label: "홈", icon: Home },
   { href: "/my-home", label: "내 기준", icon: House },
   { href: "/goal-path", label: "경로", icon: Route },
-  { href: "/portfolio", label: "가상", icon: WalletCards },
+  { href: "/portfolio", label: "관심", icon: Scale },
   { href: "/community", label: "커뮤니티", icon: MessageCircle },
   { href: "/chat", label: "AI", icon: Bot }
 ];

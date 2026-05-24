@@ -15,9 +15,7 @@ export function AppShell({ title, subtitle, children, action }: AppShellProps) {
       <header className="sticky top-0 z-40 border-b border-black/10 bg-paper/95 px-5 pb-3 pt-5 backdrop-blur">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-bold uppercase text-moss">
-              부동산 시나리오
-            </p>
+            <p className="text-xs font-bold uppercase text-moss">홈패스</p>
             <h1 className="mt-1 text-2xl font-black leading-tight text-ink">{title}</h1>
             {subtitle ? <p className="mt-1 text-sm leading-5 text-black/58">{subtitle}</p> : null}
           </div>

@@ -2,7 +2,8 @@
 
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Flag, MessageSquarePlus, ThumbsUp } from "lucide-react";
+import Link from "next/link";
+import { Bot, Flag, MessageSquarePlus, ThumbsUp } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Label } from "@/components/Label";
 import { properties } from "@/data/dummy";
@@ -181,6 +182,24 @@ function CommunityPageContent() {
             onChange={(event) => setContent(event.target.value)}
           />
           <button
+            className="mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-md bg-moss text-sm font-black text-white"
+            onClick={() => {
+              const draft = buildDataBackedQuestion(roomContext, region);
+              setTitle(draft.title);
+              setContent(draft.content);
+              setCategory("move_up_consulting");
+            }}
+          >
+            <Bot size={16} />
+            AI가 데이터 기반 질문 작성
+          </button>
+          <Link
+            href={`/chat?intent=data_source&prompt=${encodeURIComponent("이 커뮤니티 질문을 공공 실거래 기준으로 어떻게 검증하면 좋을지 설명해줘.")}`}
+            className="mt-2 flex h-10 w-full items-center justify-center rounded-md bg-black/5 text-xs font-black text-ink"
+          >
+            AI에게 검증 기준 묻기
+          </Link>
+          <button
             className="mt-2 h-11 w-full rounded-md bg-ink text-sm font-black text-white"
             onClick={() => {
               if (!title.trim() || !content.trim()) return;
@@ -358,4 +377,19 @@ function parseRoomContext(roomKey: string | null, room: CommunityRoomRow | undef
 function extractDraftMetric(body: string, label: string) {
   const line = body.split("\n").find((item) => item.startsWith(label));
   return line?.split(":").slice(1).join(":").trim();
+}
+
+function buildDataBackedQuestion(roomContext: ReturnType<typeof parseRoomContext>, region: string) {
+  const title = roomContext ? `${roomContext.title} 주거 이동 후보로 봐도 될까요?` : `${region} 주거 이동 리스크를 어떻게 봐야 할까요?`;
+  const content = [
+    `단지/지역: ${roomContext?.title ?? region}`,
+    `실거래 기준가: ${roomContext?.referencePrice ?? "확인 필요"}`,
+    `최근 90일 거래량: ${roomContext?.volume90d ?? "확인 필요"}`,
+    `거래 집중도: ${roomContext?.heat ?? "확인 필요"}`,
+    `전세가율: ${roomContext?.jeonseRatio ?? "확인 필요"}`,
+    "DSR/LTV: 내 소득과 대출 조건 기준으로 추가 확인 필요",
+    "",
+    "같은 예산 후보와 비교할 때 실거주 안정성, 거래 회복, 전세가율 리스크 중 무엇을 먼저 봐야 할까요?"
+  ].join("\n");
+  return { title, content };
 }

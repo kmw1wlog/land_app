@@ -23,8 +23,9 @@ describe("HomePath AI chatbot safety", () => {
       contextText: "[근거 1] 거래 집중도 2.4배\n[근거 2] 전세가율 64%"
     });
 
-    expect(answer).toContain("근거 1: 구매력 계산");
-    expect(answer).toContain("근거 2: 후보 실거래 지표");
+    expect(answer).toContain("근거 3개:");
+    expect(answer).toContain("1. 구매력 계산 근거");
+    expect(answer).toContain("2. 실거래/전세가율/거래량 근거");
     expect(answer).toContain("거래 집중도");
     expect(answer).toContain(HOMEPASS_SAFETY_NOTICE);
   });

@@ -284,7 +284,7 @@ const categoryTitles: Record<CommunityCategory, string> = {
   bad_news: "악재 체크",
   prediction: "가격 예측",
   move_up_consulting: "갈아타기 상담",
-  cash_flow_investment: "월세 투자 검토"
+  cash_flow_investment: "주거비 절감 검토"
 };
 
 const badges: CommunityPost["authorBadge"][] = [

@@ -49,7 +49,7 @@ export default function PortfolioPage() {
             virtualPurchasePrice: property.salePrice,
             virtualPurchaseDate: new Date().toISOString(),
             virtualInvestmentAmount: property.salePrice - property.jeonsePrice,
-            memo: "추천 가상 후보",
+            memo: "관심 주거 후보",
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
           },
@@ -78,14 +78,14 @@ export default function PortfolioPage() {
     : 0;
 
   return (
-    <AppShell title="내 미래 후보" subtitle="지금 못 사도 담아두고, 내 사다리 안에서 언제 접근 가능한지 추적합니다.">
+    <AppShell title="내 관심 후보" subtitle="지금 바로 결정하지 않고, 내 주거 경로 안에서 언제 접근 가능한지 추적합니다.">
       <div className="space-y-4">
         <MoveUpLadderSummary profile={profile} currentHome={currentHome} financialPlan={financialPlan} compact />
 
         <section className="rounded-lg border border-black/10 bg-white p-4">
           <div className="flex items-end justify-between gap-3">
             <div>
-              <p className="text-xs font-bold text-black/45">내가 그린 미래 부동산 장바구니</p>
+              <p className="text-xs font-bold text-black/45">내가 비교할 미래 주거 후보</p>
               <h2 className="mt-1 text-xl font-black text-ink">1.5배 사다리 진행률 {ladderProgress}%</h2>
             </div>
             <p className="text-sm font-black text-moss">{formatKRW(averageReferencePrice)}</p>
@@ -123,7 +123,7 @@ export default function PortfolioPage() {
             hint="보수적 공실/이자 차감"
           />
           <Metric label="목표 집 도달" value={targetPath.yearsToReachWithHomeSale === null ? "조건 변경" : `${targetPath.yearsToReachWithHomeSale}년`} />
-          <Metric label="가상 순자산" value={formatKRW(hydratedItems.reduce((sum, entry) => sum + entry.property.salePrice * 0.18, 0))} />
+          <Metric label="참고 순자산" value={formatKRW(hydratedItems.reduce((sum, entry) => sum + entry.property.salePrice * 0.18, 0))} />
         </div>
 
         <section className="space-y-3">
@@ -144,7 +144,7 @@ export default function PortfolioPage() {
                   {items.length > 0 ? (
                     <button
                       className="flex h-9 w-9 items-center justify-center rounded-md bg-black/5"
-                      title="가상 포트폴리오에서 제거"
+                      title="관심 후보에서 제거"
                       onClick={() => removeFromPortfolio(property.id)}
                     >
                       <Trash2 size={16} />
@@ -152,11 +152,11 @@ export default function PortfolioPage() {
                   ) : null}
                 </div>
                 <div className="mt-3 grid grid-cols-2 gap-2">
-                  <Metric label="가상 매수가" value={formatKRW(item.virtualPurchasePrice)} />
+                  <Metric label="기준 매수가" value={formatKRW(item.virtualPurchasePrice)} />
                   <Metric label="실투자금" value={formatKRW(analysis.investmentAmount)} />
                   <Metric label="예상 월세" value={formatMonthly(property.expectedMonthlyRent)} />
                   <Metric label="월 현금흐름" value={formatMonthly(analysis.monthlyCashFlow)} />
-                  <Metric label="가상 수익률" value={`${virtualReturn.toFixed(1)}%`} />
+                  <Metric label="참고 변화율" value={`${virtualReturn.toFixed(1)}%`} />
                   <Metric
                     label="목표 월세 기여"
                     value={`${Math.max(0, (analysis.monthlyCashFlow / profile.targetMonthlyCashFlow) * 100).toFixed(1)}%`}

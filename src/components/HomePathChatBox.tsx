@@ -8,7 +8,7 @@ type ChatMessage = {
   role: "user" | "assistant";
   content: string;
   fallbackUsed?: boolean;
-  sources?: Array<{ title?: string; sourceType: string; score: number }>;
+  sources?: Array<{ title?: string; sourceType: string; score: number; finalScore?: number; boostReason?: string[] }>;
 };
 
 const SUGGESTED_QUESTIONS = [
@@ -37,7 +37,10 @@ export function HomePathChatBox() {
   const [chatApiUrl, setChatApiUrl] = useState("/api/chat");
 
   useEffect(() => {
-    setChatApiUrl(resolveChatApiUrl());
+    const params = new URLSearchParams(window.location.search);
+    setChatApiUrl(resolveChatApiUrl(params));
+    const prompt = params.get("prompt")?.trim();
+    if (prompt) setInput(prompt);
   }, []);
 
   async function ask(message: string) {
@@ -121,6 +124,8 @@ export function HomePathChatBox() {
             {message.sources?.length ? (
               <div className="mt-3 rounded-md bg-black/5 p-3 text-xs font-bold text-black/50">
                 근거: {message.sources.slice(0, 3).map((source) => source.title ?? source.sourceType).join(" · ")}
+                <br />
+                점수: {message.sources.slice(0, 3).map((source) => `${source.sourceType} ${(source.finalScore ?? source.score).toFixed(2)}`).join(" · ")}
               </div>
             ) : null}
           </div>
@@ -162,13 +167,12 @@ export function HomePathChatBox() {
   );
 }
 
-function resolveChatApiUrl() {
+function resolveChatApiUrl(params?: URLSearchParams) {
   if (typeof window === "undefined") {
     return process.env.NEXT_PUBLIC_HOMEPATH_CHAT_API_URL || "/api/chat";
   }
 
-  const params = new URLSearchParams(window.location.search);
-  const queryValue = params.get("chatApi")?.trim();
+  const queryValue = (params ?? new URLSearchParams(window.location.search)).get("chatApi")?.trim();
   if (queryValue) {
     window.localStorage.setItem(CHAT_API_STORAGE_KEY, queryValue);
     return queryValue;

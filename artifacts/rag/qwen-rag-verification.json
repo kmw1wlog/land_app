@@ -1,65 +1,140 @@
 {
-  "checkedAt": "2026-05-24T13:28:22.168Z",
-  "question": "왜 이 후보가 떴어? 이 결과는 매수 추천이야?",
+  "checkedAt": "2026-05-24T19:32:13.220Z",
+  "question": "왜 이 후보가 떴어? 이 결과는 매수 추천이야? 450자 이내로 답해줘.",
   "localQwen": {
     "ok": true,
-    "baseUrl": "http://127.0.0.1:11434/v1",
-    "model": "Qwen/Qwen3.5-0.8B",
-    "models": {
-      "object": "list",
-      "data": [
-        {
-          "id": "Qwen/Qwen3.5-0.8B",
-          "object": "model",
-          "created": 0,
-          "owned_by": "homepath-local"
-        }
-      ]
-    }
+    "baseUrl": "https://<redacted-alibaba-maas>/compatible-mode/v1",
+    "model": "qwen3.6-flash",
+    "modelCount": 160,
+    "targetModelListed": true,
+    "sampleModelIds": [
+      "qwen3.7-max-2026-05-20",
+      "qwen3.7-max",
+      "qwen3.5-livetranslate-flash-realtime-2026-05-19",
+      "qwen3.5-livetranslate-flash-realtime",
+      "deepseek-v4-flash",
+      "deepseek-v4-pro",
+      "qwen-image-2.0-pro-2026-04-22",
+      "qwen3.6-27b",
+      "qwen3.5-plus-2026-04-20",
+      "qwen3.6-max-preview",
+      "qwen3.6-35b-a3b",
+      "qwen3.6-flash"
+    ]
   },
   "rag": {
-    "chunkCount": 69,
+    "chunkCount": 113,
     "provider": "turbo_vector_sqlite",
-    "quantization": "turboquant_lite_uint8"
+    "quantization": "turboquant_rht_normal_uint8"
   },
   "withRag": {
     "intent": "candidate_reason",
-    "sourceCount": 4,
+    "sourceCount": 8,
     "sources": [
       {
-        "id": "model-signal:27110|달성파크푸르지오힐스테이트|apartment|59:2025-09-01",
-        "sourceType": "model_artifact",
-        "title": "Transformer AI signal 달성파크푸르지오힐스테이트",
-        "score": 0.25902976169316405
+        "id": "complex-signal-artifact:27230|복현아이파크|apartment|74:2025-11-01",
+        "sourceType": "complex_signal",
+        "title": "복현아이파크 74",
+        "score": 0.08552409681120463,
+        "finalScore": 0.2855240968112046,
+        "boostReason": [
+          "intent:candidate_reason:complex_signal+0.20"
+        ]
       },
       {
-        "id": "model-signal:27140|율하센트럴파크9단지|apartment|84:2025-03-01",
-        "sourceType": "model_artifact",
-        "title": "Transformer AI signal 율하센트럴파크9단지",
-        "score": 0.22539313060263258
+        "id": "complex-signal-artifact:27230|영남네오빌아트|apartment|84:2025-09-01",
+        "sourceType": "complex_signal",
+        "title": "영남네오빌아트 84",
+        "score": 0.08044321317204642,
+        "finalScore": 0.28044321317204646,
+        "boostReason": [
+          "intent:candidate_reason:complex_signal+0.20"
+        ]
       },
       {
-        "id": "model-signal:27140|신암뜨란채|apartment|84:2025-06-01",
+        "id": "model-signal:27230|칠곡현대아파트|apartment|59:2025-08-01",
         "sourceType": "model_artifact",
-        "title": "Transformer AI signal 신암뜨란채",
-        "score": 0.2229550986151944
+        "title": "Transformer AI signal 칠곡현대아파트",
+        "score": 0.37015163917443705,
+        "finalScore": 0.5301516391744371,
+        "boostReason": [
+          "intent:candidate_reason:model_artifact+0.16"
+        ]
+      },
+      {
+        "id": "model-signal:27230|칠곡네스빌|apartment|84:2025-09-01",
+        "sourceType": "model_artifact",
+        "title": "Transformer AI signal 칠곡네스빌",
+        "score": 0.3573778645904617,
+        "finalScore": 0.5173778645904618,
+        "boostReason": [
+          "intent:candidate_reason:model_artifact+0.16"
+        ]
+      },
+      {
+        "id": "faq:why-candidate",
+        "sourceType": "faq",
+        "title": "왜 후보가 떴나요?",
+        "score": 0.16997862709020808,
+        "finalScore": 0.24997862709020807,
+        "boostReason": [
+          "intent:candidate_reason:faq+0.08"
+        ]
       },
       {
         "id": "safety:decision-support",
         "sourceType": "safety_policy",
         "title": "홈패스 안전 원칙",
-        "score": 0.06727994546993905
+        "score": 0.1621576386844014,
+        "finalScore": 0.2021576386844014,
+        "boostReason": [
+          "intent:candidate_reason:safety_policy+0.04"
+        ]
+      },
+      {
+        "id": "model-signal:27230|영남네오빌아트|apartment|84:2025-09-01",
+        "sourceType": "model_artifact",
+        "title": "Transformer AI signal 영남네오빌아트",
+        "score": 0.327020659069288,
+        "finalScore": 0.48702065906928804,
+        "boostReason": [
+          "intent:candidate_reason:model_artifact+0.16"
+        ]
+      },
+      {
+        "id": "model-signal:27140|동대구에일린의뜰|apartment|84:2025-01-01",
+        "sourceType": "model_artifact",
+        "title": "Transformer AI signal 동대구에일린의뜰",
+        "score": 0.3188868851954074,
+        "finalScore": 0.47888688519540745,
+        "boostReason": [
+          "intent:candidate_reason:model_artifact+0.16"
+        ]
       }
     ],
     "usedLocalModel": true,
+    "usedConfiguredModel": true,
+    "endpointType": "remote",
     "fallbackUsed": false,
-    "answer": "참고용 추정이며 의사결정 보조입니다. 매수 추천, 수익 보장, 대출 승인 보장이 아닙니다.\n\n현재 구매력 1.6억 원, 5년 뒤 추정 구매력 5.8억 원, 월저축 150 만 원으로 계산된 **월저축 150 만 원**이 5년 뒤 추정 구매력 5.8 억 원 대비 3.8 배 이상 성장하는 것으로 보입니다. 이는 **월저축 150 만 원**이 5년 뒤 추정 구매력 5.8 억 원 대비 3.8 배 이상 성장하는 것으로 보입니다.\n\n**주의점:**\n1.  **월저축 150 만 원**이 5년 뒤 추정 구매력 5.8 억 원 대비 3.8 배 이상 성장하는 것으로 보입니다.\n2.  **월저축 150 만 원**이 5년 뒤 추정 구매력 5.8 억 원 대비 3.8 배 이상 성장하는 것으로 보입니다.\n3.  **월저축 150 만 원**이 5년 뒤 추정 구매력 5.8 억 원 대비 3.8 배 이상 성장하는 것으로 보입니다.\n\n**다음 행동:**\n1.  **월저축 150 만 원**이 5년 뒤 추정 구매력 5.8 억 원 대비 3.8 배 이상 성장하는 것으로 보입니다.\n2.  **월저축 150 만 원**이 5년 뒤 추정 구매력 5.8 억 원 대비 3.8 배 이상 성장하는 것으로 보입니다.\n3.  **월저축 150 만 원**이 5년 뒤 추정 구매력 5.8 억 원 대비 3.8 배 이상 성장하는 것으로 보입니다."
+    "instructionScenarios": [
+      "candidate_explanation",
+      "risk_and_safety",
+      "missing_data"
+    ],
+    "answer": "결론: 매수 추천이 아니며, 이는 데이터 기반의 참고용 의사결정 보조 결과입니다.\n\n근거 1: 후보는 기준가(예: 복현아이파크 4.6억), 거래 집중도, 전고점 대비 낙폭 등 공공데이터와 사용자 구매력(현재 정리 후 4.8억) 간격을 분석해 선정됩니다.\n근거 2: Transformer AI 신호(회복/재활성화 확률 등)와 실거래 지표가 복합적으로 반영되어 점수가 산출되며, 높은 점수는 단순 적합도가 아닌 확률적 참고치입니다.\n근거 3: 홈패스는 특정 단지 매입 권유나 수익 보장을 하지 않으며, 모든 결과는 사용자의 최종 판단을 위한 정보 제공 목적입니다.\n\n주의점: 현재 집 보유 여부나 구체적인 재정 계획 입력이 부족할 경우 기본값으로 추정되었을 수 있으며, 실제 대출 승인이나 세무 효과는 금융기관 및 전문가 확인이 필요합니다.\n\n다음 행동: 정확한 평가를 위해 현재 보유 주택 유무와 상세 소득·저축 내역을 입력하고, 해당 단지의 전세가율과 실거래 동향을 직접 비교해 보세요.\n\n참고용 추정이며 의사결정 보조입니다. 매수 추천, 수익 보장, 대출 승인 보장이 아닙니다."
   },
   "withoutRag": {
     "intent": "candidate_reason",
     "sourceCount": 0,
     "usedLocalModel": true,
+    "usedConfiguredModel": true,
+    "endpointType": "remote",
     "fallbackUsed": false,
-    "answer": "현재 구매력이 1.6 억이고, 집 정리 후 예산이 4.8 억로 계산된 것은 참고 신호이나 참고 신호을 목적으로 하는 것이 아니라, 청년·사회초년생이 1주택자로서 주거 구매력과 갈아타기 리스크를 설명하는 공공데이터 기반 의사결정 보조 서비스의 기본 계산 결과입니다. 매수 추천이나 수익 보장, 특정 단지 매입 권유를 하지 않습니다. 참고용 추정이며 의사결정 보조입니다.\n\n참고용 추정이며 의사결정 보조입니다. 매수 추천, 수익 보장, 대출 승인 보장이 아닙니다."
+    "instructionScenarios": [
+      "candidate_explanation",
+      "risk_and_safety",
+      "missing_data"
+    ],
+    "answer": "결론: 매수 추천이 아니며, 이는 구매력 대비 적정성 및 시장 데이터 기반의 참고 후보입니다.\n\n근거 1: 현재 집 정리 후 예산(4.8억)과 목표 예산 간격이 좁아 진입 장벽이 낮습니다.\n근거 2: Transformer 점수는 확률적 신호일 뿐, 특정 단지 매입을 권유하지 않습니다.\n근거 3: 전고점 대비 낙폭이나 전세가율 등 리스크 요소를 함께 고려해야 합니다.\n\n주의점: 이 결과는 공공데이터 기반 추정치이며, 실제 대출 승인이나 세무 혜택을 보장하지 않습니다.\n\n다음 행동: 정확한 실거래가나 전세 시세를 확인하고, 필요시 금융기관에 대출 가능 여부를 문의하세요.\n\n참고용 추정이며 의사결정 보조입니다. 매수 추천, 수익 보장, 대출 승인 보장이 아닙니다."
   }
 }

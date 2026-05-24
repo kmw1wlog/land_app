@@ -307,7 +307,7 @@ export function calculateScenarioResults(
       afterTaxNetWorth: baseNetWorth + (target?.salePrice ?? 480_000_000) * 0.18,
       fiveYearExpectedReturn: targetAnalysis?.fiveYearNetWorthChange ?? 41_000_000,
       fitScoreSeed: userProfile.primaryGoal === "multi_home" ? 83 : 61,
-      notes: ["포트폴리오 확장 선택지", "대출과 세금 민감도가 높다"]
+      notes: ["생활권 확장 선택지", "대출과 세금 민감도가 높다"]
     }
   ];
 

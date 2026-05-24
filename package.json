@@ -1,5 +1,5 @@
 {
-  "name": "homepath-housing-power-app",
+  "name": "homepath-housing-risk-app",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -39,6 +39,7 @@
     "ai:upgrade": "npm run ai:data:seed-long && npm run ai:transformer:export && npm run ai:transformer:train-long",
     "rag:reindex": "tsx scripts/rag-reindex.ts",
     "rag:verify:qwen": "tsx scripts/verify-qwen-rag.ts",
+    "rag:verify:turboquant": "tsx scripts/verify-turboquant-rag.ts",
     "llm:qwen:install": "python3 -m pip install --user --break-system-packages -r scripts/ai/requirements-local-qwen.txt",
     "llm:qwen:download": "python3 scripts/local_qwen_download.py",
     "llm:qwen:serve": "python3 scripts/local_qwen_server.py",

@@ -73,7 +73,7 @@ export async function buildHomePathRagContext(input: HomePathChatInput) {
     ...(await store.search({ queryEmbedding, topK: 20 })),
     ...sourceSearches.flat()
   ];
-  const rankedResults = rankRagResults(rawResults, input.activeCandidate, intent);
+  const rankedResults = rankHomePathRagResults(rawResults, input.activeCandidate, intent);
   const results = selectPlannedResults(rankedResults, retrievalPlan);
 
   return {
@@ -147,7 +147,9 @@ function buildContextText(results: SearchResult[], activeCandidate?: ComplexSign
       const metadata = summarizeMetadata(result);
       return [
         `[${sourceTypeLabel(result.sourceType)} ${index + 1}] ${result.title ?? result.id}`,
-        `score=${result.score.toFixed(4)}${metadata ? `, ${metadata}` : ""}`,
+        `score=${result.score.toFixed(4)}, finalScore=${(result.finalScore ?? result.score).toFixed(4)}${
+          result.boostReason?.length ? `, boost=${result.boostReason.join("|")}` : ""
+        }${metadata ? `, ${metadata}` : ""}`,
         limitContextChunk(result.text)
       ].join("\n");
     })
@@ -201,41 +203,62 @@ const INTENT_SOURCE_BOOST: Record<HomePathChatIntent, Partial<Record<RagSourceTy
   }
 };
 
-function rankRagResults(
+export function rankHomePathRagResults(
   results: SearchResult[],
   activeCandidate: ComplexSignalCandidate | null | undefined,
   intent: HomePathChatIntent
 ) {
   return results
-    .map((result) => ({
-      ...result,
-      score:
-        result.score +
-        (INTENT_SOURCE_BOOST[intent][result.sourceType] ?? 0) +
-        candidateMetadataBoost(result, activeCandidate)
-    }))
-    .sort((a, b) => b.score - a.score);
+    .map((result) => {
+      const sourceTypeBoost = INTENT_SOURCE_BOOST[intent][result.sourceType] ?? 0;
+      const candidateBoost = candidateMetadataBoost(result, activeCandidate);
+      const boostReason = [
+        sourceTypeBoost ? `intent:${intent}:${result.sourceType}+${sourceTypeBoost.toFixed(2)}` : undefined,
+        ...candidateBoost.reasons
+      ].filter(Boolean) as string[];
+      return {
+        ...result,
+        finalScore: result.score + sourceTypeBoost + candidateBoost.value,
+        boostReason
+      };
+    })
+    .sort((a, b) => (b.finalScore ?? b.score) - (a.finalScore ?? a.score));
 }
 
 function candidateMetadataBoost(result: SearchResult, activeCandidate?: ComplexSignalCandidate | null) {
-  if (!activeCandidate) return 0;
-  let boost = 0;
+  if (!activeCandidate) return { value: 0, reasons: [] as string[] };
+  let value = 0;
+  const reasons: string[] = [];
   const haystack = [
     result.title,
     result.text,
     result.metadata.complexName,
     result.metadata.region,
-    result.metadata.areaBucket
+    result.metadata.areaBucket,
+    result.metadata.lawdCode5
   ]
     .filter(Boolean)
     .join(" ")
     .toLowerCase();
 
   const complexName = activeCandidate.complexName.toLowerCase();
-  if (complexName && haystack.includes(complexName)) boost += 0.24;
-  if (activeCandidate.region && haystack.includes(activeCandidate.region.toLowerCase())) boost += 0.08;
-  if (activeCandidate.areaBucket && haystack.includes(activeCandidate.areaBucket.toLowerCase())) boost += 0.06;
-  return boost;
+  if (complexName && haystack.includes(complexName)) {
+    value += 0.24;
+    reasons.push("activeCandidate:complexName+0.24");
+  }
+  if (activeCandidate.lawdCode5 && haystack.includes(activeCandidate.lawdCode5.toLowerCase())) {
+    value += 0.1;
+    reasons.push("activeCandidate:lawdCode5+0.10");
+  }
+  if (activeCandidate.region && haystack.includes(activeCandidate.region.toLowerCase())) {
+    value += 0.08;
+    reasons.push("activeCandidate:region+0.08");
+  }
+  if (activeCandidate.areaBucket && haystack.includes(activeCandidate.areaBucket.toLowerCase())) {
+    value += 0.06;
+    reasons.push("activeCandidate:areaBucket+0.06");
+  }
+  return { value, reasons };
 }
 
 export function getIntentRetrievalPlan(intent: HomePathChatIntent): RetrievalPlan {

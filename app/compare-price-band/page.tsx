@@ -62,7 +62,7 @@ function ComparePriceBandContent() {
               <p className="mt-2 text-sm text-white/70">기준가 {comparison.base.referencePrice ? formatKRW(comparison.base.referencePrice) : "미상"} · ±10% 가격대 비교</p>
               {activeCandidate ? (
                 <Link
-                  href="/chat"
+                  href={`/chat?intent=comparison&prompt=${encodeURIComponent("같은 예산 후보들 중 어떤 리스크를 비교해야 해?")}`}
                   className="mt-3 flex h-10 items-center justify-center rounded-md bg-white text-sm font-black text-ink"
                   onClick={() => setActiveCandidate(activeCandidate)}
                 >
@@ -102,7 +102,7 @@ function ComparePriceBandContent() {
                     외부 사이트에서 매물 확인
                   </a>
                   <Link
-                    href="/chat"
+                    href={`/chat?intent=candidate_reason&prompt=${encodeURIComponent(`${item.candidate.complexName}와 같은 예산 후보를 비교할 때 어떤 리스크를 봐야 해?`)}`}
                     className="mt-2 flex h-10 items-center justify-center rounded-md bg-moss text-sm font-black text-white"
                     onClick={() => setActiveCandidate(item.candidate)}
                   >

@@ -53,22 +53,20 @@ export function buildSafeFallbackAnswer(input: {
   contextText: string;
 }) {
   const sections = splitContextSections(input.contextText);
-  const candidateBasis = pickSectionSummary(sections, [
+  const candidateBasis = pickSourceSummary(sections, "후보 실거래 지표", [
     "현재 후보",
-    "후보 실거래 지표",
     "최근 실거래",
     "거래 집중도",
-    "전세가율"
+    "전세가율",
+    "전고점 대비"
   ]);
-  const aiBasis = pickSectionSummary(sections, [
-    "Transformer AI 신호",
+  const aiBasis = pickSourceSummary(sections, "Transformer AI 신호", [
     "AI 후보점수",
     "회복 확률",
     "거래 재활성화",
     "하락 리스크"
   ]);
-  const safetyBasis = pickSectionSummary(sections, [
-    "안전 정책",
+  const safetyBasis = pickSourceSummary(sections, "안전 정책", [
     "매수 추천",
     "수익 보장",
     "대출 승인",
@@ -77,20 +75,16 @@ export function buildSafeFallbackAnswer(input: {
 
   return ensureHomePathSafety(
     [
-      "결론: 현재 답변은 매수 판단이 아니라 홈패스 계산 결과와 검색된 공공데이터 근거를 묶은 참고 설명입니다.",
+      "결론: 현재 후보는 입력 조건과 계산 결과를 기준으로 현재 가능, 정리 후 가능, 미래 준비 중 어디에 가까운지 설명해야 하는 참고 후보입니다.",
       "",
-      "근거 1: 구매력 계산",
-      input.calculationSummary,
+      "근거 3개:",
+      `1. 구매력 계산 근거: ${input.calculationSummary}`,
+      `2. 실거래/전세가율/거래량 근거: ${candidateBasis ?? "후보 단지의 가격, 거래량, 전세가율, 전고점 대비 흐름을 확인할 검색 근거가 충분하지 않습니다."}`,
+      `3. Transformer AI 신호 근거: ${aiBasis ?? "현재 검색 context에서 후보와 직접 연결된 회복 확률, 거래 재활성화, 하락 리스크 신호가 부족합니다."}`,
       "",
-      "근거 2: 후보 실거래 지표",
-      candidateBasis ?? "후보 단지의 기준가, 거래량, 전세가율, 전고점 대비 흐름을 확인할 근거가 충분하지 않습니다.",
+      `주의점: ${safetyBasis ?? "이 결과는 매수 추천이 아니며, 실제 매물·대출·세금은 외부 확인이 필요합니다."}`,
       "",
-      "근거 3: Transformer AI 신호",
-      aiBasis ?? "현재 검색 context에서 후보와 직접 연결된 Transformer 신호가 부족합니다.",
-      "",
-      `주의점: ${safetyBasis ?? "실제 매물, 권리관계, 대출 조건은 별도 확인해야 합니다."}`,
-      "",
-      "다음 행동: 후보 카드의 실거래 기준가, 90일 거래량, 전세가율, DSR/LTV 참고값을 확인한 뒤 외부 매물 사이트에서 실제 매물을 검증하세요."
+      "다음 행동: 같은 예산 비교 / 주거 경로 보기 / 커뮤니티 질문 / 외부 매물 확인 중 하나로 이어가세요."
     ].join("\n")
   );
 }
@@ -102,15 +96,16 @@ function splitContextSections(contextText: string) {
     .filter(Boolean);
 }
 
-function pickSectionSummary(sections: string[], keywords: string[]) {
-  const section = sections.find((item) => keywords.some((keyword) => item.includes(keyword)));
+function pickSourceSummary(sections: string[], sourceLabel: string, keywords: string[]) {
+  const section = sections.find((item) => item.includes(sourceLabel) || keywords.some((keyword) => item.includes(keyword)));
   if (!section) return undefined;
   const lines = section
     .split("\n")
     .map((line) => line.trim())
     .filter(Boolean)
-    .map((line) => line.replace(/^\[[^\]]+\]\s*/, ""));
-  const meaningful = lines.find((line) => /기준가|거래|전세|후보|AI|회복|리스크|보조|추천|수익|대출/.test(line)) ?? lines[0];
+    .map((line) => line.replace(/^\[[^\]]+\]\s*/, ""))
+    .filter((line) => !/^score=|^sourceTypes:|^RAG 검색 요약/.test(line));
+  const meaningful = lines.find((line) => /기준가|가격|거래|전세|전고점|후보점수|회복|재활성화|하락|보조|추천|수익|대출/.test(line));
   return meaningful ? limitSentence(meaningful) : undefined;
 }
 

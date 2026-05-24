@@ -161,11 +161,11 @@ export function DiscoveryCard({ card, onNext }: DiscoveryCardProps) {
           왜 떴지?
         </button>
         <Link
-          href="/chat"
+          href={`/chat?intent=candidate_reason&prompt=${encodeURIComponent(`${card.complexName} ${areaBucketText(card.areaBucket)}가 왜 후보로 떴는지 공공데이터와 AI 신호 기준으로 설명해줘.`)}`}
           className="flex h-10 w-full items-center justify-center rounded-md bg-moss text-sm font-black text-white"
           onClick={() => setActiveCandidate(card)}
         >
-          AI에게 이 후보 설명 받기
+          AI가 이 후보 이유 설명
         </Link>
 
         <div className="grid grid-cols-6 gap-2">

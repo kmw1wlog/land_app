@@ -22,6 +22,8 @@ export interface EmbeddedChunk extends RagChunk {
 
 export interface SearchResult extends RagChunk {
   score: number;
+  finalScore?: number;
+  boostReason?: string[];
 }
 
 export interface VectorStore {

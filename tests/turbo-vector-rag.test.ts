@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { hashEmbedding } from "@/server/rag/embedding";
-import { quantizeVector, dequantizeVector, cosineApproxFromQuantized } from "@/server/rag/turboVector/quantize";
+import {
+  LEGACY_TURBO_VECTOR_CONFIG,
+  TURBO_VECTOR_CONFIG,
+  quantizeVector,
+  dequantizeVector,
+  cosineApproxFromQuantized
+} from "@/server/rag/turboVector/quantize";
 import { InMemoryTurboVectorStore } from "@/server/rag/turboVector/store";
 
 describe("TurboVector-lite RAG", () => {
@@ -9,10 +15,18 @@ describe("TurboVector-lite RAG", () => {
     const a = quantizeVector(embedding);
     const b = quantizeVector(embedding);
 
-    expect(a.method).toBe("turboquant_lite_uint8");
-    expect(a.codes.length).toBe(384);
+    expect(a.method).toBe("turboquant_rht_normal_uint8");
+    expect(a.codes.length).toBe(TURBO_VECTOR_CONFIG.dim);
     expect(Array.from(a.codes)).toEqual(Array.from(b.codes));
-    expect(dequantizeVector(a).length).toBe(384);
+    expect(dequantizeVector(a).length).toBe(TURBO_VECTOR_CONFIG.dim);
+  });
+
+  it("keeps the legacy pseudo rotation quantizer available", () => {
+    const embedding = hashEmbedding("범어동 후보 단지 거래 집중도 전세가율", 384);
+    const legacy = quantizeVector(embedding, LEGACY_TURBO_VECTOR_CONFIG);
+
+    expect(legacy.method).toBe("turboquant_lite_uint8");
+    expect(legacy.codes.length).toBe(384);
   });
 
   it("keeps similar text near the top after compression", async () => {

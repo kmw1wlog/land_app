@@ -141,10 +141,13 @@ function rowToChunk(row: RagChunkRow) {
   };
   const quantized: QuantizedVector = {
     dim: row.embedding_dim,
-    method: "turboquant_lite_uint8",
+    method: row.quant_method === "turboquant_rht_normal_uint8" ? "turboquant_rht_normal_uint8" : "turboquant_lite_uint8",
     min: row.vector_min,
     scale: row.vector_scale,
-    codes: decodeCodes(row.vector_blob)
+    codes: decodeCodes(row.vector_blob),
+    rotation: row.quant_method === "turboquant_rht_normal_uint8" ? "rht_pad512" : "legacy_pseudo",
+    quantizer: row.quant_method === "turboquant_rht_normal_uint8" ? "normal_quantile_uint8" : "minmax_uint8",
+    residualCorrection: row.quant_method === "turboquant_rht_normal_uint8"
   };
   return { chunk, quantized };
 }

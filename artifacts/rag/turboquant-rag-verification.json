@@ -1,0 +1,43 @@
+{
+  "checkedAt": "2026-05-24T19:26:26.263Z",
+  "description": "TurboQuant-inspired RAG verification for HomePath compact SQLite retrieval.",
+  "pipeline": [
+    "embedding",
+    "normalize",
+    "randomized Hadamard rotation with 512 padding",
+    "normal-quantile scalar quantization",
+    "TurboQuant-inspired residual sign correction",
+    "SQLite compressed vector store",
+    "RAG topK retrieval"
+  ],
+  "baseline": {
+    "name": "float cosine baseline",
+    "storageBytesPerVector": 1536
+  },
+  "results": [
+    {
+      "name": "legacy pseudo rotation",
+      "recallAt4": 0.95,
+      "recallAt10": 1,
+      "meanCosineError": 0.001,
+      "storageBytesPerVector": 400,
+      "searchLatencyMs": 0.848
+    },
+    {
+      "name": "RHT + normal codebook",
+      "recallAt4": 0.9,
+      "recallAt10": 1,
+      "meanCosineError": 0.001,
+      "storageBytesPerVector": 528,
+      "searchLatencyMs": 1.129
+    },
+    {
+      "name": "RHT + residual correction",
+      "recallAt4": 0.95,
+      "recallAt10": 1,
+      "meanCosineError": 0.0014,
+      "storageBytesPerVector": 528,
+      "searchLatencyMs": 1.511
+    }
+  ]
+}
