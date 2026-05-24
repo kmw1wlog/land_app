@@ -25,12 +25,33 @@ Expected columns:
     trade_count
     rent_count
     jeonse_median
+    monthly_rent_median
     jeonse_ratio
+    jeonse_ratio_change_3m
     drawdown_from_high
+    recovery_from_trough
+    price_mom_pct
+    price_3m_momentum
+    price_6m_momentum
+    price_volatility_3m
     transaction_heat
+    trade_mom_pct
+    rent_mom_pct
+    trade_count_3m
+    trade_count_6m
+    rent_count_3m
+    rent_count_6m
+    months_since_trade
+    months_since_rent
     reacceleration_score
     liquidity_score
     leader_score
+    region_weighted_price
+    region_trade_count
+    relative_price_to_region
+    trade_share_in_region
+    median_floor
+    median_built_year
 
 Outputs
 -------
@@ -77,12 +98,39 @@ FEATURE_COLUMNS = [
     "trade_count",
     "rent_count",
     "jeonse_median",
+    "monthly_rent_median",
     "jeonse_ratio",
+    "jeonse_ratio_change_3m",
     "drawdown_from_high",
+    "recovery_from_trough",
+    "price_mom_pct",
+    "price_3m_momentum",
+    "price_6m_momentum",
+    "price_volatility_3m",
     "transaction_heat",
+    "trade_mom_pct",
+    "rent_mom_pct",
+    "trade_count_3m",
+    "trade_count_6m",
+    "rent_count_3m",
+    "rent_count_6m",
+    "months_since_trade",
+    "months_since_rent",
     "reacceleration_score",
     "liquidity_score",
     "leader_score",
+    "region_weighted_price",
+    "region_trade_count",
+    "relative_price_to_region",
+    "trade_share_in_region",
+    "median_floor",
+    "median_built_year",
+]
+
+TARGET_COLUMNS = [
+    "future_recovery",
+    "transaction_reactivation",
+    "downside_risk",
 ]
 
 
@@ -103,6 +151,7 @@ class TrainConfig:
     seed: int = 42
     test_ratio: float = 0.2
     device: str = "auto"
+    checkpoint_every: int = 1
 
 
 def set_seed(seed: int) -> None:
@@ -143,7 +192,7 @@ def make_samples(
     df: pd.DataFrame, cfg: TrainConfig
 ) -> Tuple[np.ndarray, np.ndarray, List[dict], np.ndarray]:
     X: List[np.ndarray] = []
-    y: List[int] = []
+    y: List[List[int]] = []
     meta: List[dict] = []
     group_ids: List[str] = []
 
@@ -160,9 +209,17 @@ def make_samples(
             if current_price <= 0 or future_price <= 0:
                 continue
             future_return = future_price / current_price - 1.0
-            target = int(future_return >= cfg.target_return_threshold)
+            future_window = group.iloc[end : end + cfg.horizon_months]
+            current_trade_3m = float(group.loc[end - 1, "trade_count_3m"])
+            future_trade_count = float(future_window["trade_count"].sum())
+            future_recovery = int(future_return >= cfg.target_return_threshold)
+            transaction_reactivation = int(
+                future_trade_count >= max(2.0, current_trade_3m * 1.2)
+                and future_trade_count > float(group.loc[end - 1, "trade_count"])
+            )
+            downside_risk = int(future_return <= -cfg.target_return_threshold)
             X.append(features[end - cfg.sequence_length : end])
-            y.append(target)
+            y.append([future_recovery, transaction_reactivation, downside_risk])
             meta.append(
                 {
                     "complex_id": complex_id,
@@ -170,6 +227,8 @@ def make_samples(
                     "future_return": future_return,
                     "current_price": current_price,
                     "future_price": future_price,
+                    "current_trade_3m": current_trade_3m,
+                    "future_trade_count": future_trade_count,
                 }
             )
             group_ids.append(complex_id)
@@ -232,8 +291,16 @@ class RealEstateSequenceDataset(Dataset):
 class RealEstateSignalTransformer(nn.Module):
     def __init__(self, n_features: int, cfg: TrainConfig):
         super().__init__()
+        self.input_norm = nn.LayerNorm(n_features)
         self.input_projection = nn.Linear(n_features, cfg.d_model)
         self.position_embedding = nn.Parameter(torch.zeros(1, cfg.sequence_length, cfg.d_model))
+        self.temporal_mixer = nn.Conv1d(
+            cfg.d_model,
+            cfg.d_model,
+            kernel_size=3,
+            padding=1,
+            groups=1,
+        )
         encoder_layer = nn.TransformerEncoderLayer(
             d_model=cfg.d_model,
             nhead=cfg.nhead,
@@ -243,19 +310,31 @@ class RealEstateSignalTransformer(nn.Module):
             activation="gelu",
         )
         self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=cfg.num_layers)
+        self.attention_pool = nn.Sequential(
+            nn.Linear(cfg.d_model, cfg.d_model // 2),
+            nn.GELU(),
+            nn.Linear(cfg.d_model // 2, 1),
+        )
         self.head = nn.Sequential(
-            nn.LayerNorm(cfg.d_model),
+            nn.LayerNorm(cfg.d_model * 2),
+            nn.Linear(cfg.d_model * 2, cfg.d_model),
+            nn.GELU(),
+            nn.Dropout(cfg.dropout),
             nn.Linear(cfg.d_model, cfg.d_model // 2),
             nn.GELU(),
             nn.Dropout(cfg.dropout),
-            nn.Linear(cfg.d_model // 2, 1),
+            nn.Linear(cfg.d_model // 2, len(TARGET_COLUMNS)),
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        hidden = self.input_projection(x) + self.position_embedding[:, : x.shape[1], :]
+        hidden = self.input_projection(self.input_norm(x)) + self.position_embedding[:, : x.shape[1], :]
+        mixed = self.temporal_mixer(hidden.transpose(1, 2)).transpose(1, 2)
+        hidden = hidden + torch.nn.functional.gelu(mixed)
         hidden = self.encoder(hidden)
-        pooled = hidden[:, -1, :]
-        return self.head(pooled).squeeze(-1)
+        weights = torch.softmax(self.attention_pool(hidden), dim=1)
+        pooled = (hidden * weights).sum(dim=1)
+        last_token = hidden[:, -1, :]
+        return self.head(torch.cat([pooled, last_token], dim=-1))
 
 
 def safe_auc(y_true: np.ndarray, y_score: np.ndarray) -> float:
@@ -270,6 +349,34 @@ def safe_auc(y_true: np.ndarray, y_score: np.ndarray) -> float:
     return float((rank_sum_pos - n_pos * (n_pos + 1) / 2) / (n_pos * n_neg))
 
 
+def summarize_multitarget_metrics(y_true: np.ndarray, y_score: np.ndarray) -> dict:
+    if len(y_true) == 0:
+        return {
+            "accuracy": float("nan"),
+            "mean_auc": float("nan"),
+            "targets": {},
+        }
+    y_pred = (y_score >= 0.5).astype(int)
+    target_metrics: dict[str, dict[str, float]] = {}
+    auc_values: list[float] = []
+    for idx, target_name in enumerate(TARGET_COLUMNS):
+        target_auc = safe_auc(y_true[:, idx], y_score[:, idx])
+        if not np.isnan(target_auc):
+            auc_values.append(target_auc)
+        target_metrics[target_name] = {
+            "accuracy": float((y_pred[:, idx] == y_true[:, idx]).mean()),
+            "auc": target_auc,
+            "positive_rate": float(y_true[:, idx].mean()),
+        }
+
+    return {
+        "accuracy": float((y_pred == y_true).mean()),
+        "exact_match_accuracy": float((y_pred == y_true).all(axis=1).mean()),
+        "mean_auc": float(np.mean(auc_values)) if auc_values else float("nan"),
+        "targets": target_metrics,
+    }
+
+
 def evaluate_model(model: nn.Module, loader: DataLoader, device: str) -> dict:
     model.eval()
     scores: List[np.ndarray] = []
@@ -282,14 +389,41 @@ def evaluate_model(model: nn.Module, loader: DataLoader, device: str) -> dict:
             labels.append(yb.numpy())
     y_score = np.concatenate(scores) if scores else np.array([])
     y_true = np.concatenate(labels) if labels else np.array([])
-    if len(y_true) == 0:
-        return {"accuracy": float("nan"), "auc": float("nan"), "positive_rate": float("nan")}
-    y_pred = (y_score >= 0.5).astype(int)
-    return {
-        "accuracy": float((y_pred == y_true).mean()),
-        "auc": safe_auc(y_true, y_score),
-        "positive_rate": float(y_true.mean()),
-    }
+    return summarize_multitarget_metrics(y_true, y_score)
+
+
+def metric_value(metrics: dict, key: str) -> float:
+    value = metrics.get(key, float("nan"))
+    return float(value) if value == value else float("-inf")
+
+
+def save_training_checkpoint(
+    checkpoint_dir: Path,
+    model: nn.Module,
+    optimizer: torch.optim.Optimizer,
+    cfg: TrainConfig,
+    epoch: int,
+    metrics: dict,
+    history: List[dict],
+    name: str,
+) -> None:
+    checkpoint_dir.mkdir(parents=True, exist_ok=True)
+    checkpoint_path = checkpoint_dir / name
+    tmp_path = checkpoint_dir / f".{name}.tmp"
+    torch.save(
+        {
+            "epoch": epoch,
+            "config": asdict(cfg),
+            "feature_columns": FEATURE_COLUMNS,
+            "target_columns": TARGET_COLUMNS,
+            "model_state_dict": model.state_dict(),
+            "optimizer_state_dict": optimizer.state_dict(),
+            "metrics": metrics,
+            "history": history,
+        },
+        tmp_path,
+    )
+    tmp_path.replace(checkpoint_path)
 
 
 def train_model(
@@ -297,8 +431,18 @@ def train_model(
 ) -> List[dict]:
     model.to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=cfg.learning_rate)
-    criterion = nn.BCEWithLogitsLoss()
+    train_labels = train_loader.dataset.y
+    positive_counts = train_labels.sum(dim=0)
+    negative_counts = len(train_labels) - positive_counts
+    positive_weights = torch.where(
+        positive_counts > 0,
+        negative_counts / positive_counts.clamp(min=1.0),
+        torch.ones_like(positive_counts),
+    )
+    criterion = nn.BCEWithLogitsLoss(pos_weight=positive_weights.to(device))
     history: List[dict] = []
+    checkpoint_dir = Path(cfg.output_dir) / "checkpoints"
+    best_mean_auc = float("-inf")
 
     for epoch in range(1, cfg.epochs + 1):
         model.train()
@@ -316,13 +460,53 @@ def train_model(
         metrics["epoch"] = epoch
         metrics["train_loss"] = float(np.mean(train_losses))
         history.append(metrics)
+        (checkpoint_dir / "training_history_partial.json").parent.mkdir(parents=True, exist_ok=True)
+        (checkpoint_dir / "training_history_partial.json").write_text(
+            json.dumps(history, ensure_ascii=False, indent=2)
+        )
+        save_training_checkpoint(
+            checkpoint_dir,
+            model,
+            optimizer,
+            cfg,
+            epoch,
+            metrics,
+            history,
+            "latest.pt",
+        )
+        current_mean_auc = metric_value(metrics, "mean_auc")
+        if current_mean_auc > best_mean_auc:
+            best_mean_auc = current_mean_auc
+            save_training_checkpoint(
+                checkpoint_dir,
+                model,
+                optimizer,
+                cfg,
+                epoch,
+                metrics,
+                history,
+                "best_mean_auc.pt",
+            )
+        if cfg.checkpoint_every > 0 and epoch % cfg.checkpoint_every == 0:
+            save_training_checkpoint(
+                checkpoint_dir,
+                model,
+                optimizer,
+                cfg,
+                epoch,
+                metrics,
+                history,
+                f"epoch_{epoch:03d}.pt",
+            )
         print(
-            "epoch={epoch:03d} loss={loss:.4f} auc={auc:.4f} acc={acc:.4f}".format(
+            "epoch={epoch:03d} loss={loss:.4f} mean_auc={auc:.4f} acc={acc:.4f} recovery_auc={recovery_auc:.4f}".format(
                 epoch=epoch,
                 loss=metrics["train_loss"],
-                auc=metrics["auc"],
+                auc=metrics["mean_auc"],
                 acc=metrics["accuracy"],
-            )
+                recovery_auc=metrics["targets"].get("future_recovery", {}).get("auc", float("nan")),
+            ),
+            flush=True,
         )
 
     return history
@@ -335,8 +519,17 @@ def predict_all(model: nn.Module, X: np.ndarray, meta: List[dict], device: str) 
         logits = model(xb)
         probs = torch.sigmoid(logits).cpu().numpy()
     out = pd.DataFrame(meta)
-    out["prob_future_recovery"] = probs
-    out["candidate_ai_score"] = (out["prob_future_recovery"] * 100).round(2)
+    out["prob_future_recovery"] = probs[:, 0]
+    out["prob_transaction_reactivation"] = probs[:, 1]
+    out["prob_downside_risk"] = probs[:, 2]
+    out["candidate_ai_score"] = (
+        (
+            0.55 * out["prob_future_recovery"]
+            + 0.25 * out["prob_transaction_reactivation"]
+            + 0.20 * (1.0 - out["prob_downside_risk"])
+        )
+        * 100
+    ).round(2)
     return out
 
 
@@ -383,8 +576,14 @@ def write_outputs(
 
     manifest = {
         "features": FEATURE_COLUMNS,
+        "targets": TARGET_COLUMNS,
         "standardization": {"mean": feature_mean, "std": feature_std},
-        "outputs": ["prob_future_recovery", "candidate_ai_score"],
+        "outputs": [
+            "prob_future_recovery",
+            "prob_transaction_reactivation",
+            "prob_downside_risk",
+            "candidate_ai_score",
+        ],
         "decision_use": "candidate ranking and explainable decision-support only; not investment advice",
     }
     (out_dir / "feature_manifest.json").write_text(
@@ -409,6 +608,7 @@ def make_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--test-ratio", type=float, default=0.2)
     parser.add_argument("--device", default="auto")
+    parser.add_argument("--checkpoint-every", type=int, default=1)
     return parser
 
 
@@ -433,7 +633,8 @@ def main() -> None:
     device = resolve_device(cfg.device)
     print(
         f"training_samples={len(train_idx)} test_samples={len(test_idx)} "
-        f"train_complexes={len(train_groups)} test_complexes={len(test_groups)} device={device}"
+        f"train_complexes={len(train_groups)} test_complexes={len(test_groups)} device={device}",
+        flush=True,
     )
 
     model = RealEstateSignalTransformer(n_features=len(FEATURE_COLUMNS), cfg=cfg)
@@ -453,7 +654,7 @@ def main() -> None:
         split_strategy,
         device,
     )
-    print(f"wrote outputs to {cfg.output_dir}")
+    print(f"wrote outputs to {cfg.output_dir}", flush=True)
 
 
 if __name__ == "__main__":

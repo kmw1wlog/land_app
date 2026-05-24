@@ -45,7 +45,9 @@ def load_transactions(db_path: str) -> pd.DataFrame:
             dealMonth AS deal_month,
             dealAmount AS deal_amount,
             deposit,
-            monthlyRent AS monthly_rent
+            monthlyRent AS monthly_rent,
+            floor,
+            builtYear AS built_year
         FROM RealTransaction
         WHERE complexName IS NOT NULL
           AND dealYear IS NOT NULL
@@ -86,6 +88,8 @@ def build_feature_frame(df: pd.DataFrame) -> pd.DataFrame:
         .agg(
             median_price=("deal_amount", "median"),
             trade_count=("deal_amount", "size"),
+            median_floor=("floor", "median"),
+            median_built_year=("built_year", "median"),
         )
     )
     rent = (
@@ -121,18 +125,40 @@ def build_feature_frame(df: pd.DataFrame) -> pd.DataFrame:
         dense["rent_count"] = dense["rent_count"].fillna(0)
         dense["median_price"] = dense["median_price"].ffill()
         dense["jeonse_median"] = dense["jeonse_median"].ffill()
+        dense["monthly_rent_median"] = dense["monthly_rent_median"].ffill()
+        dense["median_floor"] = dense["median_floor"].ffill().bfill()
+        dense["median_built_year"] = dense["median_built_year"].ffill().bfill()
         dense["weighted_price"] = dense["median_price"].ewm(span=3, adjust=False, min_periods=1).mean()
         dense["weighted_price"] = dense["weighted_price"].fillna(dense["median_price"])
         dense["weighted_price"] = dense["weighted_price"].fillna(0)
+        price_for_change = dense["weighted_price"].replace(0, np.nan)
+        dense["price_mom_pct"] = price_for_change.pct_change(fill_method=None).replace([np.inf, -np.inf], np.nan) * 100.0
+        dense["price_3m_momentum"] = ((price_for_change / price_for_change.shift(3)) - 1.0) * 100.0
+        dense["price_6m_momentum"] = ((price_for_change / price_for_change.shift(6)) - 1.0) * 100.0
+        dense["price_volatility_3m"] = price_for_change.pct_change(fill_method=None).rolling(3, min_periods=2).std() * 100.0
         running_high = dense["weighted_price"].replace(0, np.nan).cummax()
         dense["drawdown_from_high"] = np.where(
             running_high.gt(0),
             (dense["weighted_price"] / running_high - 1.0) * 100.0,
             0.0,
         )
+        running_low = dense["weighted_price"].replace(0, np.nan).cummin()
+        dense["recovery_from_trough"] = np.where(
+            running_low.gt(0),
+            (dense["weighted_price"] / running_low - 1.0) * 100.0,
+            0.0,
+        )
         prev_trade_mean = dense["trade_count"].rolling(3, min_periods=1).mean().shift(1)
         prev_trade_mean = prev_trade_mean.replace(0, np.nan)
         dense["transaction_heat"] = (dense["trade_count"] / prev_trade_mean).fillna(dense["trade_count"].clip(lower=0))
+        prev_rent_mean = dense["rent_count"].rolling(3, min_periods=1).mean().shift(1)
+        prev_rent_mean = prev_rent_mean.replace(0, np.nan)
+        dense["trade_mom_pct"] = ((dense["trade_count"] / prev_trade_mean) - 1.0) * 100.0
+        dense["rent_mom_pct"] = ((dense["rent_count"] / prev_rent_mean) - 1.0) * 100.0
+        dense["trade_count_3m"] = dense["trade_count"].rolling(3, min_periods=1).sum()
+        dense["trade_count_6m"] = dense["trade_count"].rolling(6, min_periods=1).sum()
+        dense["rent_count_3m"] = dense["rent_count"].rolling(3, min_periods=1).sum()
+        dense["rent_count_6m"] = dense["rent_count"].rolling(6, min_periods=1).sum()
         recent_trade = dense["trade_count"].rolling(2, min_periods=1).mean()
         prior_trade = recent_trade.shift(2).replace(0, np.nan)
         dense["reacceleration_score"] = (recent_trade / prior_trade).fillna(1.0)
@@ -147,9 +173,39 @@ def build_feature_frame(df: pd.DataFrame) -> pd.DataFrame:
             (dense["jeonse_median"] / dense["weighted_price"]) * 100.0,
             0.0,
         )
+        dense["jeonse_ratio_change_3m"] = dense["jeonse_ratio"] - dense["jeonse_ratio"].shift(3)
+
+        months_since_trade: list[int] = []
+        months_since_rent: list[int] = []
+        last_trade_index = -1
+        last_rent_index = -1
+        for idx, row in dense.reset_index(drop=True).iterrows():
+            if float(row["trade_count"]) > 0:
+                last_trade_index = idx
+            if float(row["rent_count"]) > 0:
+                last_rent_index = idx
+            months_since_trade.append(idx - last_trade_index if last_trade_index >= 0 else idx + 1)
+            months_since_rent.append(idx - last_rent_index if last_rent_index >= 0 else idx + 1)
+        dense["months_since_trade"] = months_since_trade
+        dense["months_since_rent"] = months_since_rent
         full_frames.append(dense)
 
     features = pd.concat(full_frames, ignore_index=True)
+    region_keys = ["lawd_code5", "month", "property_type"]
+    features["region_weighted_price"] = features.groupby(region_keys)["weighted_price"].transform(
+        lambda values: values.replace(0, np.nan).median()
+    )
+    features["region_trade_count"] = features.groupby(region_keys)["trade_count"].transform("sum")
+    features["relative_price_to_region"] = np.where(
+        features["region_weighted_price"].gt(0),
+        (features["weighted_price"] / features["region_weighted_price"] - 1.0) * 100.0,
+        0.0,
+    )
+    features["trade_share_in_region"] = np.where(
+        features["region_trade_count"].gt(0),
+        (features["trade_count"] / features["region_trade_count"]) * 100.0,
+        0.0,
+    )
     leader_rank = features.groupby(["lawd_code5", "month", "property_type"])["weighted_price"].rank(
         pct=True, method="average"
     )
@@ -157,18 +213,41 @@ def build_feature_frame(df: pd.DataFrame) -> pd.DataFrame:
     features["median_price"] = features["median_price"].fillna(0.0)
     features["jeonse_median"] = features["jeonse_median"].fillna(0.0)
     features["monthly_rent_median"] = features["monthly_rent_median"].fillna(0.0)
+    features["median_floor"] = features["median_floor"].fillna(0.0)
+    features["median_built_year"] = features["median_built_year"].fillna(0.0)
     numeric_cols = [
         "median_price",
         "weighted_price",
         "trade_count",
         "rent_count",
         "jeonse_median",
+        "monthly_rent_median",
         "jeonse_ratio",
+        "jeonse_ratio_change_3m",
         "drawdown_from_high",
+        "recovery_from_trough",
+        "price_mom_pct",
+        "price_3m_momentum",
+        "price_6m_momentum",
+        "price_volatility_3m",
         "transaction_heat",
+        "trade_mom_pct",
+        "rent_mom_pct",
+        "trade_count_3m",
+        "trade_count_6m",
+        "rent_count_3m",
+        "rent_count_6m",
+        "months_since_trade",
+        "months_since_rent",
         "reacceleration_score",
         "liquidity_score",
         "leader_score",
+        "region_weighted_price",
+        "region_trade_count",
+        "relative_price_to_region",
+        "trade_share_in_region",
+        "median_floor",
+        "median_built_year",
     ]
     features[numeric_cols] = features[numeric_cols].replace([np.inf, -np.inf], 0.0).fillna(0.0)
     features["month"] = features["month"].dt.strftime("%Y-%m")
@@ -184,12 +263,33 @@ def build_feature_frame(df: pd.DataFrame) -> pd.DataFrame:
             "trade_count",
             "rent_count",
             "jeonse_median",
+            "monthly_rent_median",
             "jeonse_ratio",
+            "jeonse_ratio_change_3m",
             "drawdown_from_high",
+            "recovery_from_trough",
+            "price_mom_pct",
+            "price_3m_momentum",
+            "price_6m_momentum",
+            "price_volatility_3m",
             "transaction_heat",
+            "trade_mom_pct",
+            "rent_mom_pct",
+            "trade_count_3m",
+            "trade_count_6m",
+            "rent_count_3m",
+            "rent_count_6m",
+            "months_since_trade",
+            "months_since_rent",
             "reacceleration_score",
             "liquidity_score",
             "leader_score",
+            "region_weighted_price",
+            "region_trade_count",
+            "relative_price_to_region",
+            "trade_share_in_region",
+            "median_floor",
+            "median_built_year",
         ]
     ].sort_values(["complex_id", "month"])
 
@@ -219,6 +319,7 @@ def main() -> None:
         "month_count": int(features["month"].nunique()),
         "month_min": str(features["month"].min()),
         "month_max": str(features["month"].max()),
+        "feature_count": int(len([col for col in features.columns if col not in {"complex_id", "month", "lawd_code5", "property_type", "area_bucket"}])),
     }
     summary_path = Path(args.summary_path)
     summary_path.parent.mkdir(parents=True, exist_ok=True)

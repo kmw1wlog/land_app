@@ -75,6 +75,9 @@ const endpointMeta: Record<
   landTrade: { propertyType: "land", dealType: "trade" }
 };
 
+const TRANSACTION_PAGE_SIZE = 1000;
+const MAX_TRANSACTION_PAGES = 30;
+
 export async function fetchApartmentTrade(lawdCode5: string, dealYmd: string) {
   return fetchTransactions("apartmentTrade", lawdCode5, dealYmd);
 }
@@ -206,12 +209,22 @@ async function fetchTransactions(
   }
 
   try {
-    const response = await client.getXml(endpoints[endpointKey], {
-      LAWD_CD: lawdCode5,
-      DEAL_YMD: dealYmd,
-      numOfRows: 500
-    });
-    const rawItems = asArray(getPath(response.parsed, ["response", "body", "items", "item"]));
+    const rawItems: unknown[] = [];
+    let pageNo = 1;
+    let totalPages = 1;
+    do {
+      const response = await client.getXml(endpoints[endpointKey], {
+        LAWD_CD: lawdCode5,
+        DEAL_YMD: dealYmd,
+        numOfRows: TRANSACTION_PAGE_SIZE,
+        pageNo
+      });
+      rawItems.push(...asArray(getPath(response.parsed, ["response", "body", "items", "item"])));
+      const totalCount = Number(getPath(response.parsed, ["response", "body", "totalCount"]) ?? rawItems.length);
+      totalPages = Math.max(1, Math.ceil(totalCount / TRANSACTION_PAGE_SIZE));
+      pageNo += 1;
+    } while (pageNo <= totalPages && pageNo <= MAX_TRANSACTION_PAGES);
+
     const normalized = rawItems.map((item) =>
       withExternalKey(
         normalizeTransactionItem(item as Record<string, unknown>, {

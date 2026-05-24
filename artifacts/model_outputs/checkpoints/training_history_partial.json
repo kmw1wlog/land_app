@@ -1,0 +1,674 @@
+[
+  {
+    "accuracy": 0.6478619268418341,
+    "exact_match_accuracy": 0.27743431221020093,
+    "mean_auc": 0.7137871371231096,
+    "targets": {
+      "future_recovery": {
+        "accuracy": 0.5517774343122102,
+        "auc": 0.668014576811679,
+        "positive_rate": 0.20556414127349854
+      },
+      "transaction_reactivation": {
+        "accuracy": 0.7094281298299846,
+        "auc": 0.7749355190286675,
+        "positive_rate": 0.3048686385154724
+      },
+      "downside_risk": {
+        "accuracy": 0.6823802163833076,
+        "auc": 0.6984113155289821,
+        "positive_rate": 0.23531684279441833
+      }
+    },
+    "epoch": 1,
+    "train_loss": 0.9620933632672943
+  },
+  {
+    "accuracy": 0.6342091705306543,
+    "exact_match_accuracy": 0.2445904173106646,
+    "mean_auc": 0.724483197224376,
+    "targets": {
+      "future_recovery": {
+        "accuracy": 0.5741885625965997,
+        "auc": 0.6716148957022907,
+        "positive_rate": 0.20556414127349854
+      },
+      "transaction_reactivation": {
+        "accuracy": 0.6808346213292118,
+        "auc": 0.7836218685074302,
+        "positive_rate": 0.3048686385154724
+      },
+      "downside_risk": {
+        "accuracy": 0.6476043276661515,
+        "auc": 0.7182128274634069,
+        "positive_rate": 0.23531684279441833
+      }
+    },
+    "epoch": 2,
+    "train_loss": 0.9137533170095882
+  },
+  {
+    "accuracy": 0.6827666151468316,
+    "exact_match_accuracy": 0.3315301391035549,
+    "mean_auc": 0.7256405087623987,
+    "targets": {
+      "future_recovery": {
+        "accuracy": 0.6240340030911901,
+        "auc": 0.683134453351277,
+        "positive_rate": 0.20556414127349854
+      },
+      "transaction_reactivation": {
+        "accuracy": 0.7132921174652241,
+        "auc": 0.7884798694669831,
+        "positive_rate": 0.3048686385154724
+      },
+      "downside_risk": {
+        "accuracy": 0.7109737248840804,
+        "auc": 0.7053072034689362,
+        "positive_rate": 0.23531684279441833
+      }
+    },
+    "epoch": 3,
+    "train_loss": 0.8866654345707864
+  },
+  {
+    "accuracy": 0.6889489953632149,
+    "exact_match_accuracy": 0.3446676970633694,
+    "mean_auc": 0.7320667737622116,
+    "targets": {
+      "future_recovery": {
+        "accuracy": 0.6634466769706336,
+        "auc": 0.6989976156344168,
+        "positive_rate": 0.20556414127349854
+      },
+      "transaction_reactivation": {
+        "accuracy": 0.6955177743431221,
+        "auc": 0.7920440238944182,
+        "positive_rate": 0.3048686385154724
+      },
+      "downside_risk": {
+        "accuracy": 0.7078825347758887,
+        "auc": 0.7051586817578,
+        "positive_rate": 0.23531684279441833
+      }
+    },
+    "epoch": 4,
+    "train_loss": 0.8661667885987655
+  },
+  {
+    "accuracy": 0.6764554353426069,
+    "exact_match_accuracy": 0.33075734157650694,
+    "mean_auc": 0.7326754619254681,
+    "targets": {
+      "future_recovery": {
+        "accuracy": 0.6545595054095827,
+        "auc": 0.6904539437114187,
+        "positive_rate": 0.20556414127349854
+      },
+      "transaction_reactivation": {
+        "accuracy": 0.6939721792890263,
+        "auc": 0.7958315103941,
+        "positive_rate": 0.3048686385154724
+      },
+      "downside_risk": {
+        "accuracy": 0.6808346213292118,
+        "auc": 0.7117409316708858,
+        "positive_rate": 0.23531684279441833
+      }
+    },
+    "epoch": 5,
+    "train_loss": 0.8436215442159901
+  },
+  {
+    "accuracy": 0.6810922205048944,
+    "exact_match_accuracy": 0.32998454404945904,
+    "mean_auc": 0.723624111834936,
+    "targets": {
+      "future_recovery": {
+        "accuracy": 0.7090417310664606,
+        "auc": 0.6864083847751675,
+        "positive_rate": 0.20556414127349854
+      },
+      "transaction_reactivation": {
+        "accuracy": 0.7044049459041731,
+        "auc": 0.7883086716955131,
+        "positive_rate": 0.3048686385154724
+      },
+      "downside_risk": {
+        "accuracy": 0.6298299845440495,
+        "auc": 0.6961552790341277,
+        "positive_rate": 0.23531684279441833
+      }
+    },
+    "epoch": 6,
+    "train_loss": 0.8157476527350289
+  },
+  {
+    "accuracy": 0.651468315301391,
+    "exact_match_accuracy": 0.28632148377125194,
+    "mean_auc": 0.71938249634757,
+    "targets": {
+      "future_recovery": {
+        "accuracy": 0.625193199381762,
+        "auc": 0.681698165647582,
+        "positive_rate": 0.20556414127349854
+      },
+      "transaction_reactivation": {
+        "accuracy": 0.6897217928902627,
+        "auc": 0.7924744841346164,
+        "positive_rate": 0.3048686385154724
+      },
+      "downside_risk": {
+        "accuracy": 0.6394899536321483,
+        "auc": 0.6839748392605113,
+        "positive_rate": 0.23531684279441833
+      }
+    },
+    "epoch": 7,
+    "train_loss": 0.800331801731394
+  },
+  {
+    "accuracy": 0.6688562596599691,
+    "exact_match_accuracy": 0.3106646058732612,
+    "mean_auc": 0.7253619779505985,
+    "targets": {
+      "future_recovery": {
+        "accuracy": 0.6105100463678517,
+        "auc": 0.6825017919311899,
+        "positive_rate": 0.20556414127349854
+      },
+      "transaction_reactivation": {
+        "accuracy": 0.7040185471406492,
+        "auc": 0.7964937569174819,
+        "positive_rate": 0.3048686385154724
+      },
+      "downside_risk": {
+        "accuracy": 0.6920401854714064,
+        "auc": 0.6970903850031239,
+        "positive_rate": 0.23531684279441833
+      }
+    },
+    "epoch": 8,
+    "train_loss": 0.7630523043389646
+  },
+  {
+    "accuracy": 0.6895929933024214,
+    "exact_match_accuracy": 0.35819165378670786,
+    "mean_auc": 0.7191732335102116,
+    "targets": {
+      "future_recovery": {
+        "accuracy": 0.6503091190108191,
+        "auc": 0.6891529650975688,
+        "positive_rate": 0.20556414127349854
+      },
+      "transaction_reactivation": {
+        "accuracy": 0.7159969088098919,
+        "auc": 0.7869433166292216,
+        "positive_rate": 0.3048686385154724
+      },
+      "downside_risk": {
+        "accuracy": 0.7024729520865534,
+        "auc": 0.6814234188038443,
+        "positive_rate": 0.23531684279441833
+      }
+    },
+    "epoch": 9,
+    "train_loss": 0.7391005961791329
+  },
+  {
+    "accuracy": 0.6812210200927357,
+    "exact_match_accuracy": 0.34350850077279754,
+    "mean_auc": 0.7052072825072573,
+    "targets": {
+      "future_recovery": {
+        "accuracy": 0.6746522411128284,
+        "auc": 0.6550569029577835,
+        "positive_rate": 0.20556414127349854
+      },
+      "transaction_reactivation": {
+        "accuracy": 0.7009273570324575,
+        "auc": 0.780387780565319,
+        "positive_rate": 0.3048686385154724
+      },
+      "downside_risk": {
+        "accuracy": 0.6680834621329211,
+        "auc": 0.6801771639986691,
+        "positive_rate": 0.23531684279441833
+      }
+    },
+    "epoch": 10,
+    "train_loss": 0.700016554838382
+  },
+  {
+    "accuracy": 0.6978361669242659,
+    "exact_match_accuracy": 0.3601236476043277,
+    "mean_auc": 0.7178699029392313,
+    "targets": {
+      "future_recovery": {
+        "accuracy": 0.7040185471406492,
+        "auc": 0.6882505997483982,
+        "positive_rate": 0.20556414127349854
+      },
+      "transaction_reactivation": {
+        "accuracy": 0.6924265842349304,
+        "auc": 0.7861278375326104,
+        "positive_rate": 0.3048686385154724
+      },
+      "downside_risk": {
+        "accuracy": 0.6970633693972179,
+        "auc": 0.6792312715366853,
+        "positive_rate": 0.23531684279441833
+      }
+    },
+    "epoch": 11,
+    "train_loss": 0.6758298899816431
+  },
+  {
+    "accuracy": 0.6943585780525502,
+    "exact_match_accuracy": 0.3554868624420402,
+    "mean_auc": 0.7115069066975321,
+    "targets": {
+      "future_recovery": {
+        "accuracy": 0.6885625965996909,
+        "auc": 0.6662546443930839,
+        "positive_rate": 0.20556414127349854
+      },
+      "transaction_reactivation": {
+        "accuracy": 0.7129057187017002,
+        "auc": 0.7838705632124874,
+        "positive_rate": 0.3048686385154724
+      },
+      "downside_risk": {
+        "accuracy": 0.6816074188562596,
+        "auc": 0.6843955124870251,
+        "positive_rate": 0.23531684279441833
+      }
+    },
+    "epoch": 12,
+    "train_loss": 0.6463675115789685
+  },
+  {
+    "accuracy": 0.6794178258629573,
+    "exact_match_accuracy": 0.3249613601236476,
+    "mean_auc": 0.709794580835908,
+    "targets": {
+      "future_recovery": {
+        "accuracy": 0.6615146831530139,
+        "auc": 0.6621551446710161,
+        "positive_rate": 0.20556414127349854
+      },
+      "transaction_reactivation": {
+        "accuracy": 0.7063369397217929,
+        "auc": 0.7970305993119682,
+        "positive_rate": 0.3048686385154724
+      },
+      "downside_risk": {
+        "accuracy": 0.6704018547140649,
+        "auc": 0.6701979985247396,
+        "positive_rate": 0.23531684279441833
+      }
+    },
+    "epoch": 13,
+    "train_loss": 0.6228898252759661
+  },
+  {
+    "accuracy": 0.6930705821741371,
+    "exact_match_accuracy": 0.35741885625965997,
+    "mean_auc": 0.7139529972989945,
+    "targets": {
+      "future_recovery": {
+        "accuracy": 0.6692426584234931,
+        "auc": 0.6806449489482461,
+        "positive_rate": 0.20556414127349854
+      },
+      "transaction_reactivation": {
+        "accuracy": 0.7032457496136012,
+        "auc": 0.7833368911471026,
+        "positive_rate": 0.3048686385154724
+      },
+      "downside_risk": {
+        "accuracy": 0.7067233384853169,
+        "auc": 0.6778771518016348,
+        "positive_rate": 0.23531684279441833
+      }
+    },
+    "epoch": 14,
+    "train_loss": 0.594553709215259
+  },
+  {
+    "accuracy": 0.666795466254508,
+    "exact_match_accuracy": 0.3118238021638331,
+    "mean_auc": 0.71201126624991,
+    "targets": {
+      "future_recovery": {
+        "accuracy": 0.6723338485316847,
+        "auc": 0.6662820719112957,
+        "positive_rate": 0.20556414127349854
+      },
+      "transaction_reactivation": {
+        "accuracy": 0.6800618238021638,
+        "auc": 0.792138429249879,
+        "positive_rate": 0.3048686385154724
+      },
+      "downside_risk": {
+        "accuracy": 0.6479907264296755,
+        "auc": 0.677613297588555,
+        "positive_rate": 0.23531684279441833
+      }
+    },
+    "epoch": 15,
+    "train_loss": 0.5762957110538246
+  },
+  {
+    "accuracy": 0.6804482225656878,
+    "exact_match_accuracy": 0.32805255023183927,
+    "mean_auc": 0.7062240980035351,
+    "targets": {
+      "future_recovery": {
+        "accuracy": 0.6510819165378671,
+        "auc": 0.668394905064217,
+        "positive_rate": 0.20556414127349854
+      },
+      "transaction_reactivation": {
+        "accuracy": 0.7113601236476044,
+        "auc": 0.7845599336626249,
+        "positive_rate": 0.3048686385154724
+      },
+      "downside_risk": {
+        "accuracy": 0.6789026275115919,
+        "auc": 0.6657174552837636,
+        "positive_rate": 0.23531684279441833
+      }
+    },
+    "epoch": 16,
+    "train_loss": 0.5403212479182652
+  },
+  {
+    "accuracy": 0.6879185986604843,
+    "exact_match_accuracy": 0.3315301391035549,
+    "mean_auc": 0.7058142056034445,
+    "targets": {
+      "future_recovery": {
+        "accuracy": 0.6839258114374034,
+        "auc": 0.6765079649512887,
+        "positive_rate": 0.20556414127349854
+      },
+      "transaction_reactivation": {
+        "accuracy": 0.7159969088098919,
+        "auc": 0.7825569901881837,
+        "positive_rate": 0.3048686385154724
+      },
+      "downside_risk": {
+        "accuracy": 0.6638330757341576,
+        "auc": 0.658377661670861,
+        "positive_rate": 0.23531684279441833
+      }
+    },
+    "epoch": 17,
+    "train_loss": 0.5170113009325465
+  },
+  {
+    "accuracy": 0.6743946419371458,
+    "exact_match_accuracy": 0.31491499227202474,
+    "mean_auc": 0.7073024614393205,
+    "targets": {
+      "future_recovery": {
+        "accuracy": 0.634466769706337,
+        "auc": 0.6673723157602177,
+        "positive_rate": 0.20556414127349854
+      },
+      "transaction_reactivation": {
+        "accuracy": 0.6982225656877898,
+        "auc": 0.7776112767901615,
+        "positive_rate": 0.3048686385154724
+      },
+      "downside_risk": {
+        "accuracy": 0.6904945904173106,
+        "auc": 0.6769237917675827,
+        "positive_rate": 0.23531684279441833
+      }
+    },
+    "epoch": 18,
+    "train_loss": 0.4977143456847031
+  },
+  {
+    "accuracy": 0.6801906233900051,
+    "exact_match_accuracy": 0.3230293663060278,
+    "mean_auc": 0.6978785486771523,
+    "targets": {
+      "future_recovery": {
+        "accuracy": 0.6638330757341576,
+        "auc": 0.6415067947105116,
+        "positive_rate": 0.20556414127349854
+      },
+      "transaction_reactivation": {
+        "accuracy": 0.7105873261205564,
+        "auc": 0.7742732725052857,
+        "positive_rate": 0.3048686385154724
+      },
+      "downside_risk": {
+        "accuracy": 0.6661514683153014,
+        "auc": 0.6778555788156596,
+        "positive_rate": 0.23531684279441833
+      }
+    },
+    "epoch": 19,
+    "train_loss": 0.47271915955573135
+  },
+  {
+    "accuracy": 0.6836682122617208,
+    "exact_match_accuracy": 0.3330757341576507,
+    "mean_auc": 0.69663323385716,
+    "targets": {
+      "future_recovery": {
+        "accuracy": 0.6549459041731066,
+        "auc": 0.6533911383517159,
+        "positive_rate": 0.20556414127349854
+      },
+      "transaction_reactivation": {
+        "accuracy": 0.7090417310664606,
+        "auc": 0.776363576159407,
+        "positive_rate": 0.3048686385154724
+      },
+      "downside_risk": {
+        "accuracy": 0.6870170015455951,
+        "auc": 0.6601449870603571,
+        "positive_rate": 0.23531684279441833
+      }
+    },
+    "epoch": 20,
+    "train_loss": 0.4539685567713672
+  },
+  {
+    "accuracy": 0.6792890262751159,
+    "exact_match_accuracy": 0.330370942812983,
+    "mean_auc": 0.6923779832000809,
+    "targets": {
+      "future_recovery": {
+        "accuracy": 0.6854714064914992,
+        "auc": 0.636105402123987,
+        "positive_rate": 0.20556414127349854
+      },
+      "transaction_reactivation": {
+        "accuracy": 0.7024729520865534,
+        "auc": 0.780954917215662,
+        "positive_rate": 0.3048686385154724
+      },
+      "downside_risk": {
+        "accuracy": 0.6499227202472952,
+        "auc": 0.6600736302605934,
+        "positive_rate": 0.23531684279441833
+      }
+    },
+    "epoch": 21,
+    "train_loss": 0.4426466793006992
+  },
+  {
+    "accuracy": 0.7063369397217929,
+    "exact_match_accuracy": 0.3697836166924266,
+    "mean_auc": 0.7057933282502714,
+    "targets": {
+      "future_recovery": {
+        "accuracy": 0.6966769706336939,
+        "auc": 0.672615085866417,
+        "positive_rate": 0.20556414127349854
+      },
+      "transaction_reactivation": {
+        "accuracy": 0.7279752704791345,
+        "auc": 0.7849974390786038,
+        "positive_rate": 0.3048686385154724
+      },
+      "downside_risk": {
+        "accuracy": 0.6943585780525502,
+        "auc": 0.6597674598057933,
+        "positive_rate": 0.23531684279441833
+      }
+    },
+    "epoch": 22,
+    "train_loss": 0.4285812020672034
+  },
+  {
+    "accuracy": 0.6880473982483256,
+    "exact_match_accuracy": 0.33423493044822256,
+    "mean_auc": 0.7003921123429118,
+    "targets": {
+      "future_recovery": {
+        "accuracy": 0.6881761978361669,
+        "auc": 0.6647342456335391,
+        "positive_rate": 0.20556414127349854
+      },
+      "transaction_reactivation": {
+        "accuracy": 0.7074961360123647,
+        "auc": 0.778236183881906,
+        "positive_rate": 0.3048686385154724
+      },
+      "downside_risk": {
+        "accuracy": 0.6684698608964451,
+        "auc": 0.6582059075132902,
+        "positive_rate": 0.23531684279441833
+      }
+    },
+    "epoch": 23,
+    "train_loss": 0.4019536982226816
+  },
+  {
+    "accuracy": 0.6929417825862957,
+    "exact_match_accuracy": 0.34698608964451316,
+    "mean_auc": 0.6963584701352147,
+    "targets": {
+      "future_recovery": {
+        "accuracy": 0.7059505409582689,
+        "auc": 0.6500367528744039,
+        "positive_rate": 0.20556414127349854
+      },
+      "transaction_reactivation": {
+        "accuracy": 0.7121329211746522,
+        "auc": 0.7688365103553516,
+        "positive_rate": 0.3048686385154724
+      },
+      "downside_risk": {
+        "accuracy": 0.660741885625966,
+        "auc": 0.6702021471758887,
+        "positive_rate": 0.23531684279441833
+      }
+    },
+    "epoch": 24,
+    "train_loss": 0.399997593823427
+  },
+  {
+    "accuracy": 0.6971921689850592,
+    "exact_match_accuracy": 0.3558732612055641,
+    "mean_auc": 0.6973398582950244,
+    "targets": {
+      "future_recovery": {
+        "accuracy": 0.714064914992272,
+        "auc": 0.6599170591849273,
+        "positive_rate": 0.20556414127349854
+      },
+      "transaction_reactivation": {
+        "accuracy": 0.7032457496136012,
+        "auc": 0.7679939073319849,
+        "positive_rate": 0.3048686385154724
+      },
+      "downside_risk": {
+        "accuracy": 0.6742658423493045,
+        "auc": 0.6641086083681612,
+        "positive_rate": 0.23531684279441833
+      }
+    },
+    "epoch": 25,
+    "train_loss": 0.3697322917095623
+  },
+  {
+    "accuracy": 0.6903657908294694,
+    "exact_match_accuracy": 0.33268933539412676,
+    "mean_auc": 0.6981561104712234,
+    "targets": {
+      "future_recovery": {
+        "accuracy": 0.6843122102009274,
+        "auc": 0.664571509025482,
+        "positive_rate": 0.20556414127349854
+      },
+      "transaction_reactivation": {
+        "accuracy": 0.7202472952086554,
+        "auc": 0.7704977628044308,
+        "positive_rate": 0.3048686385154724
+      },
+      "downside_risk": {
+        "accuracy": 0.6665378670788253,
+        "auc": 0.6593990595837576,
+        "positive_rate": 0.23531684279441833
+      }
+    },
+    "epoch": 26,
+    "train_loss": 0.37374740959324454
+  },
+  {
+    "accuracy": 0.7103297269448737,
+    "exact_match_accuracy": 0.3697836166924266,
+    "mean_auc": 0.6932159093640414,
+    "targets": {
+      "future_recovery": {
+        "accuracy": 0.7047913446676971,
+        "auc": 0.6614077447997425,
+        "positive_rate": 0.20556414127349854
+      },
+      "transaction_reactivation": {
+        "accuracy": 0.7210200927357032,
+        "auc": 0.7670054691699585,
+        "positive_rate": 0.3048686385154724
+      },
+      "downside_risk": {
+        "accuracy": 0.705177743431221,
+        "auc": 0.6512345141224234,
+        "positive_rate": 0.23531684279441833
+      }
+    },
+    "epoch": 27,
+    "train_loss": 0.3502280504807182
+  },
+  {
+    "accuracy": 0.6938433797011849,
+    "exact_match_accuracy": 0.3365533230293663,
+    "mean_auc": 0.6989038271316063,
+    "targets": {
+      "future_recovery": {
+        "accuracy": 0.6986089644513137,
+        "auc": 0.649876759018168,
+        "positive_rate": 0.20556414127349854
+      },
+      "transaction_reactivation": {
+        "accuracy": 0.7059505409582689,
+        "auc": 0.7784588114365747,
+        "positive_rate": 0.3048686385154724
+      },
+      "downside_risk": {
+        "accuracy": 0.6769706336939721,
+        "auc": 0.6683759109400761,
+        "positive_rate": 0.23531684279441833
+      }
+    },
+    "epoch": 28,
+    "train_loss": 0.3395981589644592
+  }
+]
