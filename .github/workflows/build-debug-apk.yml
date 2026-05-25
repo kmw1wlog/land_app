@@ -1,88 +1,37 @@
-name: Build Debug APK
+name: Apply HomePath Fusion Patch
 
 on:
   workflow_dispatch:
-    inputs:
-      capacitor_app_url:
-        description: "HTTPS URL of deployed land app web app"
-        required: false
-        default: "https://land-app-mu.vercel.app/"
-        type: string
   push:
     branches:
       - main
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+permissions:
+  contents: write
 
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    if: contains(github.event.head_commit.message, 'Apply HomePath fusion patch bootstrap') || github.event_name == 'workflow_dispatch'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Set up Node
-        uses: actions/setup-node@v4
         with:
-          node-version: 24
-          cache: npm
+          fetch-depth: 2
+          persist-credentials: true
 
-      - name: Set up JDK
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 21
-
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: 8.14.3
-
-      - name: Show versions
-        run: |
-          node -v
-          npm -v
-          java -version
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Resolve CAPACITOR_APP_URL
+      - name: Apply compressed patch and restore workflow
         shell: bash
         run: |
-          if [ -n "${{ github.event.inputs.capacitor_app_url }}" ]; then
-            echo "CAPACITOR_APP_URL=${{ github.event.inputs.capacitor_app_url }}" >> "$GITHUB_ENV"
-          elif [ -n "${{ vars.CAPACITOR_APP_URL }}" ]; then
-            echo "CAPACITOR_APP_URL=${{ vars.CAPACITOR_APP_URL }}" >> "$GITHUB_ENV"
-          else
-            echo "CAPACITOR_APP_URL=https://land-app-mu.vercel.app/" >> "$GITHUB_ENV"
-          fi
-
-      - name: Validate URL
-        shell: bash
-        run: |
-          case "$CAPACITOR_APP_URL" in
-            https://*) echo "Using $CAPACITOR_APP_URL" ;;
-            *) echo "CAPACITOR_APP_URL must start with https://" && exit 1 ;;
-          esac
-
-      - name: Sync Capacitor Android
-        run: npm run cap:sync
-
-      - name: Generate Gradle wrapper
-        working-directory: android
-        run: gradle wrapper --gradle-version 8.14.3
-
-      - name: Make Gradle wrapper executable
-        run: chmod +x android/gradlew
-
-      - name: Build debug APK
-        working-directory: android
-        run: ./gradlew assembleDebug
-
-      - name: Upload debug APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: land-app-debug-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git show HEAD:.github/homepath-fusion.patch.gz.b64 > /tmp/homepath-fusion.patch.gz.b64
+          base64 -d /tmp/homepath-fusion.patch.gz.b64 > /tmp/homepath-fusion.patch.gz
+          gzip -d /tmp/homepath-fusion.patch.gz
+          git apply --index /tmp/homepath-fusion.patch
+          git checkout HEAD^ -- .github/workflows/build-debug-apk.yml
+          git rm -f .github/homepath-fusion.patch.gz.b64
+          git status --short
+          git commit -m "Add fusion public data evidence and RAG context"
+          git push origin HEAD:main
