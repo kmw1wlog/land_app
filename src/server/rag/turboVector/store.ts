@@ -26,6 +26,14 @@ type RagChunkRow = {
 export class InMemoryTurboVectorStore implements VectorStore {
   private rows = new Map<string, { chunk: RagChunk; quantized: QuantizedVector }>();
 
+  async clear() {
+    this.rows.clear();
+  }
+
+  async count() {
+    return this.rows.size;
+  }
+
   async upsert(chunks: EmbeddedChunk[]) {
     for (const chunk of chunks) {
       this.rows.set(chunk.id, { chunk, quantized: quantizeVector(chunk.embedding) });
@@ -126,7 +134,22 @@ export class TurboVectorSqliteStore implements VectorStore {
 }
 
 export function getDefaultVectorStore() {
+  if (shouldUseInMemoryStore()) {
+    return getGlobalInMemoryStore();
+  }
   return new TurboVectorSqliteStore();
+}
+
+function shouldUseInMemoryStore() {
+  return process.env.RAG_VECTOR_STORE === "memory" || process.env.VERCEL === "1" || process.env.VERCEL === "true";
+}
+
+function getGlobalInMemoryStore() {
+  const globalForRag = globalThis as typeof globalThis & {
+    homePathInMemoryVectorStore?: InMemoryTurboVectorStore;
+  };
+  globalForRag.homePathInMemoryVectorStore ??= new InMemoryTurboVectorStore();
+  return globalForRag.homePathInMemoryVectorStore;
 }
 
 function rowToChunk(row: RagChunkRow) {
