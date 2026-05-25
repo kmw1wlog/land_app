@@ -47,12 +47,22 @@ function MvpMiniScreens() {
 
 function TechFlow() {
   return (
-    <div className="mt-7 grid grid-cols-[1fr_auto_1fr_auto_1fr] items-center gap-4 text-center">
-      <FlowBox title="공공데이터" body="실거래·전월세·건축물대장" />
-      <span className="text-4xl font-black text-moss">→</span>
-      <FlowBox title="시그널 엔진" body="거래 집중도·전고점·전세가율" />
-      <span className="text-4xl font-black text-moss">→</span>
-      <FlowBox title="개인화 계산" body="DSR/LTV·정리 후 여력·미래 구매력" />
+    <div className="mt-7 space-y-5 text-center">
+      <div className="grid grid-cols-4 gap-4">
+        <FlowBox title="국토부" body="실거래·전월세" />
+        <FlowBox title="한국부동산원" body="지역시장 지수 seed" />
+        <FlowBox title="HUG" body="전세 리스크 seed" />
+        <FlowBox title="교통 접근성" body="직주근접 seed" />
+      </div>
+      <div className="grid grid-cols-[1fr_auto_1fr_auto_1fr_auto_1fr] items-center gap-3">
+        <FlowBox title="융합 안정성 점수" body="시장·전세·교통 통합" />
+        <span className="text-4xl font-black text-moss">→</span>
+        <FlowBox title="Transformer AI" body="회복·재활성화·하락 리스크" />
+        <span className="text-4xl font-black text-moss">→</span>
+        <FlowBox title="TurboQuant-RAG" body="근거 검색" />
+        <span className="text-4xl font-black text-moss">→</span>
+        <FlowBox title="Qwen 설명봇" body="구매력·리스크 설명" />
+      </div>
     </div>
   );
 }

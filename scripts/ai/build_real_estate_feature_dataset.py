@@ -294,11 +294,101 @@ def build_feature_frame(df: pd.DataFrame) -> pd.DataFrame:
     ].sort_values(["complex_id", "month"])
 
 
+def enrich_with_fusion_seed_features(
+    features: pd.DataFrame,
+    kreb_seed_path: str,
+    hug_seed_path: str,
+    transport_seed_path: str,
+) -> pd.DataFrame:
+    enriched = features.copy()
+    enriched["lawd_code5"] = enriched["lawd_code5"].astype(str)
+    enriched["fusion_seed_flag"] = 0.0
+
+    kreb_path = Path(kreb_seed_path)
+    if kreb_path.exists():
+        kreb = pd.read_csv(kreb_path, dtype={"lawdCode5": str})
+        kreb = kreb.rename(
+            columns={
+                "lawdCode5": "lawd_code5",
+                "saleMom": "kreb_sale_mom",
+                "rentMom": "kreb_rent_mom",
+                "volatilityScore": "kreb_volatility_score",
+            }
+        )
+        enriched = enriched.merge(
+            kreb[["month", "lawd_code5", "kreb_sale_mom", "kreb_rent_mom", "kreb_volatility_score"]],
+            on=["month", "lawd_code5"],
+            how="left",
+        )
+        enriched["fusion_seed_flag"] = np.where(enriched["kreb_sale_mom"].notna(), 1.0, enriched["fusion_seed_flag"])
+
+    hug_path = Path(hug_seed_path)
+    if hug_path.exists():
+        hug = pd.read_csv(hug_path, dtype={"lawdCode5": str})
+        hug = hug.rename(columns={"lawdCode5": "lawd_code5", "jeonseRiskScore": "hug_jeonse_risk_score"})
+        enriched = enriched.merge(
+            hug[["month", "lawd_code5", "hug_jeonse_risk_score"]],
+            on=["month", "lawd_code5"],
+            how="left",
+        )
+        enriched["fusion_seed_flag"] = np.where(enriched["hug_jeonse_risk_score"].notna(), 1.0, enriched["fusion_seed_flag"])
+
+    transport_path = Path(transport_seed_path)
+    if transport_path.exists():
+        transport = pd.read_csv(transport_path, dtype={"lawdCode5": str})
+        transport = transport.rename(
+            columns={
+                "lawdCode5": "lawd_code5",
+                "transitAccessibilityScore": "transit_accessibility_score",
+                "commuteAccessScore": "commute_access_score",
+            }
+        )
+        enriched = enriched.merge(
+            transport[["lawd_code5", "transit_accessibility_score", "commute_access_score"]].drop_duplicates("lawd_code5"),
+            on="lawd_code5",
+            how="left",
+        )
+        enriched["fusion_seed_flag"] = np.where(enriched["transit_accessibility_score"].notna(), 1.0, enriched["fusion_seed_flag"])
+
+    defaults = {
+        "kreb_sale_mom": 0.0,
+        "kreb_rent_mom": 0.0,
+        "kreb_volatility_score": 45.0,
+        "hug_jeonse_risk_score": 55.0,
+        "transit_accessibility_score": 55.0,
+        "commute_access_score": 55.0,
+    }
+    for column, default in defaults.items():
+        if column not in enriched.columns:
+            enriched[column] = default
+        enriched[column] = enriched[column].replace([np.inf, -np.inf], np.nan).fillna(default).astype(float)
+
+    molit_score = (
+        55
+        + enriched["transaction_heat"].clip(0, 3) / 3 * 18
+        + np.where(enriched["jeonse_ratio"].between(45, 70), 14, 5)
+        + np.where(enriched["drawdown_from_high"].abs().between(5, 18), 8, 4)
+    ).clip(0, 100)
+    kreb_score = (
+        70
+        + enriched["kreb_sale_mom"].clip(-1.5, 1.5) * 8
+        + enriched["kreb_rent_mom"].clip(-1.5, 1.5) * 4
+        - enriched["kreb_volatility_score"].clip(0, 100) * 0.35
+    ).clip(0, 100)
+    hug_score = (100 - enriched["hug_jeonse_risk_score"].clip(0, 100)).clip(0, 100)
+    transit_score = enriched["transit_accessibility_score"].clip(0, 100)
+    enriched["fused_stability_score"] = (molit_score * 0.4 + kreb_score * 0.2 + hug_score * 0.2 + transit_score * 0.2).round(2)
+    return enriched
+
+
 def make_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Build complex monthly features from the local SQLite database.")
     parser.add_argument("--db-path", default="prisma/dev.db")
     parser.add_argument("--output-path", default="artifacts/complex_monthly_features.csv")
     parser.add_argument("--summary-path", default="artifacts/complex_monthly_features.summary.json")
+    parser.add_argument("--kreb-seed-path", default="data/fusion/kreb_region_index_seed.csv")
+    parser.add_argument("--hug-seed-path", default="data/fusion/hug_jeonse_risk_seed.csv")
+    parser.add_argument("--transport-seed-path", default="data/fusion/transport_access_seed.csv")
     return parser
 
 
@@ -306,6 +396,12 @@ def main() -> None:
     args = make_parser().parse_args()
     transactions = load_transactions(args.db_path)
     features = build_feature_frame(transactions)
+    features = enrich_with_fusion_seed_features(
+        features,
+        args.kreb_seed_path,
+        args.hug_seed_path,
+        args.transport_seed_path,
+    )
 
     output_path = Path(args.output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)

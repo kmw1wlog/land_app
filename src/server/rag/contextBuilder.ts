@@ -161,12 +161,18 @@ const INTENT_SOURCE_BOOST: Record<HomePathChatIntent, Partial<Record<RagSourceTy
   candidate_reason: {
     complex_signal: 0.2,
     model_artifact: 0.16,
+    fusion_data: 0.1,
+    kreb_market_index: 0.08,
+    hug_jeonse_risk: 0.08,
+    transport_accessibility: 0.08,
     faq: 0.08,
     safety_policy: 0.04,
     doc: -0.04
   },
   purchase_power: {
     complex_signal: 0.1,
+    fusion_data: 0.06,
+    transport_accessibility: 0.04,
     faq: 0.1,
     doc: 0.04,
     safety_policy: 0.04
@@ -174,6 +180,10 @@ const INTENT_SOURCE_BOOST: Record<HomePathChatIntent, Partial<Record<RagSourceTy
   comparison: {
     complex_signal: 0.18,
     model_artifact: 0.14,
+    fusion_data: 0.12,
+    kreb_market_index: 0.1,
+    hug_jeonse_risk: 0.1,
+    transport_accessibility: 0.1,
     faq: 0.08,
     safety_policy: 0.06,
     doc: 0.02
@@ -181,10 +191,18 @@ const INTENT_SOURCE_BOOST: Record<HomePathChatIntent, Partial<Record<RagSourceTy
   risk_check: {
     complex_signal: 0.14,
     model_artifact: 0.12,
+    hug_jeonse_risk: 0.14,
+    kreb_market_index: 0.1,
+    fusion_data: 0.1,
+    transport_accessibility: 0.06,
     safety_policy: 0.12,
     faq: 0.06
   },
   data_source: {
+    fusion_data: 0.22,
+    kreb_market_index: 0.2,
+    hug_jeonse_risk: 0.2,
+    transport_accessibility: 0.2,
     faq: 0.16,
     doc: 0.1,
     model_artifact: 0.04,
@@ -197,6 +215,7 @@ const INTENT_SOURCE_BOOST: Record<HomePathChatIntent, Partial<Record<RagSourceTy
   },
   general: {
     complex_signal: 0.08,
+    fusion_data: 0.06,
     faq: 0.06,
     model_artifact: 0.04,
     safety_policy: 0.04
@@ -280,6 +299,7 @@ export function getIntentRetrievalPlan(intent: HomePathChatIntent): RetrievalPla
       sourceMinimums: [
         { sourceType: "complex_signal", minimum: 2, take: 5, hints: ["후보 실거래", "거래 집중도", "전세가율", "전고점 대비"] },
         { sourceType: "model_artifact", minimum: 2, take: 5, hints: ["Transformer AI 신호", "회복 확률", "거래 재활성화", "하락 리스크"] },
+        { sourceType: "fusion_data", minimum: 1, take: 3, hints: ["융합 안정성 점수", "한국부동산원", "HUG", "교통 접근성"] },
         faq,
         commonSafety
       ]
@@ -291,6 +311,7 @@ export function getIntentRetrievalPlan(intent: HomePathChatIntent): RetrievalPla
       sourceMinimums: [
         { sourceType: "faq", minimum: 2, take: 4, hints: ["구매력", "월소득", "월저축", "예산", "DSR", "LTV"] },
         { sourceType: "complex_signal", minimum: 2, take: 4, hints: ["기준가", "내 예산", "현재 집 정리 후 예산"] },
+        { sourceType: "fusion_data", minimum: 1, take: 3, hints: ["융합 안정성", "주거 안정성", "데이터 확인 가능성"] },
         { sourceType: "doc", minimum: 1, take: 3, hints: ["구매력 계산", "미래 구매력", "갈아타기"] },
         commonSafety
       ]
@@ -302,6 +323,8 @@ export function getIntentRetrievalPlan(intent: HomePathChatIntent): RetrievalPla
       sourceMinimums: [
         { sourceType: "complex_signal", minimum: 3, take: 6, hints: ["같은 예산 비교", "안정성", "거래량", "전세가율", "가격 낙폭"] },
         { sourceType: "model_artifact", minimum: 2, take: 5, hints: ["AI 후보점수 비교", "회복 확률", "하락 리스크"] },
+        { sourceType: "fusion_data", minimum: 1, take: 3, hints: ["융합 안정성 점수", "주거 안정성", "지역시장"] },
+        { sourceType: "transport_accessibility", minimum: 1, take: 3, hints: ["교통 접근성", "직주근접", "생활권"] },
         faq,
         commonSafety
       ]
@@ -312,6 +335,8 @@ export function getIntentRetrievalPlan(intent: HomePathChatIntent): RetrievalPla
       resultLimit: 8,
       sourceMinimums: [
         { sourceType: "safety_policy", minimum: 1, take: 2, hints: ["매수 추천 아님", "위험", "의사결정 보조"] },
+        { sourceType: "hug_jeonse_risk", minimum: 1, take: 3, hints: ["HUG", "전세 리스크", "보증사고", "임차 안정성"] },
+        { sourceType: "kreb_market_index", minimum: 1, take: 3, hints: ["한국부동산원", "지역시장", "가격지수", "변동성"] },
         { sourceType: "complex_signal", minimum: 2, take: 4, hints: ["하락 리스크", "전세가율", "거래 부재", "공급", "공실"] },
         { sourceType: "model_artifact", minimum: 1, take: 4, hints: ["하락 리스크 확률", "Transformer", "백테스트"] },
         faq
@@ -320,9 +345,13 @@ export function getIntentRetrievalPlan(intent: HomePathChatIntent): RetrievalPla
   }
   if (intent === "data_source") {
     return {
-      resultLimit: 8,
+      resultLimit: 12,
       sourceMinimums: [
-        { sourceType: "faq", minimum: 2, take: 4, hints: ["데이터 출처", "공공 실거래", "법정동 코드", "건축물대장"] },
+        { sourceType: "fusion_data", minimum: 2, take: 4, hints: ["융합데이터 증빙", "real seed mock", "주관기관 융합데이터"] },
+        { sourceType: "kreb_market_index", minimum: 1, take: 3, hints: ["한국부동산원", "지역시장 지수", "R-ONE"] },
+        { sourceType: "hug_jeonse_risk", minimum: 1, take: 3, hints: ["HUG", "전세 리스크", "보증사고"] },
+        { sourceType: "transport_accessibility", minimum: 1, take: 3, hints: ["교통 접근성", "K-MaaS", "직주근접"] },
+        { sourceType: "faq", minimum: 1, take: 4, hints: ["데이터 출처", "공공 실거래", "법정동 코드", "건축물대장"] },
         { sourceType: "doc", minimum: 2, take: 4, hints: ["README", "제출 문서", "공공데이터 활용"] },
         { sourceType: "model_artifact", minimum: 1, take: 3, hints: ["Transformer artifact", "feature manifest", "metrics"] },
         commonSafety
@@ -333,6 +362,7 @@ export function getIntentRetrievalPlan(intent: HomePathChatIntent): RetrievalPla
     resultLimit: 7,
     sourceMinimums: [
       { sourceType: "complex_signal", minimum: 2, take: 4, hints: ["후보", "기준가", "거래", "전세가율"] },
+      { sourceType: "fusion_data", minimum: 1, take: 3, hints: ["융합 안정성", "한국부동산원", "HUG", "교통"] },
       { sourceType: "faq", minimum: 1, take: 3, hints: ["FAQ", "홈패스 설명"] },
       { sourceType: "model_artifact", minimum: 1, take: 3, hints: ["Transformer AI 신호"] },
       commonSafety
@@ -379,6 +409,10 @@ function sourceTypeLabel(sourceType: RagSourceType) {
   if (sourceType === "model_artifact") return "Transformer AI 신호";
   if (sourceType === "faq") return "FAQ 근거";
   if (sourceType === "safety_policy") return "안전 정책";
+  if (sourceType === "fusion_data") return "융합 공공데이터";
+  if (sourceType === "kreb_market_index") return "한국부동산원 지역지수";
+  if (sourceType === "hug_jeonse_risk") return "HUG 전세 리스크";
+  if (sourceType === "transport_accessibility") return "교통 접근성";
   return "문서 근거";
 }
 
@@ -391,11 +425,11 @@ function buildRagQuery(input: {
 }) {
   const activeCandidate = input.input.activeCandidate;
   const intentKeywords: Record<HomePathChatIntent, string[]> = {
-    candidate_reason: ["후보 이유", "거래 집중도", "전세가율", "AI 후보점수", "회복 확률", "하락 리스크"],
-    purchase_power: ["구매력", "월소득", "월저축", "현재 집 정리 후 예산", "미래 구매력", "DSR", "LTV"],
-    comparison: ["같은 예산 비교", "안정성", "거래 회복", "가격 낙폭", "전세가율", "현금흐름"],
-    risk_check: ["리스크", "안전", "하락", "대출 부담", "실거래 부재", "전세가율"],
-    data_source: ["데이터 출처", "공공 실거래", "법정동 코드", "건축물대장", "Transformer artifact"],
+    candidate_reason: ["후보 이유", "거래 집중도", "전세가율", "AI 후보점수", "회복 확률", "하락 리스크", "융합 안정성"],
+    purchase_power: ["구매력", "월소득", "월저축", "현재 집 정리 후 예산", "미래 구매력", "DSR", "LTV", "주거 안정성"],
+    comparison: ["같은 예산 비교", "안정성", "거래 회복", "가격 낙폭", "전세가율", "현금흐름", "교통 접근성"],
+    risk_check: ["리스크", "안전", "하락", "대출 부담", "실거래 부재", "전세가율", "HUG", "한국부동산원"],
+    data_source: ["데이터 출처", "공공 실거래", "법정동 코드", "건축물대장", "한국부동산원", "HUG", "교통 접근성", "Transformer artifact"],
     safety: ["매수 추천 아님", "수익 보장 금지", "대출 승인 보장 금지", "의사결정 보조"],
     general: ["홈패스", "공공데이터", "구매력", "후보", "리스크"]
   };
@@ -434,7 +468,11 @@ function summarizeMetadata(result: SearchResult) {
     result.metadata.region ? `region=${result.metadata.region}` : undefined,
     result.metadata.complexName ? `complex=${result.metadata.complexName}` : undefined,
     result.metadata.areaBucket ? `area=${result.metadata.areaBucket}` : undefined,
-    result.metadata.aiScore ? `aiScore=${result.metadata.aiScore}` : undefined
+    result.metadata.aiScore ? `aiScore=${result.metadata.aiScore}` : undefined,
+    result.metadata.provider ? `provider=${result.metadata.provider}` : undefined,
+    result.metadata.fusionSourceType ? `fusionSourceType=${result.metadata.fusionSourceType}` : undefined,
+    result.metadata.fusedStabilityScore ? `fusedScore=${result.metadata.fusedStabilityScore}` : undefined,
+    result.metadata.fusedRiskGrade ? `fusedGrade=${result.metadata.fusedRiskGrade}` : undefined
   ].filter(Boolean);
   return metadata.join(", ");
 }

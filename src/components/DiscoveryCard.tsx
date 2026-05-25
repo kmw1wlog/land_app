@@ -9,6 +9,7 @@ import { complexSignalToPropertyLike } from "@/lib/candidateAdapter";
 import { analyzePropertyForUser } from "@/lib/calculations";
 import { calculateFuturePurchasePower } from "@/lib/futurePlan";
 import { formatKRW, formatMonthly, percent } from "@/lib/format";
+import { estimateFusionMetricsForCandidate, getFusionEvidenceBadges } from "@/lib/fusionPresentation";
 import { useAppStore } from "@/store/useAppStore";
 import { Label } from "./Label";
 import { Metric } from "./Metric";
@@ -34,6 +35,8 @@ export function DiscoveryCard({ card, onNext }: DiscoveryCardProps) {
   const rotate = useTransform(x, [-220, 0, 220], [-6, 0, 6]);
   const future5 = calculateFuturePurchasePower(profile, currentHome, financialPlan, 5) >= (card.referencePrice ?? 0);
   const future10 = calculateFuturePurchasePower(profile, currentHome, financialPlan, 10) >= (card.referencePrice ?? 0);
+  const fusionMetrics = estimateFusionMetricsForCandidate(card);
+  const fusionBadges = getFusionEvidenceBadges();
 
   const next = (action: "pass" | "save" | "calculate" | "community") => {
     recordSwipe(card.id, action);
@@ -101,6 +104,34 @@ export function DiscoveryCard({ card, onNext }: DiscoveryCardProps) {
             <Metric label="대장성" value={`${Math.round(card.moveUp?.leaderScore ?? 0)}점`} />
             <Metric label="매도성" value={`${Math.round(card.moveUp?.sellabilityScore ?? 0)}점`} />
           </div>
+        </div>
+
+        <div className="rounded-md border border-black/10 bg-white p-3">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-[11px] font-bold text-black/45">융합 공공데이터 근거</p>
+            <span className="rounded bg-black/5 px-2 py-1 text-[10px] font-black text-black/45">가점 체크 보류</span>
+          </div>
+          <div className="mt-2 grid gap-2 text-xs font-bold text-black/62">
+            {fusionBadges.map((item) => (
+              <div key={item.provider} className="flex items-center justify-between gap-2 rounded bg-black/5 px-2 py-2">
+                <span>
+                  {item.provider}: {item.label}
+                </span>
+                <span className={`rounded px-2 py-1 text-[10px] font-black ${item.sourceType === "실데이터" ? "bg-moss text-white" : "bg-gold/25 text-ink"}`}>
+                  {item.sourceType}
+                </span>
+              </div>
+            ))}
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-2 text-center">
+            <Metric label="지역시장 안정성" value={`${fusionMetrics.regionalMarketStability}점`} />
+            <Metric label="전세 리스크" value={`${fusionMetrics.jeonseRiskScore}점`} />
+            <Metric label="교통 접근성" value={`${fusionMetrics.transitAccessibilityScore}점`} />
+            <Metric label="융합 안정성" value={`${fusionMetrics.fusedStabilityScore}점`} />
+          </div>
+          <p className="mt-2 text-[11px] font-bold leading-5 text-black/45">
+            한국부동산원·HUG·교통 항목은 MVP 시드 스냅샷입니다. 실제 공식 데이터 연결 전에는 융합데이터 가점으로 단정하지 않습니다.
+          </p>
         </div>
 
         <div className="rounded-md border border-black/10 bg-white p-3">

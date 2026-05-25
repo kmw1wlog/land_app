@@ -1,0 +1,6 @@
+region,legalDong,lawdCode5,complexName,nearestStationDistanceM,nearestBusStopDistanceM,transitAccessibilityScore,commuteAccessScore,lifeSocAccessScore,sourceType
+대구 수성구,범어동,27260,범어동 B아파트,420,110,84,78,82,seed
+대구 동구,신암동,27140,각산태영데시앙,680,160,72,68,70,seed
+대구 북구,복현동,27230,복현아이파크,530,140,76,73,74,seed
+대구 중구,남산동,27110,청라힐스자이,310,90,88,81,86,seed
+서울 성동구,성수동,11200,성동구 D아파트,360,120,86,84,83,seed

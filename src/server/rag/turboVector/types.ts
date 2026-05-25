@@ -3,7 +3,11 @@ export type RagSourceType =
   | "complex_signal"
   | "model_artifact"
   | "faq"
-  | "safety_policy";
+  | "safety_policy"
+  | "fusion_data"
+  | "kreb_market_index"
+  | "hug_jeonse_risk"
+  | "transport_accessibility";
 
 export type RagMetadata = Record<string, string | number | boolean | null>;
 

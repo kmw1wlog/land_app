@@ -1,6 +1,6 @@
 # TurboQuant-inspired RAG Verification
 
-- checkedAt: 2026-05-24T19:26:26.263Z
+- checkedAt: 2026-05-25T07:37:50.221Z
 - description: TurboQuant-inspired RAG verification for HomePath compact SQLite retrieval.
 - baseline: float cosine baseline
 - float storage bytes/vector: 1536
@@ -19,8 +19,8 @@
 
 | variant | recall@4 | recall@10 | cosine error | bytes/vector | latency ms/query |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| legacy pseudo rotation | 0.95 | 1 | 0.001 | 400 | 0.848 |
-| RHT + normal codebook | 0.9 | 1 | 0.001 | 528 | 1.129 |
-| RHT + residual correction | 0.95 | 1 | 0.0014 | 528 | 1.511 |
+| legacy pseudo rotation | 0.95 | 1 | 0.001 | 400 | 0.831 |
+| RHT + normal codebook | 0.9 | 1 | 0.001 | 528 | 1.066 |
+| RHT + residual correction | 0.95 | 1 | 0.0014 | 528 | 1.094 |
 
 This is a TurboQuant-inspired compact retrieval path, not a claim of full paper reproduction.

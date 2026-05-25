@@ -7,6 +7,7 @@ import { useSearchParams } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
 import { Metric } from "@/components/Metric";
 import { formatKRW, percent } from "@/lib/format";
+import { estimateFusionMetricsForCandidate } from "@/lib/fusionPresentation";
 import { useAppStore } from "@/store/useAppStore";
 import type { PriceBandComparison } from "@/types";
 
@@ -71,7 +72,9 @@ function ComparePriceBandContent() {
               ) : null}
             </section>
             <section className="space-y-3">
-              {comparison.comparables.map((item) => (
+              {comparison.comparables.map((item) => {
+                const fusion = estimateFusionMetricsForCandidate(item.candidate);
+                return (
                 <article key={item.candidate.id} className="rounded-lg border border-black/10 bg-white p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div>
@@ -87,6 +90,18 @@ function ComparePriceBandContent() {
                     <Metric label="대장성" value={`${Math.round(item.candidate.moveUp?.leaderScore ?? 0)}점`} />
                     <Metric label="유동성" value={`${Math.round(item.candidate.moveUp?.liquidityScore ?? 0)}점`} />
                     <Metric label="DSR" value={`${(item.candidate.userFit.dsrRatio ?? 0).toFixed(1)}%`} />
+                  </div>
+                  <div className="mt-3 rounded-md bg-black/5 p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-xs font-black text-black/45">융합 공공데이터 비교</p>
+                      <span className="rounded bg-gold/25 px-2 py-1 text-[10px] font-black text-ink">KREB/HUG/교통 시드</span>
+                    </div>
+                    <div className="mt-2 grid grid-cols-2 gap-2 md:grid-cols-4">
+                      <Metric label="지역시장 안정성" value={`${fusion.regionalMarketStability}점`} />
+                      <Metric label="전세 리스크" value={`${fusion.jeonseRiskScore}점`} />
+                      <Metric label="교통 접근성" value={`${fusion.transitAccessibilityScore}점`} />
+                      <Metric label="융합 안정성" value={`${fusion.fusedStabilityScore}점`} />
+                    </div>
                   </div>
                   <div className="mt-3 grid grid-cols-2 gap-2 text-xs leading-5">
                     <div className="rounded-md bg-moss/10 p-3 text-moss">
@@ -109,7 +124,8 @@ function ComparePriceBandContent() {
                     AI에게 이 후보 설명 받기
                   </Link>
                 </article>
-              ))}
+                );
+              })}
             </section>
           </>
         ) : !error ? (

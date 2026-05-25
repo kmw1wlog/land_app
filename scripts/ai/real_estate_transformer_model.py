@@ -52,6 +52,14 @@ Expected columns:
     trade_share_in_region
     median_floor
     median_built_year
+    kreb_sale_mom
+    kreb_rent_mom
+    kreb_volatility_score
+    hug_jeonse_risk_score
+    transit_accessibility_score
+    commute_access_score
+    fused_stability_score
+    fusion_seed_flag
 
 Outputs
 -------
@@ -125,6 +133,14 @@ FEATURE_COLUMNS = [
     "trade_share_in_region",
     "median_floor",
     "median_built_year",
+    "kreb_sale_mom",
+    "kreb_rent_mom",
+    "kreb_volatility_score",
+    "hug_jeonse_risk_score",
+    "transit_accessibility_score",
+    "commute_access_score",
+    "fused_stability_score",
+    "fusion_seed_flag",
 ]
 
 TARGET_COLUMNS = [
@@ -171,6 +187,19 @@ def parse_month(value: object) -> pd.Timestamp:
 
 def load_features(path: str) -> pd.DataFrame:
     df = pd.read_csv(path)
+    default_fusion_columns = {
+        "kreb_sale_mom": 0.0,
+        "kreb_rent_mom": 0.0,
+        "kreb_volatility_score": 45.0,
+        "hug_jeonse_risk_score": 55.0,
+        "transit_accessibility_score": 55.0,
+        "commute_access_score": 55.0,
+        "fused_stability_score": 55.0,
+        "fusion_seed_flag": 0.0,
+    }
+    for column, default in default_fusion_columns.items():
+        if column not in df.columns:
+            df[column] = default
     required = {"complex_id", "month", *FEATURE_COLUMNS}
     missing = sorted(required - set(df.columns))
     if missing:

@@ -33,9 +33,13 @@ HomePath는 국토교통 공공데이터, 사용자 구매력 계산, Transforme
 - 오피스텔 매매/전월세 실거래가
 - 건축물대장
 - 법정동코드
-- 향후 교통 접근성/K-MaaS 계열 데이터 연계 후보
+- 한국부동산원 지역시장 지수 seed snapshot
+- HUG 전세 리스크 seed snapshot
+- 교통 접근성/직주근접 seed snapshot
 
 공공 실거래 데이터를 단지·면적대·층수대 단위로 재가공해 최근 실거래 기준가, 거래 집중도, 전고점 대비 하락률, 전세가율, 유동성 점수, 대장성 점수를 생성합니다.
+
+MVP에서는 국토교통 실거래 데이터와 함께 한국부동산원·HUG·교통 접근성 데이터 구조를 시드 스냅샷으로 구현했으며, 실제 API/공식 데이터 연동 시 동일한 fusion pipeline으로 확장됩니다. seed/mock만으로는 주관기관 융합데이터 가점 체크를 하지 않고, `docs/fusion-data-evidence.md`에서 provider별 real/seed 상태를 따로 증빙합니다.
 
 ## AI 활용 방향
 
@@ -49,7 +53,9 @@ HomePath는 국토교통 공공데이터, 사용자 구매력 계산, Transforme
 
 ```text
 국토교통 실거래/전월세/법정동/건축물 데이터
+한국부동산원 지역시장 지수 + HUG 전세 리스크 + 교통 접근성 seed
 → 단지·면적대 feature 생성
+→ 융합 안정성 점수
 → Time-Series Transformer 안정성 신호
 → TurboQuant-inspired RAG
 → Qwen 설명봇

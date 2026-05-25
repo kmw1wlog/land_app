@@ -8,7 +8,7 @@ type ChatMessage = {
   role: "user" | "assistant";
   content: string;
   fallbackUsed?: boolean;
-  sources?: Array<{ title?: string; sourceType: string; score: number; finalScore?: number; boostReason?: string[] }>;
+  sources?: Array<{ title?: string; sourceType: string; score: number; finalScore?: number; boostReason?: string[]; metadata?: Record<string, unknown> }>;
 };
 
 const SUGGESTED_QUESTIONS = [
@@ -123,7 +123,9 @@ export function HomePathChatBox() {
             ) : null}
             {message.sources?.length ? (
               <div className="mt-3 rounded-md bg-black/5 p-3 text-xs font-bold text-black/50">
-                근거: {message.sources.slice(0, 3).map((source) => source.title ?? source.sourceType).join(" · ")}
+                <p className="text-black/65">이번 답변 근거</p>
+                <p className="mt-1 text-black/50">{summarizeSourceProviders(message.sources).join(" · ")}</p>
+                <p className="mt-2">근거: {message.sources.slice(0, 3).map((source) => source.title ?? source.sourceType).join(" · ")}</p>
                 <br />
                 점수: {message.sources.slice(0, 3).map((source) => `${source.sourceType} ${(source.finalScore ?? source.score).toFixed(2)}`).join(" · ")}
               </div>
@@ -165,6 +167,20 @@ export function HomePathChatBox() {
       </form>
     </div>
   );
+}
+
+function summarizeSourceProviders(sources: NonNullable<ChatMessage["sources"]>) {
+  const labels = new Set<string>();
+  for (const source of sources) {
+    if (source.sourceType === "complex_signal") labels.add("MOLIT 실거래");
+    if (source.sourceType === "model_artifact") labels.add("Transformer AI signal");
+    if (source.sourceType === "kreb_market_index") labels.add("KREB 지역지수");
+    if (source.sourceType === "hug_jeonse_risk") labels.add("HUG 전세리스크");
+    if (source.sourceType === "transport_accessibility") labels.add("TRANSPORT 접근성");
+    if (source.sourceType === "fusion_data") labels.add("융합 안정성");
+    if (source.sourceType === "safety_policy") labels.add("안전정책");
+  }
+  return labels.size ? Array.from(labels) : ["RAG 근거"];
 }
 
 function resolveChatApiUrl(params?: URLSearchParams) {

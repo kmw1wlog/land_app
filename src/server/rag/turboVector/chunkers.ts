@@ -3,6 +3,13 @@ import path from "path";
 import { prisma } from "@/server/db";
 import { formatKRW } from "@/lib/format";
 import { getRealEstateAiSignalFeed } from "@/server/ai/realEstateSignalArtifactService";
+import {
+  buildFusionDataEvidence,
+  buildFusedRegionSignals,
+  loadHugJeonseRiskSeed,
+  loadKrebRegionIndexSeed,
+  loadTransportAccessSeed
+} from "@/server/public-data/fusion/fusionEvidence";
 import type { RagChunk } from "./types";
 
 const DOC_TARGETS = [
@@ -17,6 +24,7 @@ export async function buildHomePathRagChunks() {
   const chunks: RagChunk[] = [
     ...buildDocumentChunks(),
     ...buildSafetyAndFaqChunks(),
+    ...buildFusionDataChunks(),
     ...buildAiArtifactChunks(),
     ...(await buildComplexSignalChunks())
   ];
@@ -73,7 +81,7 @@ function buildSafetyAndFaqChunks(): RagChunk[] {
       sourceType: "faq",
       title: "데이터 출처",
       text:
-        "홈패스는 국토교통부 실거래 공개 데이터, 법정동 코드, 건축물대장/공공데이터 연계 결과, 앱 내부 계산 로직, Transformer 모델 산출물을 함께 사용한다.",
+        "홈패스는 국토교통부 실거래 공개 데이터, 법정동 코드, 건축물대장/공공데이터 연계 결과, 앱 내부 계산 로직, Transformer 모델 산출물을 함께 사용한다. MVP에서는 한국부동산원 지역시장 지수, HUG 전세 리스크, 교통 접근성 데이터를 seed snapshot으로 연결해 RAG와 융합 안정성 점수에 반영한다. seed/mock만으로는 주관기관 융합데이터 가점 박스를 체크하지 않는다.",
       metadata: { intent: "data_source" }
     },
     {
@@ -109,6 +117,108 @@ function buildSafetyAndFaqChunks(): RagChunk[] {
       metadata: { intent: "purchase_power" }
     }
   ];
+}
+
+function buildFusionDataChunks(): RagChunk[] {
+  const evidenceChunks = buildFusionDataEvidence().map((item) => ({
+    id: `fusion-evidence:${item.provider}`,
+    sourceType: "fusion_data" as const,
+    sourceId: item.provider,
+    title: `${item.provider} 융합데이터 증빙`,
+    text:
+      `${item.provider} ${item.datasetName}은 ${item.sourceType} 데이터로 기록됐다. ` +
+      `rowCount ${item.rowCount}, fields ${item.fields.join(", ")}. ` +
+      `사용 위치는 ${item.usedIn.join(", ")}이다. ${item.note ?? ""}`,
+    metadata: {
+      provider: item.provider,
+      fusionSourceType: item.sourceType,
+      rowCount: item.rowCount
+    }
+  }));
+
+  const krebChunks = loadKrebRegionIndexSeed().map((item) => ({
+    id: `kreb-market-index:${item.month}:${item.lawdCode5}`,
+    sourceType: "kreb_market_index" as const,
+    sourceId: `${item.month}:${item.lawdCode5}`,
+    title: `한국부동산원 지역시장 지수 ${item.region}`,
+    text:
+      `${item.month} ${item.region} 한국부동산원 지역시장 seed. ` +
+      `매매지수 ${item.saleIndex}, 전세지수 ${item.rentIndex}, 매매 MoM ${item.saleMom}%, 전세 MoM ${item.rentMom}%, ` +
+      `지역 변동성 ${item.volatilityScore}점. 국토부 개별 실거래의 단기 노이즈를 보완하는 시장 기준선으로 사용한다.`,
+    metadata: {
+      provider: "KREB",
+      fusionSourceType: item.sourceType,
+      region: item.region,
+      lawdCode5: item.lawdCode5,
+      month: item.month,
+      saleMom: item.saleMom,
+      rentMom: item.rentMom,
+      volatilityScore: item.volatilityScore
+    }
+  }));
+
+  const hugChunks = loadHugJeonseRiskSeed().map((item) => ({
+    id: `hug-jeonse-risk:${item.month}:${item.lawdCode5}`,
+    sourceType: "hug_jeonse_risk" as const,
+    sourceId: `${item.month}:${item.lawdCode5}`,
+    title: `HUG 전세 리스크 ${item.region}`,
+    text:
+      `${item.month} ${item.region} HUG 전세 리스크 seed. ` +
+      `보증사고율 참고값 ${item.guaranteeAccidentRate}%, 전세 리스크 ${item.jeonseRiskScore}점, 등급 ${item.riskGrade}. ` +
+      `보증 승인 가능 여부가 아니라 전세가율과 함께 확인할 임차 안정성 참고 지표다.`,
+    metadata: {
+      provider: "HUG",
+      fusionSourceType: item.sourceType,
+      region: item.region,
+      lawdCode5: item.lawdCode5,
+      month: item.month,
+      riskGrade: item.riskGrade,
+      jeonseRiskScore: item.jeonseRiskScore
+    }
+  }));
+
+  const transportChunks = loadTransportAccessSeed().map((item) => ({
+    id: `transport-access:${item.lawdCode5}:${item.complexName}`,
+    sourceType: "transport_accessibility" as const,
+    sourceId: `${item.lawdCode5}:${item.complexName}`,
+    title: `교통 접근성 ${item.complexName}`,
+    text:
+      `${item.region} ${item.legalDong} ${item.complexName} 교통 접근성 seed. ` +
+      `가까운 역 ${item.nearestStationDistanceM}m, 버스정류장 ${item.nearestBusStopDistanceM}m, ` +
+      `대중교통 접근성 ${item.transitAccessibilityScore}점, 직주근접 ${item.commuteAccessScore}점, 생활권 이동성 ${item.lifeSocAccessScore}점.`,
+    metadata: {
+      provider: "TRANSPORT",
+      fusionSourceType: item.sourceType,
+      region: item.region,
+      legalDong: item.legalDong,
+      lawdCode5: item.lawdCode5,
+      complexName: item.complexName,
+      transitAccessibilityScore: item.transitAccessibilityScore,
+      commuteAccessScore: item.commuteAccessScore
+    }
+  }));
+
+  const fusedChunks = buildFusedRegionSignals().map((item) => ({
+    id: `fused-signal:${item.month}:${item.lawdCode5}`,
+    sourceType: "fusion_data" as const,
+    sourceId: `${item.month}:${item.lawdCode5}`,
+    title: `융합 안정성 점수 ${item.region}`,
+    text:
+      `${item.month} ${item.region} 융합 안정성 점수는 ${item.fusedStabilityScore}점, 등급은 ${item.fusedRiskGrade}이다. ` +
+      `근거는 ${item.evidence.join(", ")}이며, 국토부 실거래 안정성 40%, 한국부동산원 지역시장 20%, HUG 전세 리스크 20%, 교통 접근성 20% 기준으로 계산했다. ` +
+      `높을수록 가격 상승 가능성이 아니라 데이터 확인 가능성과 주거 안정성 측면의 참고 점수다.`,
+    metadata: {
+      provider: "FUSION",
+      fusionSourceType: item.sourceType,
+      region: item.region,
+      lawdCode5: item.lawdCode5 ?? null,
+      month: item.month,
+      fusedStabilityScore: item.fusedStabilityScore,
+      fusedRiskGrade: item.fusedRiskGrade
+    }
+  }));
+
+  return [...evidenceChunks, ...krebChunks, ...hugChunks, ...transportChunks, ...fusedChunks];
 }
 
 function buildAiArtifactChunks(): RagChunk[] {

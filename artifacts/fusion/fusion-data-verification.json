@@ -1,0 +1,194 @@
+{
+  "checkedAt": "2026-05-25T07:36:17.546Z",
+  "readiness": {
+    "canCheckMultiAgencyFusion": false,
+    "reason": "현재 실데이터 provider는 MOLIT이고, KREB, HUG, TRANSPORT는 seed/mock이므로 주관기관 융합데이터 가점 체크는 보류한다.",
+    "providers": [
+      "MOLIT"
+    ],
+    "seedProviders": [
+      "KREB",
+      "HUG",
+      "TRANSPORT"
+    ]
+  },
+  "evidence": [
+    {
+      "provider": "MOLIT",
+      "datasetName": "국토교통부 실거래/전월세·건축물·법정동 데이터",
+      "sourceType": "real",
+      "rowCount": 1,
+      "fields": [
+        "dealAmount",
+        "deposit",
+        "lawdCode5",
+        "complexName",
+        "areaM2",
+        "dealYear",
+        "dealMonth"
+      ],
+      "collectedAt": "2026-05-25T07:36:17.542Z",
+      "usedIn": [
+        "candidate scoring",
+        "purchase power context",
+        "Transformer feature",
+        "RAG complex_signal"
+      ],
+      "note": "DataGoKrClient와 로컬 public-data seed 파이프라인으로 실제 공공데이터 축을 구성한다."
+    },
+    {
+      "provider": "KREB",
+      "datasetName": "한국부동산원 지역 매매/전세 가격지수 시드",
+      "sourceType": "seed",
+      "rowCount": 5,
+      "fields": [
+        "saleIndex",
+        "rentIndex",
+        "saleMom",
+        "rentMom",
+        "volatilityScore"
+      ],
+      "collectedAt": "2026-05-25T07:36:17.542Z",
+      "usedIn": [
+        "fused stability score",
+        "RAG kreb_market_index",
+        "comparison UI"
+      ],
+      "note": "MVP seed snapshot이다. 실제 R-ONE/API 확보 전에는 가점 실데이터로 계산하지 않는다."
+    },
+    {
+      "provider": "HUG",
+      "datasetName": "HUG 전세 보증/보증사고 리스크 시드",
+      "sourceType": "seed",
+      "rowCount": 5,
+      "fields": [
+        "guaranteeAccidentRate",
+        "jeonseRiskScore",
+        "riskGrade"
+      ],
+      "collectedAt": "2026-05-25T07:36:17.542Z",
+      "usedIn": [
+        "fused stability score",
+        "RAG hug_jeonse_risk",
+        "tenant safety UI"
+      ],
+      "note": "보증 승인 가능 여부가 아니라 전세 리스크 참고 지표로만 사용한다."
+    },
+    {
+      "provider": "TRANSPORT",
+      "datasetName": "교통 접근성/직주근접 시드",
+      "sourceType": "seed",
+      "rowCount": 5,
+      "fields": [
+        "nearestStationDistanceM",
+        "nearestBusStopDistanceM",
+        "transitAccessibilityScore",
+        "commuteAccessScore"
+      ],
+      "collectedAt": "2026-05-25T07:36:17.542Z",
+      "usedIn": [
+        "fused stability score",
+        "RAG transport_accessibility",
+        "same budget comparison UI"
+      ],
+      "note": "K-MaaS 실제 데이터가 확보되기 전까지는 교통 접근성 seed로 표시한다."
+    }
+  ],
+  "fusedSignals": [
+    {
+      "region": "대구 수성구",
+      "lawdCode5": "27260",
+      "month": "2026-04",
+      "molitTradeHeat": 1.1,
+      "molitJeonseRatio": 62,
+      "krebMarketStability": 60,
+      "hugJeonseRiskScore": 28,
+      "transitAccessibilityScore": 84,
+      "fusedStabilityScore": 77,
+      "fusedRiskGrade": "안정",
+      "sourceType": "seed",
+      "evidence": [
+        "MOLIT 실거래",
+        "KREB 지역지수",
+        "HUG 전세 리스크",
+        "TRANSPORT 접근성"
+      ]
+    },
+    {
+      "region": "대구 동구",
+      "lawdCode5": "27140",
+      "month": "2026-04",
+      "molitTradeHeat": 1.1,
+      "molitJeonseRatio": 62,
+      "krebMarketStability": 55,
+      "hugJeonseRiskScore": 47,
+      "transitAccessibilityScore": 72,
+      "fusedStabilityScore": 69,
+      "fusedRiskGrade": "확인 필요",
+      "sourceType": "seed",
+      "evidence": [
+        "MOLIT 실거래",
+        "KREB 지역지수",
+        "HUG 전세 리스크",
+        "TRANSPORT 접근성"
+      ]
+    },
+    {
+      "region": "대구 북구",
+      "lawdCode5": "27230",
+      "month": "2026-04",
+      "molitTradeHeat": 1.1,
+      "molitJeonseRatio": 62,
+      "krebMarketStability": 53,
+      "hugJeonseRiskScore": 58,
+      "transitAccessibilityScore": 76,
+      "fusedStabilityScore": 68,
+      "fusedRiskGrade": "확인 필요",
+      "sourceType": "seed",
+      "evidence": [
+        "MOLIT 실거래",
+        "KREB 지역지수",
+        "HUG 전세 리스크",
+        "TRANSPORT 접근성"
+      ]
+    },
+    {
+      "region": "대구 중구",
+      "lawdCode5": "27110",
+      "month": "2026-04",
+      "molitTradeHeat": 1.1,
+      "molitJeonseRatio": 62,
+      "krebMarketStability": 57,
+      "hugJeonseRiskScore": 34,
+      "transitAccessibilityScore": 88,
+      "fusedStabilityScore": 76,
+      "fusedRiskGrade": "안정",
+      "sourceType": "seed",
+      "evidence": [
+        "MOLIT 실거래",
+        "KREB 지역지수",
+        "HUG 전세 리스크",
+        "TRANSPORT 접근성"
+      ]
+    },
+    {
+      "region": "서울 성동구",
+      "lawdCode5": "11200",
+      "month": "2026-04",
+      "molitTradeHeat": 1.1,
+      "molitJeonseRatio": 62,
+      "krebMarketStability": 54,
+      "hugJeonseRiskScore": 43,
+      "transitAccessibilityScore": 86,
+      "fusedStabilityScore": 73,
+      "fusedRiskGrade": "확인 필요",
+      "sourceType": "seed",
+      "evidence": [
+        "MOLIT 실거래",
+        "KREB 지역지수",
+        "HUG 전세 리스크",
+        "TRANSPORT 접근성"
+      ]
+    }
+  ]
+}

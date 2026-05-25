@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, BarChart3, Bot, Building2, CheckCircle2, Home, MessageSquareText, Route, Sparkles } from "lucide-react";
+import { ArrowRight, BarChart3, Bot, Building2, CheckCircle2, Database, Home, MessageSquareText, Route, Sparkles } from "lucide-react";
 import { demoCandidate, demoCommunityDraft, demoComparables, demoCurrentHome, demoLadder, demoProfile } from "@/lib/demoSubmissionData";
 import { formatKRW, formatMonthly } from "@/lib/format";
 
@@ -12,6 +12,7 @@ const steps = [
   "구매력 요약",
   "실거래 후보 카드",
   "같은 돈 비교",
+  "융합데이터",
   "커뮤니티",
   "AI 설명봇",
   "Final"
@@ -59,9 +60,10 @@ export default function DemoSubmissionPage() {
           {step === 2 ? <LadderStep /> : null}
           {step === 3 ? <CandidateStep /> : null}
           {step === 4 ? <CompareStep /> : null}
-          {step === 5 ? <CommunityStep /> : null}
-          {step === 6 ? <AiChatStep /> : null}
-          {step === 7 ? <FinalStep /> : null}
+          {step === 5 ? <FusionDataStep /> : null}
+          {step === 6 ? <CommunityStep /> : null}
+          {step === 7 ? <AiChatStep /> : null}
+          {step === 8 ? <FinalStep /> : null}
         </div>
       </section>
 
@@ -203,9 +205,41 @@ function CompareStep() {
   );
 }
 
+function FusionDataStep() {
+  return (
+    <DemoPanel eyebrow="Step 5" title="주관기관 융합데이터 구조를 분리해 보여줍니다" icon={<Database size={34} />}>
+      <div className="grid gap-5 lg:grid-cols-[1.15fr_.85fr]">
+        <div className="rounded-[1.5rem] bg-ink p-7 text-white">
+          <p className="text-sm font-black text-gold">융합 안정성 점수</p>
+          <h2 className="mt-4 text-4xl font-black leading-tight">
+            국토부 실거래 + 한국부동산원 + HUG + 교통 접근성
+          </h2>
+          <p className="mt-5 text-lg font-bold leading-8 text-white/65">
+            개별 실거래 노이즈를 지역시장 흐름, 전세 리스크, 직주근접 신호와 함께 묶어 주거 안정성 관점의 참고 점수를 만듭니다.
+          </p>
+          <div className="mt-6 grid grid-cols-4 gap-3 text-center text-sm font-black">
+            <span className="rounded-xl bg-moss px-3 py-3 text-white">MOLIT 실데이터</span>
+            <span className="rounded-xl bg-white/10 px-3 py-3">KREB 시드</span>
+            <span className="rounded-xl bg-white/10 px-3 py-3">HUG 시드</span>
+            <span className="rounded-xl bg-white/10 px-3 py-3">교통 시드</span>
+          </div>
+        </div>
+        <div className="rounded-[1.5rem] bg-white p-6 shadow-soft">
+          <p className="text-sm font-black text-moss">가점 판정 원칙</p>
+          <div className="mt-4 grid gap-3 text-lg font-black">
+            <div className="rounded-xl bg-moss/10 p-4 text-moss">AI 활용: 체크 가능</div>
+            <div className="rounded-xl bg-gold/20 p-4 text-ink">융합데이터: 실데이터 추가 전 체크 보류</div>
+            <div className="rounded-xl bg-black/5 p-4 text-black/60">seed/mock 여부를 UI와 문서에 명확히 표시</div>
+          </div>
+        </div>
+      </div>
+    </DemoPanel>
+  );
+}
+
 function CommunityStep() {
   return (
-    <DemoPanel eyebrow="Step 5" title="데이터만으로 부족한 맥락은 커뮤니티에서 확인합니다" icon={<MessageSquareText size={34} />}>
+    <DemoPanel eyebrow="Step 6" title="데이터만으로 부족한 맥락은 커뮤니티에서 확인합니다" icon={<MessageSquareText size={34} />}>
       <div className="grid gap-6 lg:grid-cols-[.75fr_1.25fr]">
         <div className="rounded-[1.5rem] bg-white p-6 shadow-soft">
           <p className="text-sm font-black text-moss">작성자 배지</p>
@@ -230,7 +264,7 @@ function CommunityStep() {
 
 function AiChatStep() {
   return (
-    <DemoPanel eyebrow="Step 6" title="Qwen + TurboVector-RAG로 후보 이유를 설명합니다" icon={<Bot size={34} />}>
+    <DemoPanel eyebrow="Step 7" title="Qwen + TurboVector-RAG로 후보 이유를 설명합니다" icon={<Bot size={34} />}>
       <div className="grid gap-6 lg:grid-cols-[.8fr_1.2fr]">
         <div className="rounded-[1.5rem] bg-ink p-6 text-white shadow-soft">
           <p className="text-sm font-black text-gold">질문</p>
