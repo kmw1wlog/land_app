@@ -14,5 +14,7 @@ describe("fusion RAG chunks", () => {
     expect(dataSourceText).toContain("한국부동산원");
     expect(dataSourceText).toContain("HUG");
     expect(dataSourceText).toContain("교통 접근성");
+    expect(chunks.find((chunk) => chunk.sourceType === "fusion_data")?.metadata).toHaveProperty("fusionSourceType");
+    expect(chunks.find((chunk) => chunk.sourceType === "kreb_market_index")?.metadata).toHaveProperty("provider", "KREB");
   });
 });

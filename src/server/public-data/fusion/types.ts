@@ -17,7 +17,24 @@ export interface FusionDataEvidence {
   fields: string[];
   collectedAt: string;
   usedIn: string[];
+  sourceUrl?: string;
+  licenseNote?: string;
+  rawSnapshotPath?: string;
+  normalizedSnapshotPath?: string;
+  sha256?: string;
+  apiCheckedAt?: string;
+  apiStatus?: "ok" | "error" | "skipped";
   note?: string;
+}
+
+export interface FusionCreditReadiness {
+  canCheckMultiAgencyFusion: boolean;
+  reason: string;
+  providers: FusionProvider[];
+  realProviders: FusionProvider[];
+  seedProviders: FusionProvider[];
+  missingForStrongerClaim: string[];
+  requiredNextStep?: string;
 }
 
 export interface KrebRegionIndexSnapshot {
@@ -30,6 +47,8 @@ export interface KrebRegionIndexSnapshot {
   rentMom: number;
   volatilityScore: number;
   sourceType: FusionSourceType;
+  sourceUrl?: string;
+  checkedAt?: string;
 }
 
 export interface HugJeonseRiskSnapshot {
@@ -40,6 +59,8 @@ export interface HugJeonseRiskSnapshot {
   jeonseRiskScore: number;
   riskGrade: string;
   sourceType: FusionSourceType;
+  sourceUrl?: string;
+  checkedAt?: string;
 }
 
 export interface TransportAccessSnapshot {
@@ -53,6 +74,9 @@ export interface TransportAccessSnapshot {
   commuteAccessScore: number;
   lifeSocAccessScore: number;
   sourceType: FusionSourceType;
+  sourceUrl?: string;
+  checkedAt?: string;
+  provider?: FusionProvider;
 }
 
 export interface FusedRegionSignal {
@@ -66,6 +90,9 @@ export interface FusedRegionSignal {
   transitAccessibilityScore?: number;
   fusedStabilityScore: number;
   fusedRiskGrade: string;
+  fusionConfidence: number;
+  realProviderCount: number;
+  seedProviderCount: number;
   sourceType: FusionSourceType;
   evidence: string[];
 }

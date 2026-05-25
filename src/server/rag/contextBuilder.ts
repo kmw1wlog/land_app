@@ -472,7 +472,8 @@ function summarizeMetadata(result: SearchResult) {
     result.metadata.provider ? `provider=${result.metadata.provider}` : undefined,
     result.metadata.fusionSourceType ? `fusionSourceType=${result.metadata.fusionSourceType}` : undefined,
     result.metadata.fusedStabilityScore ? `fusedScore=${result.metadata.fusedStabilityScore}` : undefined,
-    result.metadata.fusedRiskGrade ? `fusedGrade=${result.metadata.fusedRiskGrade}` : undefined
+    result.metadata.fusedRiskGrade ? `fusedGrade=${result.metadata.fusedRiskGrade}` : undefined,
+    typeof result.metadata.fusionConfidence === "number" ? `fusionConfidence=${result.metadata.fusionConfidence}` : undefined
   ].filter(Boolean);
   return metadata.join(", ");
 }

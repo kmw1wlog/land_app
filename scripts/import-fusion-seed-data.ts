@@ -2,18 +2,18 @@ import { prisma } from "@/server/db";
 import {
   buildFusionDataEvidence,
   buildFusedRegionSignals,
-  loadHugJeonseRiskSeed,
-  loadKrebRegionIndexSeed,
-  loadTransportAccessSeed
+  loadHugJeonseRisk,
+  loadKrebRegionIndex,
+  loadTransportAccess
 } from "@/server/public-data/fusion/fusionEvidence";
 
 async function main() {
   await ensureTables();
   await clearTables();
   const evidence = buildFusionDataEvidence();
-  const kreb = loadKrebRegionIndexSeed();
-  const hug = loadHugJeonseRiskSeed();
-  const transport = loadTransportAccessSeed();
+  const kreb = loadKrebRegionIndex();
+  const hug = loadHugJeonseRisk();
+  const transport = loadTransportAccess();
   const fused = buildFusedRegionSignals();
 
   for (const item of evidence) {
@@ -29,7 +29,16 @@ async function main() {
       item.sourceType !== "real" ? 1 : 0,
       item.collectedAt,
       item.rowCount,
-      JSON.stringify({ fields: item.fields, usedIn: item.usedIn, sourceType: item.sourceType })
+      JSON.stringify({
+        fields: item.fields,
+        usedIn: item.usedIn,
+        sourceType: item.sourceType,
+        sourceUrl: item.sourceUrl,
+        rawSnapshotPath: item.rawSnapshotPath,
+        normalizedSnapshotPath: item.normalizedSnapshotPath,
+        sha256: item.sha256,
+        apiStatus: item.apiStatus
+      })
     );
   }
 
@@ -68,8 +77,9 @@ async function main() {
   for (const item of transport) {
     await prisma.$executeRawUnsafe(
       `INSERT INTO TransportAccessSnapshot (id, provider, region, legalDong, lawdCode5, complexName, nearestStationDistanceM, nearestBusStopDistanceM, transitAccessibilityScore, commuteAccessScore, lifeSocAccessScore, sourceType, createdAt)
-       VALUES (?, 'TRANSPORT', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
       `transport:${item.lawdCode5}:${item.complexName}`,
+      item.provider ?? "TRANSPORT",
       item.region,
       item.legalDong,
       item.lawdCode5,
@@ -98,7 +108,12 @@ async function main() {
       item.transitAccessibilityScore ?? null,
       item.fusedStabilityScore,
       item.fusedRiskGrade,
-      JSON.stringify(item.evidence)
+      JSON.stringify({
+        evidence: item.evidence,
+        fusionConfidence: item.fusionConfidence,
+        realProviderCount: item.realProviderCount,
+        seedProviderCount: item.seedProviderCount
+      })
     );
   }
 

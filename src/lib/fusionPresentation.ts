@@ -26,6 +26,10 @@ export function estimateFusionMetricsForCandidate(candidate?: Pick<ComplexSignal
     jeonseRiskScore: base.jeonseRisk,
     transitAccessibilityScore: base.transit,
     fusedStabilityScore: fused,
-    fusedRiskGrade: fused >= 75 ? "안정" : fused >= 60 ? "확인 필요" : "보수적 검토"
+    fusedRiskGrade: fused >= 75 ? "안정" : fused >= 60 ? "확인 필요" : "보수적 검토",
+    fusionConfidence: 0.4,
+    realProviderCount: 1,
+    seedProviderCount: 3,
+    dataConfidenceLabel: "시드 기반"
   };
 }

@@ -101,6 +101,7 @@ function ComparePriceBandContent() {
                       <Metric label="전세 리스크" value={`${fusion.jeonseRiskScore}점`} />
                       <Metric label="교통 접근성" value={`${fusion.transitAccessibilityScore}점`} />
                       <Metric label="융합 안정성" value={`${fusion.fusedStabilityScore}점`} />
+                      <Metric label="데이터 신뢰도" value={`${Math.round(fusion.fusionConfidence * 100)}%`} />
                     </div>
                   </div>
                   <div className="mt-3 grid grid-cols-2 gap-2 text-xs leading-5">

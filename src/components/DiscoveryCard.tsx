@@ -128,9 +128,11 @@ export function DiscoveryCard({ card, onNext }: DiscoveryCardProps) {
             <Metric label="전세 리스크" value={`${fusionMetrics.jeonseRiskScore}점`} />
             <Metric label="교통 접근성" value={`${fusionMetrics.transitAccessibilityScore}점`} />
             <Metric label="융합 안정성" value={`${fusionMetrics.fusedStabilityScore}점`} />
+            <Metric label="데이터 신뢰도" value={`${Math.round(fusionMetrics.fusionConfidence * 100)}%`} />
+            <Metric label="실데이터 축" value={`${fusionMetrics.realProviderCount}/4`} />
           </div>
           <p className="mt-2 text-[11px] font-bold leading-5 text-black/45">
-            한국부동산원·HUG·교통 항목은 MVP 시드 스냅샷입니다. 실제 공식 데이터 연결 전에는 융합데이터 가점으로 단정하지 않습니다.
+            데이터 신뢰도는 {fusionMetrics.dataConfidenceLabel}입니다. 한국부동산원·HUG·교통 항목은 실제 공식 데이터 연결 전에는 융합데이터 가점으로 단정하지 않습니다.
           </p>
         </div>
 

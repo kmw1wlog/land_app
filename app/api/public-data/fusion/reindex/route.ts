@@ -16,6 +16,6 @@ export async function POST(request: NextRequest) {
     indexed: true,
     evidenceCount: evidence.length,
     fusedSignalCount: signals.length,
-    note: "Fusion seed snapshots were refreshed from data/fusion CSV files."
+    note: "Fusion snapshots were refreshed from real > seed > mock CSV loaders."
   });
 }

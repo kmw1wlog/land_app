@@ -303,6 +303,8 @@ def enrich_with_fusion_seed_features(
     enriched = features.copy()
     enriched["lawd_code5"] = enriched["lawd_code5"].astype(str)
     enriched["fusion_seed_flag"] = 0.0
+    enriched["fusion_real_provider_count"] = 1.0
+    enriched["fusion_confidence"] = 0.4
 
     kreb_path = Path(kreb_seed_path)
     if kreb_path.exists():
@@ -321,6 +323,9 @@ def enrich_with_fusion_seed_features(
             how="left",
         )
         enriched["fusion_seed_flag"] = np.where(enriched["kreb_sale_mom"].notna(), 1.0, enriched["fusion_seed_flag"])
+        if "sourceType" in kreb.columns and (kreb["sourceType"] == "real").all():
+            enriched["fusion_real_provider_count"] = np.where(enriched["kreb_sale_mom"].notna(), enriched["fusion_real_provider_count"] + 1.0, enriched["fusion_real_provider_count"])
+            enriched["fusion_confidence"] = np.where(enriched["kreb_sale_mom"].notna(), enriched["fusion_confidence"] + 0.2, enriched["fusion_confidence"])
 
     hug_path = Path(hug_seed_path)
     if hug_path.exists():
@@ -332,6 +337,9 @@ def enrich_with_fusion_seed_features(
             how="left",
         )
         enriched["fusion_seed_flag"] = np.where(enriched["hug_jeonse_risk_score"].notna(), 1.0, enriched["fusion_seed_flag"])
+        if "sourceType" in hug.columns and (hug["sourceType"] == "real").all():
+            enriched["fusion_real_provider_count"] = np.where(enriched["hug_jeonse_risk_score"].notna(), enriched["fusion_real_provider_count"] + 1.0, enriched["fusion_real_provider_count"])
+            enriched["fusion_confidence"] = np.where(enriched["hug_jeonse_risk_score"].notna(), enriched["fusion_confidence"] + 0.2, enriched["fusion_confidence"])
 
     transport_path = Path(transport_seed_path)
     if transport_path.exists():
@@ -349,6 +357,9 @@ def enrich_with_fusion_seed_features(
             how="left",
         )
         enriched["fusion_seed_flag"] = np.where(enriched["transit_accessibility_score"].notna(), 1.0, enriched["fusion_seed_flag"])
+        if "sourceType" in transport.columns and (transport["sourceType"] == "real").all():
+            enriched["fusion_real_provider_count"] = np.where(enriched["transit_accessibility_score"].notna(), enriched["fusion_real_provider_count"] + 1.0, enriched["fusion_real_provider_count"])
+            enriched["fusion_confidence"] = np.where(enriched["transit_accessibility_score"].notna(), enriched["fusion_confidence"] + 0.2, enriched["fusion_confidence"])
 
     defaults = {
         "kreb_sale_mom": 0.0,
@@ -357,6 +368,8 @@ def enrich_with_fusion_seed_features(
         "hug_jeonse_risk_score": 55.0,
         "transit_accessibility_score": 55.0,
         "commute_access_score": 55.0,
+        "fusion_confidence": 0.4,
+        "fusion_real_provider_count": 1.0,
     }
     for column, default in defaults.items():
         if column not in enriched.columns:
@@ -378,6 +391,8 @@ def enrich_with_fusion_seed_features(
     hug_score = (100 - enriched["hug_jeonse_risk_score"].clip(0, 100)).clip(0, 100)
     transit_score = enriched["transit_accessibility_score"].clip(0, 100)
     enriched["fused_stability_score"] = (molit_score * 0.4 + kreb_score * 0.2 + hug_score * 0.2 + transit_score * 0.2).round(2)
+    enriched["fusion_confidence"] = enriched["fusion_confidence"].clip(0, 1).round(2)
+    enriched["fusion_real_provider_count"] = enriched["fusion_real_provider_count"].clip(0, 4)
     return enriched
 
 
@@ -392,15 +407,19 @@ def make_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def select_fusion_path(real_path: str, fallback_path: str) -> str:
+    return real_path if Path(real_path).exists() else fallback_path
+
+
 def main() -> None:
     args = make_parser().parse_args()
     transactions = load_transactions(args.db_path)
     features = build_feature_frame(transactions)
     features = enrich_with_fusion_seed_features(
         features,
-        args.kreb_seed_path,
-        args.hug_seed_path,
-        args.transport_seed_path,
+        select_fusion_path("data/fusion/kreb_region_index_real.csv", args.kreb_seed_path),
+        select_fusion_path("data/fusion/hug_jeonse_risk_real.csv", args.hug_seed_path),
+        select_fusion_path("data/fusion/transport_access_real.csv", args.transport_seed_path),
     )
 
     output_path = Path(args.output_path)

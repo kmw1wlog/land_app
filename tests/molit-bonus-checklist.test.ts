@@ -8,6 +8,8 @@ describe("MOLIT bonus checklist guardrails", () => {
 
     expect(readiness.canCheckMultiAgencyFusion).toBe(false);
     expect(readiness.seedProviders).toEqual(expect.arrayContaining(["KREB", "HUG", "TRANSPORT"]));
+    expect(readiness.realProviders).toEqual(["MOLIT"]);
+    expect(readiness.missingForStrongerClaim).toEqual(expect.arrayContaining(["KREB", "HUG", "KMAAS/TRANSPORT"]));
   });
 
   it("requires fusion evidence in data-source retrieval plans", () => {

@@ -1,11 +1,11 @@
-import { loadTransportAccessSeed } from "./fusionEvidence";
+import { loadTransportAccess } from "./fusionEvidence";
 
 export class TransportClient {
   isConfigured() {
-    return Boolean(process.env.TRANSPORT_API_KEY);
+    return Boolean(process.env.TRANSPORT_API_KEY || process.env.TRANSPORT_SOURCE_URL);
   }
 
   async getAccessSnapshots() {
-    return loadTransportAccessSeed();
+    return loadTransportAccess();
   }
 }

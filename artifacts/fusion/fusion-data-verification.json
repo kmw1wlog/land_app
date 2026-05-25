@@ -1,16 +1,25 @@
 {
-  "checkedAt": "2026-05-25T07:36:17.546Z",
+  "checkedAt": "2026-05-25T08:15:31.600Z",
   "readiness": {
     "canCheckMultiAgencyFusion": false,
     "reason": "현재 실데이터 provider는 MOLIT이고, KREB, HUG, TRANSPORT는 seed/mock이므로 주관기관 융합데이터 가점 체크는 보류한다.",
     "providers": [
       "MOLIT"
     ],
+    "realProviders": [
+      "MOLIT"
+    ],
     "seedProviders": [
       "KREB",
       "HUG",
       "TRANSPORT"
-    ]
+    ],
+    "missingForStrongerClaim": [
+      "KREB",
+      "HUG",
+      "KMAAS/TRANSPORT"
+    ],
+    "requiredNextStep": "KREB/HUG/KMAAS/TRANSPORT 중 최소 1개 real dataset을 연결하고 fused score, RAG, UI 사용 위치를 검증해야 한다."
   },
   "evidence": [
     {
@@ -27,13 +36,20 @@
         "dealYear",
         "dealMonth"
       ],
-      "collectedAt": "2026-05-25T07:36:17.542Z",
+      "collectedAt": "2026-05-25T08:15:31.591Z",
       "usedIn": [
         "candidate scoring",
         "purchase power context",
         "Transformer feature",
-        "RAG complex_signal"
+        "RAG complex_signal",
+        "UI evidence badge"
       ],
+      "sourceUrl": "https://www.data.go.kr",
+      "licenseNote": "공공데이터포털/국토교통부 공개 API 또는 로컬 스냅샷 기준",
+      "rawSnapshotPath": "data/public-data",
+      "normalizedSnapshotPath": "prisma/dev.db",
+      "apiCheckedAt": "2026-05-25T08:15:31.591Z",
+      "apiStatus": "ok",
       "note": "DataGoKrClient와 로컬 public-data seed 파이프라인으로 실제 공공데이터 축을 구성한다."
     },
     {
@@ -48,12 +64,18 @@
         "rentMom",
         "volatilityScore"
       ],
-      "collectedAt": "2026-05-25T07:36:17.542Z",
+      "collectedAt": "2026-05-25T08:15:31.591Z",
       "usedIn": [
         "fused stability score",
         "RAG kreb_market_index",
-        "comparison UI"
+        "comparison UI",
+        "Transformer fusion feature"
       ],
+      "licenseNote": "MVP seed snapshot. 제출 시 real/seed를 구분 표시한다.",
+      "rawSnapshotPath": "data/fusion/raw/kreb",
+      "normalizedSnapshotPath": "data/fusion/kreb_region_index_seed.csv",
+      "sha256": "60f53c3f3b4890b8921ca9274cf353a82939ca0e1279d537d4563edac4a9c636",
+      "apiStatus": "skipped",
       "note": "MVP seed snapshot이다. 실제 R-ONE/API 확보 전에는 가점 실데이터로 계산하지 않는다."
     },
     {
@@ -66,12 +88,18 @@
         "jeonseRiskScore",
         "riskGrade"
       ],
-      "collectedAt": "2026-05-25T07:36:17.542Z",
+      "collectedAt": "2026-05-25T08:15:31.591Z",
       "usedIn": [
         "fused stability score",
         "RAG hug_jeonse_risk",
-        "tenant safety UI"
+        "tenant safety UI",
+        "Transformer fusion feature"
       ],
+      "licenseNote": "MVP seed snapshot. 제출 시 real/seed를 구분 표시한다.",
+      "rawSnapshotPath": "data/fusion/raw/hug",
+      "normalizedSnapshotPath": "data/fusion/hug_jeonse_risk_seed.csv",
+      "sha256": "b981cf76db7c3db1a90d881fce37f9afd4ec740c2ecf3d43592e9adac396f55f",
+      "apiStatus": "skipped",
       "note": "보증 승인 가능 여부가 아니라 전세 리스크 참고 지표로만 사용한다."
     },
     {
@@ -85,13 +113,19 @@
         "transitAccessibilityScore",
         "commuteAccessScore"
       ],
-      "collectedAt": "2026-05-25T07:36:17.542Z",
+      "collectedAt": "2026-05-25T08:15:31.591Z",
       "usedIn": [
         "fused stability score",
         "RAG transport_accessibility",
-        "same budget comparison UI"
+        "same budget comparison UI",
+        "Transformer fusion feature"
       ],
-      "note": "K-MaaS 실제 데이터가 확보되기 전까지는 교통 접근성 seed로 표시한다."
+      "licenseNote": "MVP seed snapshot. 제출 시 real/seed를 구분 표시한다.",
+      "rawSnapshotPath": "data/fusion/raw/transport",
+      "normalizedSnapshotPath": "data/fusion/transport_access_seed.csv",
+      "sha256": "5ce8fbd9f64d716ca77ce39d103af126e76252c2f9ed481f507034b6c372ec66",
+      "apiStatus": "skipped",
+      "note": "K-MaaS 실제 데이터가 확보되기 전까지는 교통 접근성 seed/공공교통 스냅샷으로 표시한다."
     }
   ],
   "fusedSignals": [
@@ -106,6 +140,9 @@
       "transitAccessibilityScore": 84,
       "fusedStabilityScore": 77,
       "fusedRiskGrade": "안정",
+      "fusionConfidence": 0.4,
+      "realProviderCount": 1,
+      "seedProviderCount": 3,
       "sourceType": "seed",
       "evidence": [
         "MOLIT 실거래",
@@ -125,6 +162,9 @@
       "transitAccessibilityScore": 72,
       "fusedStabilityScore": 69,
       "fusedRiskGrade": "확인 필요",
+      "fusionConfidence": 0.4,
+      "realProviderCount": 1,
+      "seedProviderCount": 3,
       "sourceType": "seed",
       "evidence": [
         "MOLIT 실거래",
@@ -144,6 +184,9 @@
       "transitAccessibilityScore": 76,
       "fusedStabilityScore": 68,
       "fusedRiskGrade": "확인 필요",
+      "fusionConfidence": 0.4,
+      "realProviderCount": 1,
+      "seedProviderCount": 3,
       "sourceType": "seed",
       "evidence": [
         "MOLIT 실거래",
@@ -163,6 +206,9 @@
       "transitAccessibilityScore": 88,
       "fusedStabilityScore": 76,
       "fusedRiskGrade": "안정",
+      "fusionConfidence": 0.4,
+      "realProviderCount": 1,
+      "seedProviderCount": 3,
       "sourceType": "seed",
       "evidence": [
         "MOLIT 실거래",
@@ -182,6 +228,9 @@
       "transitAccessibilityScore": 86,
       "fusedStabilityScore": 73,
       "fusedRiskGrade": "확인 필요",
+      "fusionConfidence": 0.4,
+      "realProviderCount": 1,
+      "seedProviderCount": 3,
       "sourceType": "seed",
       "evidence": [
         "MOLIT 실거래",

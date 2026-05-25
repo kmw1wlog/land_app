@@ -6,9 +6,9 @@ import { getRealEstateAiSignalFeed } from "@/server/ai/realEstateSignalArtifactS
 import {
   buildFusionDataEvidence,
   buildFusedRegionSignals,
-  loadHugJeonseRiskSeed,
-  loadKrebRegionIndexSeed,
-  loadTransportAccessSeed
+  loadHugJeonseRisk,
+  loadKrebRegionIndex,
+  loadTransportAccess
 } from "@/server/public-data/fusion/fusionEvidence";
 import type { RagChunk } from "./types";
 
@@ -132,17 +132,20 @@ function buildFusionDataChunks(): RagChunk[] {
     metadata: {
       provider: item.provider,
       fusionSourceType: item.sourceType,
-      rowCount: item.rowCount
+      rowCount: item.rowCount,
+      sourceUrl: item.sourceUrl ?? null,
+      sha256: item.sha256 ?? null,
+      apiStatus: item.apiStatus ?? null
     }
   }));
 
-  const krebChunks = loadKrebRegionIndexSeed().map((item) => ({
+  const krebChunks = loadKrebRegionIndex().map((item) => ({
     id: `kreb-market-index:${item.month}:${item.lawdCode5}`,
     sourceType: "kreb_market_index" as const,
     sourceId: `${item.month}:${item.lawdCode5}`,
     title: `한국부동산원 지역시장 지수 ${item.region}`,
     text:
-      `${item.month} ${item.region} 한국부동산원 지역시장 seed. ` +
+      `${item.month} ${item.region} 한국부동산원 지역시장 ${item.sourceType}. ` +
       `매매지수 ${item.saleIndex}, 전세지수 ${item.rentIndex}, 매매 MoM ${item.saleMom}%, 전세 MoM ${item.rentMom}%, ` +
       `지역 변동성 ${item.volatilityScore}점. 국토부 개별 실거래의 단기 노이즈를 보완하는 시장 기준선으로 사용한다.`,
     metadata: {
@@ -153,17 +156,18 @@ function buildFusionDataChunks(): RagChunk[] {
       month: item.month,
       saleMom: item.saleMom,
       rentMom: item.rentMom,
-      volatilityScore: item.volatilityScore
+      volatilityScore: item.volatilityScore,
+      sourceUrl: item.sourceUrl ?? null
     }
   }));
 
-  const hugChunks = loadHugJeonseRiskSeed().map((item) => ({
+  const hugChunks = loadHugJeonseRisk().map((item) => ({
     id: `hug-jeonse-risk:${item.month}:${item.lawdCode5}`,
     sourceType: "hug_jeonse_risk" as const,
     sourceId: `${item.month}:${item.lawdCode5}`,
     title: `HUG 전세 리스크 ${item.region}`,
     text:
-      `${item.month} ${item.region} HUG 전세 리스크 seed. ` +
+      `${item.month} ${item.region} HUG 전세 리스크 ${item.sourceType}. ` +
       `보증사고율 참고값 ${item.guaranteeAccidentRate}%, 전세 리스크 ${item.jeonseRiskScore}점, 등급 ${item.riskGrade}. ` +
       `보증 승인 가능 여부가 아니라 전세가율과 함께 확인할 임차 안정성 참고 지표다.`,
     metadata: {
@@ -173,28 +177,30 @@ function buildFusionDataChunks(): RagChunk[] {
       lawdCode5: item.lawdCode5,
       month: item.month,
       riskGrade: item.riskGrade,
-      jeonseRiskScore: item.jeonseRiskScore
+      jeonseRiskScore: item.jeonseRiskScore,
+      sourceUrl: item.sourceUrl ?? null
     }
   }));
 
-  const transportChunks = loadTransportAccessSeed().map((item) => ({
+  const transportChunks = loadTransportAccess().map((item) => ({
     id: `transport-access:${item.lawdCode5}:${item.complexName}`,
     sourceType: "transport_accessibility" as const,
     sourceId: `${item.lawdCode5}:${item.complexName}`,
     title: `교통 접근성 ${item.complexName}`,
     text:
-      `${item.region} ${item.legalDong} ${item.complexName} 교통 접근성 seed. ` +
+      `${item.region} ${item.legalDong} ${item.complexName} 교통 접근성 ${item.sourceType}. ` +
       `가까운 역 ${item.nearestStationDistanceM}m, 버스정류장 ${item.nearestBusStopDistanceM}m, ` +
       `대중교통 접근성 ${item.transitAccessibilityScore}점, 직주근접 ${item.commuteAccessScore}점, 생활권 이동성 ${item.lifeSocAccessScore}점.`,
     metadata: {
-      provider: "TRANSPORT",
+      provider: item.provider ?? "TRANSPORT",
       fusionSourceType: item.sourceType,
       region: item.region,
       legalDong: item.legalDong,
       lawdCode5: item.lawdCode5,
       complexName: item.complexName,
       transitAccessibilityScore: item.transitAccessibilityScore,
-      commuteAccessScore: item.commuteAccessScore
+      commuteAccessScore: item.commuteAccessScore,
+      sourceUrl: item.sourceUrl ?? null
     }
   }));
 
@@ -214,7 +220,10 @@ function buildFusionDataChunks(): RagChunk[] {
       lawdCode5: item.lawdCode5 ?? null,
       month: item.month,
       fusedStabilityScore: item.fusedStabilityScore,
-      fusedRiskGrade: item.fusedRiskGrade
+      fusedRiskGrade: item.fusedRiskGrade,
+      fusionConfidence: item.fusionConfidence,
+      realProviderCount: item.realProviderCount,
+      seedProviderCount: item.seedProviderCount
     }
   }));
 

@@ -59,6 +59,8 @@ Expected columns:
     transit_accessibility_score
     commute_access_score
     fused_stability_score
+    fusion_confidence
+    fusion_real_provider_count
     fusion_seed_flag
 
 Outputs
@@ -140,6 +142,8 @@ FEATURE_COLUMNS = [
     "transit_accessibility_score",
     "commute_access_score",
     "fused_stability_score",
+    "fusion_confidence",
+    "fusion_real_provider_count",
     "fusion_seed_flag",
 ]
 
@@ -195,6 +199,8 @@ def load_features(path: str) -> pd.DataFrame:
         "transit_accessibility_score": 55.0,
         "commute_access_score": 55.0,
         "fused_stability_score": 55.0,
+        "fusion_confidence": 0.4,
+        "fusion_real_provider_count": 1.0,
         "fusion_seed_flag": 0.0,
     }
     for column, default in default_fusion_columns.items():

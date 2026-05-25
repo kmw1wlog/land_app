@@ -7,6 +7,12 @@ export function calculateFusedStabilityScore(input: {
   krebVolatilityScore?: number;
   hugJeonseRiskScore?: number;
   transitAccessibilityScore?: number;
+  sourceTypes?: {
+    molit?: "real" | "seed" | "mock";
+    kreb?: "real" | "seed" | "mock";
+    hug?: "real" | "seed" | "mock";
+    transport?: "real" | "seed" | "mock";
+  };
 }) {
   const molit = clamp(
     55 +
@@ -27,16 +33,42 @@ export function calculateFusedStabilityScore(input: {
   const hug = clamp(100 - clamp(input.hugJeonseRiskScore ?? 55, 0, 100), 0, 100);
   const transport = clamp(input.transitAccessibilityScore ?? 55, 0, 100);
   const score = Math.round(molit * 0.4 + kreb * 0.2 + hug * 0.2 + transport * 0.2);
+  const confidence = calculateFusionConfidence(input.sourceTypes);
 
   return {
     fusedStabilityScore: score,
     fusedRiskGrade: gradeFromScore(score),
+    fusionConfidence: confidence.fusionConfidence,
+    realProviderCount: confidence.realProviderCount,
+    seedProviderCount: confidence.seedProviderCount,
     components: {
       molitTradeStability: Math.round(molit),
       krebMarketStability: Math.round(kreb),
       hugTenantSafety: Math.round(hug),
       transportAccessibility: Math.round(transport)
     }
+  };
+}
+
+export function calculateFusionConfidence(sourceTypes?: {
+  molit?: "real" | "seed" | "mock";
+  kreb?: "real" | "seed" | "mock";
+  hug?: "real" | "seed" | "mock";
+  transport?: "real" | "seed" | "mock";
+}) {
+  const normalized = {
+    molit: sourceTypes?.molit ?? "real",
+    kreb: sourceTypes?.kreb ?? "seed",
+    hug: sourceTypes?.hug ?? "seed",
+    transport: sourceTypes?.transport ?? "seed"
+  };
+  const weights = { molit: 0.4, kreb: 0.2, hug: 0.2, transport: 0.2 };
+  const entries = Object.entries(normalized) as Array<[keyof typeof weights, "real" | "seed" | "mock"]>;
+  const fusionConfidence = entries.reduce((sum, [key, sourceType]) => sum + (sourceType === "real" ? weights[key] : 0), 0);
+  return {
+    fusionConfidence: Number(fusionConfidence.toFixed(2)),
+    realProviderCount: entries.filter(([, sourceType]) => sourceType === "real").length,
+    seedProviderCount: entries.filter(([, sourceType]) => sourceType === "seed").length
   };
 }
 

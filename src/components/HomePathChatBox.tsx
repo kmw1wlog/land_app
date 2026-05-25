@@ -172,12 +172,14 @@ export function HomePathChatBox() {
 function summarizeSourceProviders(sources: NonNullable<ChatMessage["sources"]>) {
   const labels = new Set<string>();
   for (const source of sources) {
+    const fusionSourceType = typeof source.metadata?.fusionSourceType === "string" ? source.metadata.fusionSourceType : null;
+    const sourceSuffix = fusionSourceType ? `(${fusionSourceType})` : "";
     if (source.sourceType === "complex_signal") labels.add("MOLIT 실거래");
     if (source.sourceType === "model_artifact") labels.add("Transformer AI signal");
-    if (source.sourceType === "kreb_market_index") labels.add("KREB 지역지수");
-    if (source.sourceType === "hug_jeonse_risk") labels.add("HUG 전세리스크");
-    if (source.sourceType === "transport_accessibility") labels.add("TRANSPORT 접근성");
-    if (source.sourceType === "fusion_data") labels.add("융합 안정성");
+    if (source.sourceType === "kreb_market_index") labels.add(`KREB 지역지수${sourceSuffix}`);
+    if (source.sourceType === "hug_jeonse_risk") labels.add(`HUG 전세리스크${sourceSuffix}`);
+    if (source.sourceType === "transport_accessibility") labels.add(`TRANSPORT 접근성${sourceSuffix}`);
+    if (source.sourceType === "fusion_data") labels.add(`융합 안정성${sourceSuffix}`);
     if (source.sourceType === "safety_policy") labels.add("안전정책");
   }
   return labels.size ? Array.from(labels) : ["RAG 근거"];

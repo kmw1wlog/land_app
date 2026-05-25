@@ -25,5 +25,7 @@
 - TRANSPORT/KMAAS: seed
 
 최종 제출 시 체크 여부: false
+필요한 다음 단계: KREB/HUG/KMAAS/TRANSPORT 중 최소 1개 real dataset을 연결하고 fused score, RAG, UI 사용 위치를 검증해야 한다.
+강한 주장에 아직 부족한 provider: KREB, HUG, KMAAS/TRANSPORT
 
 seed/mock만으로는 주관기관 융합데이터 체크하지 않는다. MVP에서는 확장 구현 가능성과 동일 파이프라인 적용 근거로만 제시한다.

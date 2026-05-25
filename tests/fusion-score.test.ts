@@ -11,7 +11,13 @@ describe("fusion stability score", () => {
       krebRentMom: 0.2,
       krebVolatilityScore: 35,
       hugJeonseRiskScore: 28,
-      transitAccessibilityScore: 84
+      transitAccessibilityScore: 84,
+      sourceTypes: {
+        molit: "real",
+        kreb: "real",
+        hug: "seed",
+        transport: "seed"
+      }
     });
 
     expect(result.fusedStabilityScore).toBeGreaterThanOrEqual(0);
@@ -20,5 +26,8 @@ describe("fusion stability score", () => {
     expect(result.components).toHaveProperty("krebMarketStability");
     expect(result.components).toHaveProperty("hugTenantSafety");
     expect(result.components).toHaveProperty("transportAccessibility");
+    expect(result.fusionConfidence).toBe(0.6);
+    expect(result.realProviderCount).toBe(2);
+    expect(result.seedProviderCount).toBe(2);
   });
 });
