@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { Bot, Send, ShieldCheck, Sparkles } from "lucide-react";
+import { properties } from "@/data/dummy";
 import { useAppStore } from "@/store/useAppStore";
 
 type ChatMessage = {
@@ -25,6 +26,27 @@ export function HomePathChatBox() {
   const currentHome = useAppStore((state) => state.currentHome);
   const financialPlan = useAppStore((state) => state.financialPlan);
   const activeCandidate = useAppStore((state) => state.activeCandidate);
+  const portfolioItems = useAppStore((state) => state.portfolioItems);
+  const interestedHomes = portfolioItems.map((item) => {
+    const property = properties.find((entry) => entry.id === item.propertyId);
+    return {
+      id: item.id,
+      propertyId: item.propertyId,
+      complexSignalId: item.complexSignalId,
+      sourceType: item.sourceType,
+      complexName: item.complexName ?? property?.name,
+      name: property?.name,
+      region: item.region ?? property?.region,
+      lawdCode5: property?.lawdCode5,
+      areaBucket: item.areaBucket,
+      floorBand: item.floorBand,
+      propertyType: property?.propertyType,
+      referencePrice: item.referencePrice ?? item.virtualPurchasePrice ?? property?.salePrice,
+      virtualPurchasePrice: item.virtualPurchasePrice,
+      memo: item.memo,
+      reason: item.reason
+    };
+  });
   const [input, setInput] = useState(activeCandidate ? `${activeCandidate.complexName} 왜 후보로 떴어?` : "");
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -58,7 +80,9 @@ export function HomePathChatBox() {
           profile,
           currentHome,
           financialPlan,
-          activeCandidate
+          activeCandidate,
+          portfolioItems,
+          interestedHomes
         })
       });
       const payload = await response.json();
@@ -102,6 +126,15 @@ export function HomePathChatBox() {
           <p className="mt-2 text-lg font-black text-ink">{activeCandidate.complexName}</p>
           <p className="text-sm font-bold text-black/55">
             {activeCandidate.region} · {activeCandidate.areaBucket} · 거래 집중도 {activeCandidate.transactionHeat.toFixed(1)}배
+          </p>
+        </div>
+      ) : null}
+
+      {portfolioItems.length ? (
+        <div className="rounded-lg border border-black/10 bg-white p-4">
+          <p className="text-xs font-black text-black/45">관심 주택 context</p>
+          <p className="mt-1 text-sm font-bold text-black/60">
+            저장한 후보 {portfolioItems.length}개를 고정 근거로 넣고, 같은 예산대의 다른 후보를 RAG로 비교합니다.
           </p>
         </div>
       ) : null}
@@ -175,6 +208,7 @@ function summarizeSourceProviders(sources: NonNullable<ChatMessage["sources"]>) 
     const fusionSourceType = typeof source.metadata?.fusionSourceType === "string" ? source.metadata.fusionSourceType : null;
     const sourceSuffix = fusionSourceType ? `(${fusionSourceType})` : "";
     if (source.sourceType === "complex_signal") labels.add("MOLIT 실거래");
+    if (source.sourceType === "user_context") labels.add("내 상황/관심 후보");
     if (source.sourceType === "model_artifact") labels.add("Transformer AI signal");
     if (source.sourceType === "kreb_market_index") labels.add(`KREB 지역지수${sourceSuffix}`);
     if (source.sourceType === "hug_jeonse_risk") labels.add(`HUG 전세리스크${sourceSuffix}`);

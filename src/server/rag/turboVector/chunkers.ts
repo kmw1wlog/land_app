@@ -282,6 +282,11 @@ async function buildComplexSignalChunks(): Promise<RagChunk[]> {
       region: snapshot.region,
       areaBucket: snapshot.areaBucket,
       floorBand: snapshot.floorBand,
+      referencePrice: snapshot.referencePrice ? Number(snapshot.referencePrice) : null,
+      jeonseRatio: snapshot.jeonseRatio,
+      drawdownFromHigh: snapshot.drawdownFromHigh,
+      volume90d: snapshot.volume90d,
+      transactionHeat: snapshot.transactionHeat,
       recommendationScore: snapshot.recommendationScore
     }
   }));
@@ -308,6 +313,8 @@ function buildArtifactBackedComplexSignalChunks(): RagChunk[] {
       lawdCode5: signal.lawdCode5,
       region: lawdRegionLabel(signal.lawdCode5),
       areaBucket: signal.areaBucket,
+      referencePrice: signal.observedOutcomeForBacktest.currentPrice ?? null,
+      futureTradeCount: signal.observedOutcomeForBacktest.futureTradeCount ?? null,
       aiScore: signal.ai.candidateScore,
       rank: index + 1
     }

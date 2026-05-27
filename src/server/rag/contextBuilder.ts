@@ -1,4 +1,4 @@
-import type { ComplexSignalCandidate, CurrentHome, UserFinancialPlan, UserProfile } from "@/types";
+import type { ComplexSignalCandidate, CurrentHome, UserFinancialPlan, UserProfile, VirtualPortfolioItem } from "@/types";
 import { sampleHomes, sampleProfiles } from "@/data/dummy";
 import { calculateMoveUpBudget, calculateNetCashAfterSellingHome, calculatePurchasePower } from "@/lib/calculations";
 import { calculateFuturePurchasePower } from "@/lib/futurePlan";
@@ -22,7 +22,27 @@ export type HomePathChatInput = {
   currentHome?: CurrentHome;
   financialPlan?: UserFinancialPlan;
   activeCandidate?: ComplexSignalCandidate | null;
+  portfolioItems?: VirtualPortfolioItem[];
+  interestedHomes?: HomePathInterestHome[];
   useRag?: boolean;
+};
+
+export type HomePathInterestHome = {
+  id?: string;
+  propertyId?: string;
+  complexSignalId?: string;
+  sourceType?: string;
+  complexName?: string;
+  name?: string;
+  region?: string;
+  lawdCode5?: string | null;
+  areaBucket?: string | null;
+  floorBand?: string | null;
+  propertyType?: string | null;
+  referencePrice?: number | null;
+  virtualPurchasePrice?: number | null;
+  memo?: string | null;
+  reason?: string | null;
 };
 
 export type SourceRequirement = {
@@ -37,6 +57,19 @@ export type RetrievalPlan = {
   sourceMinimums: SourceRequirement[];
 };
 
+type UserRagAnchor = {
+  id: string;
+  role: "active_candidate" | "portfolio_item" | "interested_home";
+  label: string;
+  complexName?: string;
+  region?: string;
+  lawdCode5?: string;
+  areaBucket?: string;
+  floorBand?: string;
+  referencePrice?: number;
+  memo?: string;
+};
+
 export async function buildHomePathRagContext(input: HomePathChatInput) {
   const profile = input.profile ?? sampleProfiles[0];
   const currentHome = input.currentHome ?? sampleHomes[0];
@@ -44,6 +77,15 @@ export async function buildHomePathRagContext(input: HomePathChatInput) {
   const intent = classifyIntent(input.message);
   const calculations = buildCalculationSummary({ profile, currentHome, financialPlan, activeCandidate: input.activeCandidate });
   const retrievalPlan = getIntentRetrievalPlan(intent);
+  const anchors = buildUserRagAnchors(input);
+  const mandatoryContext = buildMandatoryUserContextResults({
+    profile,
+    currentHome,
+    financialPlan,
+    activeCandidate: input.activeCandidate,
+    calculations,
+    anchors
+  });
 
   if (input.useRag === false) {
     return {
@@ -51,11 +93,11 @@ export async function buildHomePathRagContext(input: HomePathChatInput) {
       calculations,
       retrievalPlan,
       retrieved: [],
-      contextText: buildContextText([], input.activeCandidate, intent)
+      contextText: buildContextText(mandatoryContext, intent)
     };
   }
 
-  const query = buildRagQuery({ input, intent, profile, currentHome, financialPlan });
+  const query = buildRagQuery({ input, intent, profile, currentHome, financialPlan, calculations, anchors });
   const queryEmbedding = await embedText(query);
   const store = getDefaultVectorStore();
   const sourceSearches = await Promise.all(
@@ -69,19 +111,32 @@ export async function buildHomePathRagContext(input: HomePathChatInput) {
       });
     })
   );
+  const anchorSearches = await Promise.all(
+    buildAnchorQueries(anchors, profile, currentHome, financialPlan, calculations).map(async (anchorQuery) => {
+      const anchorEmbedding = await embedText(anchorQuery);
+      const [complexSignals, modelArtifacts, fusionSignals] = await Promise.all([
+        store.search({ queryEmbedding: anchorEmbedding, topK: 8, filters: { sourceType: "complex_signal" } }),
+        store.search({ queryEmbedding: anchorEmbedding, topK: 5, filters: { sourceType: "model_artifact" } }),
+        store.search({ queryEmbedding: anchorEmbedding, topK: 3, filters: { sourceType: "fusion_data" } })
+      ]);
+      return [...complexSignals, ...modelArtifacts, ...fusionSignals];
+    })
+  );
   const rawResults = [
     ...(await store.search({ queryEmbedding, topK: 20 })),
-    ...sourceSearches.flat()
+    ...sourceSearches.flat(),
+    ...anchorSearches.flat()
   ];
-  const rankedResults = rankHomePathRagResults(rawResults, input.activeCandidate, intent);
-  const results = selectPlannedResults(rankedResults, retrievalPlan);
+  const rankedResults = rankHomePathRagResults(rawResults, input.activeCandidate, intent, { anchors, calculations });
+  const vectorResults = selectPlannedResults(rankedResults, retrievalPlan);
+  const results = [...mandatoryContext, ...vectorResults];
 
   return {
     intent,
     calculations,
     retrievalPlan,
     retrieved: results,
-    contextText: buildContextText(results, input.activeCandidate, intent)
+    contextText: buildContextText(results, intent)
   };
 }
 
@@ -125,17 +180,7 @@ function buildCalculationSummary(input: {
   };
 }
 
-function buildContextText(results: SearchResult[], activeCandidate?: ComplexSignalCandidate | null, intent?: HomePathChatIntent) {
-  const candidateText = activeCandidate
-    ? [
-        `[현재 후보] ${activeCandidate.region} ${activeCandidate.complexName} ${activeCandidate.areaBucket}`,
-        `기준가: ${activeCandidate.referencePrice ? formatKRW(activeCandidate.referencePrice) : "데이터 부족"}`,
-        `거래 집중도: ${activeCandidate.transactionHeat.toFixed(2)}배`,
-        `전고점 대비: ${activeCandidate.drawdownFromHigh?.toFixed(1) ?? "미상"}%`,
-        `전세가율: ${activeCandidate.jeonseRatio?.toFixed(1) ?? "미상"}%`,
-        `주의: ${activeCandidate.disclaimer}`
-      ].join("\n")
-    : "";
+function buildContextText(results: SearchResult[], intent?: HomePathChatIntent) {
   const summaryText = results.length
     ? [
         `[RAG 검색 요약] intent=${intent ?? "general"}, sourceCount=${results.length}`,
@@ -154,7 +199,196 @@ function buildContextText(results: SearchResult[], activeCandidate?: ComplexSign
       ].join("\n");
     })
     .join("\n\n");
-  return [candidateText, summaryText, ragText].filter(Boolean).join("\n\n");
+  return [summaryText, ragText].filter(Boolean).join("\n\n");
+}
+
+function buildUserRagAnchors(input: HomePathChatInput): UserRagAnchor[] {
+  const anchors: UserRagAnchor[] = [];
+  if (input.activeCandidate) {
+    anchors.push({
+      id: `active:${input.activeCandidate.id}`,
+      role: "active_candidate",
+      label: input.activeCandidate.complexName,
+      complexName: input.activeCandidate.complexName,
+      region: input.activeCandidate.region,
+      lawdCode5: input.activeCandidate.lawdCode5 ?? undefined,
+      areaBucket: input.activeCandidate.areaBucket,
+      floorBand: input.activeCandidate.floorBand,
+      referencePrice: input.activeCandidate.referencePrice ?? undefined,
+      memo: "현재 화면에서 설명 중인 후보"
+    });
+  }
+
+  for (const item of input.portfolioItems ?? []) {
+    anchors.push({
+      id: `portfolio:${item.complexSignalId ?? item.propertyId ?? item.id}`,
+      role: "portfolio_item",
+      label: item.complexName ?? item.propertyId,
+      complexName: item.complexName,
+      region: item.region,
+      areaBucket: item.areaBucket,
+      floorBand: item.floorBand,
+      referencePrice: item.referencePrice ?? item.virtualPurchasePrice,
+      memo: item.memo ?? item.reason
+    });
+  }
+
+  for (const home of input.interestedHomes ?? []) {
+    anchors.push({
+      id: `interest:${home.complexSignalId ?? home.propertyId ?? home.id ?? home.complexName ?? home.name}`,
+      role: "interested_home",
+      label: home.complexName ?? home.name ?? home.propertyId ?? "관심 주택",
+      complexName: home.complexName ?? home.name,
+      region: home.region,
+      lawdCode5: home.lawdCode5 ?? undefined,
+      areaBucket: home.areaBucket ?? undefined,
+      floorBand: home.floorBand ?? undefined,
+      referencePrice: home.referencePrice ?? home.virtualPurchasePrice ?? undefined,
+      memo: home.memo ?? home.reason ?? undefined
+    });
+  }
+
+  const seen = new Set<string>();
+  return anchors.filter((anchor) => {
+    const key = [anchor.complexName ?? anchor.label, anchor.region ?? "", anchor.areaBucket ?? "", anchor.referencePrice ?? ""].join(":");
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return Boolean(anchor.label);
+  });
+}
+
+function buildMandatoryUserContextResults(input: {
+  profile: UserProfile;
+  currentHome: CurrentHome;
+  financialPlan: UserFinancialPlan;
+  activeCandidate?: ComplexSignalCandidate | null;
+  calculations: ReturnType<typeof buildCalculationSummary>;
+  anchors: UserRagAnchor[];
+}): SearchResult[] {
+  const results: SearchResult[] = [
+    {
+      id: "user-context:situation",
+      sourceType: "user_context",
+      sourceId: "user-situation",
+      title: "사용자 상황 고정 context",
+      text: [
+        "이 정보는 RAG 검색 결과와 무관하게 항상 답변에 먼저 반영해야 하는 사용자 상황이다.",
+        `월소득 ${formatMonthly(input.profile.monthlyIncome)}, 월저축 ${formatMonthly(input.profile.monthlySavings)}, 현금 ${formatKRW(input.profile.cashOnHand)}, 위험성향 ${input.profile.riskPreference}.`,
+        `선호지역 ${input.profile.preferredRegions.join(", ") || "미입력"}, 목표 ${input.financialPlan.targetRegion} ${formatKRW(input.financialPlan.targetHomePrice)}, 목표기간 ${input.financialPlan.targetHorizonYears}년.`,
+        `현재 집 ${input.currentHome.region}, 추정가 ${formatKRW(input.currentHome.estimatedCurrentPrice)}, 매입가 ${formatKRW(input.currentHome.purchasePrice)}, 대출잔액 ${formatKRW(input.currentHome.loanBalance)}, 점유 ${input.currentHome.occupancyType}.`,
+        `계산 요약: ${input.calculations.summary}`
+      ].join(" "),
+      metadata: {
+        contextRole: "user_situation",
+        pinned: true,
+        region: input.currentHome.region,
+        targetRegion: input.financialPlan.targetRegion,
+        targetPrice: input.financialPlan.targetHomePrice,
+        monthlyIncome: input.profile.monthlyIncome,
+        cashOnHand: input.profile.cashOnHand,
+        purchasePowerNow: input.calculations.purchasePowerNow,
+        moveUpBudget: input.calculations.moveUpBudget,
+        fiveYearPower: input.calculations.fiveYearPower
+      },
+      score: 1,
+      finalScore: 1.8,
+      boostReason: ["mandatory:user_situation"]
+    }
+  ];
+
+  if (input.activeCandidate) {
+    results.push({
+      id: `user-context:active-candidate:${input.activeCandidate.id}`,
+      sourceType: "user_context",
+      sourceId: input.activeCandidate.id,
+      title: "현재 후보 고정 context",
+      text: [
+        "사용자가 지금 설명을 요구한 후보이므로 반드시 답변에 포함해야 한다.",
+        `${input.activeCandidate.region} ${input.activeCandidate.complexName} ${input.activeCandidate.areaBucket}.`,
+        `기준가 ${input.activeCandidate.referencePrice ? formatKRW(input.activeCandidate.referencePrice) : "데이터 부족"}, 거래 집중도 ${input.activeCandidate.transactionHeat.toFixed(2)}배, 전고점 대비 ${input.activeCandidate.drawdownFromHigh?.toFixed(1) ?? "미상"}%, 전세가율 ${input.activeCandidate.jeonseRatio?.toFixed(1) ?? "미상"}%.`,
+        `주의: ${input.activeCandidate.disclaimer}`
+      ].join(" "),
+      metadata: {
+        contextRole: "active_candidate",
+        pinned: true,
+        complexName: input.activeCandidate.complexName,
+        region: input.activeCandidate.region,
+        lawdCode5: input.activeCandidate.lawdCode5,
+        areaBucket: input.activeCandidate.areaBucket,
+        floorBand: input.activeCandidate.floorBand,
+        referencePrice: input.activeCandidate.referencePrice ?? null
+      },
+      score: 1,
+      finalScore: 1.7,
+      boostReason: ["mandatory:active_candidate"]
+    });
+  }
+
+  const interestAnchors = input.anchors.filter((anchor) => anchor.role !== "active_candidate");
+  if (interestAnchors.length) {
+    results.push({
+      id: "user-context:interest-homes",
+      sourceType: "user_context",
+      sourceId: "interest-homes",
+      title: "관심 주택 고정 context",
+      text: [
+        "사용자가 관심에 담은 주택 목록이다. 답변은 이 관심 후보들을 빠뜨리지 말고, 이 후보들을 기준점으로 삼아 TurboQuant RAG에서 찾은 다른 후보와 비교해야 한다.",
+        ...interestAnchors.map((anchor, index) =>
+          `${index + 1}. ${anchor.region ?? "지역 미상"} ${anchor.label}${anchor.areaBucket ? ` ${anchor.areaBucket}` : ""}: 기준가 ${anchor.referencePrice ? formatKRW(anchor.referencePrice) : "미상"}${anchor.memo ? `, 메모 ${anchor.memo}` : ""}`
+        )
+      ].join("\n"),
+      metadata: {
+        contextRole: "interest_homes",
+        pinned: true,
+        interestCount: interestAnchors.length,
+        complexName: interestAnchors.map((anchor) => anchor.complexName ?? anchor.label).join(", "),
+        region: interestAnchors.map((anchor) => anchor.region).filter(Boolean).join(", ")
+      },
+      score: 1,
+      finalScore: 1.6,
+      boostReason: ["mandatory:interest_homes"]
+    });
+  }
+
+  return results;
+}
+
+function buildAnchorQueries(
+  anchors: UserRagAnchor[],
+  profile: UserProfile,
+  currentHome: CurrentHome,
+  financialPlan: UserFinancialPlan,
+  calculations: ReturnType<typeof buildCalculationSummary>
+) {
+  const base = [
+    "사용자 상황 맞춤 비교",
+    `월소득 ${profile.monthlyIncome}`,
+    `월저축 ${profile.monthlySavings}`,
+    `현금 ${profile.cashOnHand}`,
+    `현재집 ${currentHome.region}`,
+    `목표지역 ${financialPlan.targetRegion}`,
+    `현재구매력 ${calculations.purchasePowerNow}`,
+    `정리후예산 ${calculations.moveUpBudget}`,
+    `5년구매력 ${calculations.fiveYearPower}`,
+    "같은 예산 다른 후보 거래 집중도 전세가율 전고점 대비 하락 리스크"
+  ];
+  const anchorQueries = anchors.map((anchor) =>
+    [
+      ...base,
+      anchor.role,
+      anchor.complexName,
+      anchor.region,
+      anchor.lawdCode5,
+      anchor.areaBucket,
+      anchor.floorBand,
+      anchor.referencePrice ? `관심가격 ${anchor.referencePrice}` : undefined,
+      anchor.referencePrice ? `비슷한 가격대 ${Math.round(anchor.referencePrice / 100_000_000)}억` : undefined,
+      anchor.memo
+    ]
+      .filter(Boolean)
+      .join(" ")
+  );
+  return anchorQueries.length ? anchorQueries : [base.join(" ")];
 }
 
 const INTENT_SOURCE_BOOST: Record<HomePathChatIntent, Partial<Record<RagSourceType, number>>> = {
@@ -225,19 +459,27 @@ const INTENT_SOURCE_BOOST: Record<HomePathChatIntent, Partial<Record<RagSourceTy
 export function rankHomePathRagResults(
   results: SearchResult[],
   activeCandidate: ComplexSignalCandidate | null | undefined,
-  intent: HomePathChatIntent
+  intent: HomePathChatIntent,
+  options: {
+    anchors?: UserRagAnchor[];
+    calculations?: Pick<ReturnType<typeof buildCalculationSummary>, "purchasePowerNow" | "moveUpBudget" | "fiveYearPower">;
+  } = {}
 ) {
   return results
     .map((result) => {
       const sourceTypeBoost = INTENT_SOURCE_BOOST[intent][result.sourceType] ?? 0;
       const candidateBoost = candidateMetadataBoost(result, activeCandidate);
+      const anchorBoost = anchorMetadataBoost(result, options.anchors ?? []);
+      const fitBoost = userFitMetadataBoost(result, options.calculations);
       const boostReason = [
         sourceTypeBoost ? `intent:${intent}:${result.sourceType}+${sourceTypeBoost.toFixed(2)}` : undefined,
-        ...candidateBoost.reasons
+        ...candidateBoost.reasons,
+        ...anchorBoost.reasons,
+        ...fitBoost.reasons
       ].filter(Boolean) as string[];
       return {
         ...result,
-        finalScore: result.score + sourceTypeBoost + candidateBoost.value,
+        finalScore: result.score + sourceTypeBoost + candidateBoost.value + anchorBoost.value + fitBoost.value,
         boostReason
       };
     })
@@ -278,6 +520,86 @@ function candidateMetadataBoost(result: SearchResult, activeCandidate?: ComplexS
     reasons.push("activeCandidate:areaBucket+0.06");
   }
   return { value, reasons };
+}
+
+function anchorMetadataBoost(result: SearchResult, anchors: UserRagAnchor[]) {
+  if (!anchors.length) return { value: 0, reasons: [] as string[] };
+  let value = 0;
+  const reasons: string[] = [];
+  const haystack = [
+    result.title,
+    result.text,
+    result.metadata.complexName,
+    result.metadata.region,
+    result.metadata.areaBucket,
+    result.metadata.lawdCode5
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  const resultPrice = numericMetadata(result.metadata.referencePrice);
+
+  for (const anchor of anchors.slice(0, 8)) {
+    const anchorLabel = anchor.complexName?.toLowerCase();
+    if (anchorLabel && haystack.includes(anchorLabel)) {
+      value += anchor.role === "active_candidate" ? 0.1 : 0.18;
+      reasons.push(`${anchor.role}:exact+${anchor.role === "active_candidate" ? "0.10" : "0.18"}`);
+    }
+    if (anchor.lawdCode5 && haystack.includes(anchor.lawdCode5.toLowerCase())) {
+      value += 0.08;
+      reasons.push(`${anchor.role}:lawdCode5+0.08`);
+    }
+    if (anchor.region && haystack.includes(anchor.region.toLowerCase())) {
+      value += 0.08;
+      reasons.push(`${anchor.role}:region+0.08`);
+    }
+    if (anchor.areaBucket && haystack.includes(anchor.areaBucket.toLowerCase())) {
+      value += 0.05;
+      reasons.push(`${anchor.role}:areaBucket+0.05`);
+    }
+    if (anchor.referencePrice && resultPrice && isSimilarPrice(anchor.referencePrice, resultPrice)) {
+      value += 0.07;
+      reasons.push(`${anchor.role}:similarPrice+0.07`);
+    }
+  }
+  return { value: Math.min(value, 0.42), reasons: Array.from(new Set(reasons)).slice(0, 8) };
+}
+
+function userFitMetadataBoost(
+  result: SearchResult,
+  calculations?: Pick<ReturnType<typeof buildCalculationSummary>, "purchasePowerNow" | "moveUpBudget" | "fiveYearPower">
+) {
+  if (!calculations || result.sourceType !== "complex_signal") return { value: 0, reasons: [] as string[] };
+  const price = numericMetadata(result.metadata.referencePrice);
+  if (!price) return { value: 0, reasons: [] as string[] };
+  if (price <= calculations.purchasePowerNow) {
+    return { value: 0.14, reasons: ["userFit:possibleNow+0.14"] };
+  }
+  if (price <= calculations.moveUpBudget) {
+    return { value: 0.11, reasons: ["userFit:afterSale+0.11"] };
+  }
+  if (price <= calculations.fiveYearPower) {
+    return { value: 0.07, reasons: ["userFit:fiveYear+0.07"] };
+  }
+  const targetCeiling = Math.max(calculations.fiveYearPower, calculations.moveUpBudget) * 1.18;
+  if (price <= targetCeiling) {
+    return { value: 0.03, reasons: ["userFit:nearStretch+0.03"] };
+  }
+  return { value: -0.04, reasons: ["userFit:overBudget-0.04"] };
+}
+
+function numericMetadata(value: unknown) {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
+function isSimilarPrice(anchorPrice: number, resultPrice: number) {
+  const ratio = Math.abs(resultPrice - anchorPrice) / Math.max(anchorPrice, 1);
+  return ratio <= 0.22;
 }
 
 export function getIntentRetrievalPlan(intent: HomePathChatIntent): RetrievalPlan {
@@ -405,6 +727,7 @@ function dedupeSemanticResults(results: SearchResult[]) {
 }
 
 function sourceTypeLabel(sourceType: RagSourceType) {
+  if (sourceType === "user_context") return "사용자 상황/관심 주택";
   if (sourceType === "complex_signal") return "후보 실거래 지표";
   if (sourceType === "model_artifact") return "Transformer AI 신호";
   if (sourceType === "faq") return "FAQ 근거";
@@ -422,6 +745,8 @@ function buildRagQuery(input: {
   profile: UserProfile;
   currentHome: CurrentHome;
   financialPlan: UserFinancialPlan;
+  calculations: ReturnType<typeof buildCalculationSummary>;
+  anchors: UserRagAnchor[];
 }) {
   const activeCandidate = input.input.activeCandidate;
   const intentKeywords: Record<HomePathChatIntent, string[]> = {
@@ -437,6 +762,17 @@ function buildRagQuery(input: {
     input.input.message,
     input.intent,
     ...intentKeywords[input.intent],
+    "사용자 상황 맞춤 답변",
+    "관심 주택 기반 비교",
+    ...input.anchors.flatMap((anchor) => [
+      anchor.label,
+      anchor.complexName,
+      anchor.region,
+      anchor.lawdCode5,
+      anchor.areaBucket,
+      anchor.referencePrice ? `관심가격:${anchor.referencePrice}` : undefined,
+      anchor.memo
+    ]),
     activeCandidate?.complexName,
     activeCandidate?.region,
     activeCandidate?.areaBucket,
@@ -444,6 +780,9 @@ function buildRagQuery(input: {
     input.currentHome.region,
     input.financialPlan.targetRegion,
     `targetPrice:${input.financialPlan.targetHomePrice}`,
+    `purchasePowerNow:${input.calculations.purchasePowerNow}`,
+    `moveUpBudget:${input.calculations.moveUpBudget}`,
+    `fiveYearPower:${input.calculations.fiveYearPower}`,
     `monthlyIncome:${input.profile.monthlyIncome}`,
     `monthlySavings:${input.profile.monthlySavings}`
   ]
@@ -464,10 +803,12 @@ function summarizeSourceTypes(results: SearchResult[]) {
 function summarizeMetadata(result: SearchResult) {
   const metadata = [
     result.sourceId ? `sourceId=${result.sourceId}` : undefined,
+    result.metadata.contextRole ? `contextRole=${result.metadata.contextRole}` : undefined,
     result.metadata.intent ? `intent=${result.metadata.intent}` : undefined,
     result.metadata.region ? `region=${result.metadata.region}` : undefined,
     result.metadata.complexName ? `complex=${result.metadata.complexName}` : undefined,
     result.metadata.areaBucket ? `area=${result.metadata.areaBucket}` : undefined,
+    result.metadata.referencePrice ? `referencePrice=${result.metadata.referencePrice}` : undefined,
     result.metadata.aiScore ? `aiScore=${result.metadata.aiScore}` : undefined,
     result.metadata.provider ? `provider=${result.metadata.provider}` : undefined,
     result.metadata.fusionSourceType ? `fusionSourceType=${result.metadata.fusionSourceType}` : undefined,

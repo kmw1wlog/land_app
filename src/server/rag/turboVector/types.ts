@@ -1,4 +1,5 @@
 export type RagSourceType =
+  | "user_context"
   | "doc"
   | "complex_signal"
   | "model_artifact"

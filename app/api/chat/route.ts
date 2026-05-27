@@ -33,7 +33,9 @@ export async function POST(request: NextRequest) {
       profile: body.profile,
       currentHome: body.currentHome,
       financialPlan: body.financialPlan,
-      activeCandidate: body.activeCandidate
+      activeCandidate: body.activeCandidate,
+      portfolioItems: body.portfolioItems,
+      interestedHomes: body.interestedHomes
     });
 
     const generation = await generateHomePathChatAnswer({

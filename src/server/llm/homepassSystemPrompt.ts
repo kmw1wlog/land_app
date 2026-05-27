@@ -8,10 +8,11 @@ export const HOMEPASS_SYSTEM_PROMPT = `
 규칙:
 1. 매수 추천, 수익 보장, 특정 단지 매입 권유를 하지 않는다.
 2. 제공된 계산 결과와 검색 context 안에서만 답한다.
-3. 근거가 부족하면 데이터가 부족하다고 말한다.
-4. 세무, 대출, 법률 확답을 하지 않는다.
-5. 답변은 한 줄 결론, 근거 3개, 주의점, 다음 행동 순서로 작성한다.
-6. 항상 “${HOMEPASS_SAFETY_NOTICE}”라는 안전 문구를 포함한다.
+3. 사용자 상황 context와 관심 주택 context가 있으면 반드시 먼저 반영하고, TurboQuant RAG로 찾은 다른 주택은 비교 근거로 설명한다.
+4. 근거가 부족하면 데이터가 부족하다고 말한다.
+5. 세무, 대출, 법률 확답을 하지 않는다.
+6. 답변은 한 줄 결론, 근거 3개, 주의점, 다음 행동 순서로 작성한다.
+7. 항상 “${HOMEPASS_SAFETY_NOTICE}”라는 안전 문구를 포함한다.
 `.trim();
 
 export const PROHIBITED_RECOMMENDATION_PATTERNS = [
@@ -53,6 +54,13 @@ export function buildSafeFallbackAnswer(input: {
   contextText: string;
 }) {
   const sections = splitContextSections(input.contextText);
+  const userBasis = pickSourceSummary(sections, "사용자 상황/관심 주택", [
+    "사용자 상황",
+    "관심 주택",
+    "월소득",
+    "현재 집",
+    "관심에 담은"
+  ]);
   const candidateBasis = pickSourceSummary(sections, "후보 실거래 지표", [
     "현재 후보",
     "최근 실거래",
@@ -78,7 +86,7 @@ export function buildSafeFallbackAnswer(input: {
       "결론: 현재 후보는 입력 조건과 계산 결과를 기준으로 현재 가능, 정리 후 가능, 미래 준비 중 어디에 가까운지 설명해야 하는 참고 후보입니다.",
       "",
       "근거 3개:",
-      `1. 구매력 계산 근거: ${input.calculationSummary}`,
+      `1. 구매력 계산 근거: ${userBasis ?? input.calculationSummary}`,
       `2. 실거래/전세가율/거래량 근거: ${candidateBasis ?? "후보 단지의 가격, 거래량, 전세가율, 전고점 대비 흐름을 확인할 검색 근거가 충분하지 않습니다."}`,
       `3. Transformer AI 신호 근거: ${aiBasis ?? "현재 검색 context에서 후보와 직접 연결된 회복 확률, 거래 재활성화, 하락 리스크 신호가 부족합니다."}`,
       "",
@@ -105,7 +113,7 @@ function pickSourceSummary(sections: string[], sourceLabel: string, keywords: st
     .filter(Boolean)
     .map((line) => line.replace(/^\[[^\]]+\]\s*/, ""))
     .filter((line) => !/^score=|^sourceTypes:|^RAG 검색 요약/.test(line));
-  const meaningful = lines.find((line) => /기준가|가격|거래|전세|전고점|후보점수|회복|재활성화|하락|보조|추천|수익|대출/.test(line));
+  const meaningful = lines.find((line) => /월소득|월저축|현금|현재 집|관심 주택|기준가|가격|거래|전세|전고점|후보점수|회복|재활성화|하락|보조|추천|수익|대출/.test(line));
   return meaningful ? limitSentence(meaningful) : undefined;
 }
 
