@@ -66,7 +66,9 @@ function toEvidenceMarkdown(record: {
       (item) => `| ${item.region} | ${item.month} | ${item.fusedStabilityScore} | ${item.fusedRiskGrade} | ${item.fusionConfidence} | ${item.sourceType} | ${item.evidence.join(", ")} |`
     ),
     "",
-    "seed/mock만으로는 주관기관 융합데이터 가점 박스를 체크하지 않는다."
+    record.readiness.canCheckMultiAgencyFusion
+      ? "현재 가점 체크 가능 판정은 real provider만 사용한다. seed/mock provider는 보조 설명과 확장 구조로만 표시한다."
+      : "seed/mock만으로는 주관기관 융합데이터 가점 박스를 체크하지 않는다."
   ].join("\n");
 }
 
@@ -158,7 +160,10 @@ function toSubmissionCopyMarkdown(record: {
   readiness: ReturnType<typeof getFusionCreditReadiness>;
 }) {
   const currentCopy = record.readiness.canCheckMultiAgencyFusion
-    ? "국토교통 실거래 데이터와 한국부동산원/HUG/교통 접근성 공공데이터를 실제로 융합하여 단지·지역별 주거 안정성 점수를 산출한다."
+    ? `국토교통 실거래 데이터와 ${record.readiness.realProviders
+        .filter((provider) => provider !== "MOLIT")
+        .map(providerLabel)
+        .join("/")} 공식 실데이터를 실제로 융합하여 단지·지역별 주거 안정성 점수를 산출한다. HUG·교통 접근성은 현재 시드 스냅샷으로 보조 반영하며, 실데이터로 단정하지 않는다.`
     : "MVP에서는 국토교통 실거래 데이터와 한국부동산원·HUG·교통 접근성 데이터 구조를 시드 스냅샷으로 구현했으며, 동일한 fusion pipeline으로 실데이터 연동 시 확장 가능하다.";
   return [
     "# 국토교통 제출서용 문구",
@@ -178,6 +183,14 @@ function toSubmissionCopyMarkdown(record: {
     "- 대출 승인 가능",
     "- 투자 타이밍 확정"
   ].join("\n");
+}
+
+function providerLabel(provider: string) {
+  if (provider === "KREB") return "한국부동산원(KREB)";
+  if (provider === "HUG") return "HUG";
+  if (provider === "KMAAS") return "K-MaaS";
+  if (provider === "TRANSPORT") return "교통 접근성";
+  return provider;
 }
 
 main().catch((error) => {

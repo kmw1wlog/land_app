@@ -81,7 +81,7 @@ function buildSafetyAndFaqChunks(): RagChunk[] {
       sourceType: "faq",
       title: "데이터 출처",
       text:
-        "홈패스는 국토교통부 실거래 공개 데이터, 법정동 코드, 건축물대장/공공데이터 연계 결과, 앱 내부 계산 로직, Transformer 모델 산출물을 함께 사용한다. MVP에서는 한국부동산원 지역시장 지수, HUG 전세 리스크, 교통 접근성 데이터를 seed snapshot으로 연결해 RAG와 융합 안정성 점수에 반영한다. seed/mock만으로는 주관기관 융합데이터 가점 박스를 체크하지 않는다.",
+        "홈패스는 국토교통부 실거래 공개 데이터, 법정동 코드, 건축물대장/공공데이터 연계 결과, 앱 내부 계산 로직, Transformer 모델 산출물을 함께 사용한다. 현재 MVP는 한국부동산원 R-ONE 지역 매매·전세 가격지수를 real snapshot으로 연결하고, HUG 전세 리스크와 교통 접근성은 seed snapshot으로 보조 반영한다. 주관기관 융합데이터 가점 판정은 MOLIT real과 KREB real만 사용하며, HUG/교통 seed는 실데이터로 단정하지 않는다.",
       metadata: { intent: "data_source" }
     },
     {
@@ -120,7 +120,9 @@ function buildSafetyAndFaqChunks(): RagChunk[] {
 }
 
 function buildFusionDataChunks(): RagChunk[] {
-  const evidenceChunks = buildFusionDataEvidence().map((item) => ({
+  const evidence = buildFusionDataEvidence();
+  const krebEvidence = evidence.find((item) => item.provider === "KREB");
+  const evidenceChunks = evidence.map((item) => ({
     id: `fusion-evidence:${item.provider}`,
     sourceType: "fusion_data" as const,
     sourceId: item.provider,
@@ -157,7 +159,8 @@ function buildFusionDataChunks(): RagChunk[] {
       saleMom: item.saleMom,
       rentMom: item.rentMom,
       volatilityScore: item.volatilityScore,
-      sourceUrl: item.sourceUrl ?? null
+      sourceUrl: item.sourceUrl ?? null,
+      sha256: krebEvidence?.sha256 ?? null
     }
   }));
 

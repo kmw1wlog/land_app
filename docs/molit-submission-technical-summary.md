@@ -6,15 +6,15 @@ HomePath는 국토교통 실거래/전월세, 법정동, 건축물, 주소/지�
 
 ## 주관기관 융합데이터 현재 상태
 
-- 체크 가능 여부: false
-- 사유: 현재 실데이터 provider는 MOLIT이고, KREB, HUG, TRANSPORT는 seed/mock이므로 주관기관 융합데이터 가점 체크는 보류한다.
-- real providers: MOLIT
-- seed/mock providers: KREB, HUG, TRANSPORT
+- 체크 가능 여부: true
+- 사유: MOLIT와 KREB 실데이터가 fused stability score, RAG, UI에 함께 반영된다.
+- real providers: MOLIT, KREB
+- seed/mock providers: HUG, TRANSPORT
 
 ## real/seed/mock 구분
 
 - MOLIT: real, rows=1, usedIn=candidate scoring, purchase power context, Transformer feature, RAG complex_signal, UI evidence badge
-- KREB: seed, rows=5, usedIn=fused stability score, RAG kreb_market_index, comparison UI, Transformer fusion feature, sha256=60f53c3f3b4890b8921ca9274cf353a82939ca0e1279d537d4563edac4a9c636
+- KREB: real, rows=5, usedIn=fused stability score, RAG kreb_market_index, comparison UI, Transformer fusion feature, sha256=707b62bf66946c452101723326cbda2743a3524429ccbd7af72523180fac22c6
 - HUG: seed, rows=5, usedIn=fused stability score, RAG hug_jeonse_risk, tenant safety UI, Transformer fusion feature, sha256=b981cf76db7c3db1a90d881fce37f9afd4ec740c2ecf3d43592e9adac396f55f
 - TRANSPORT: seed, rows=5, usedIn=fused stability score, RAG transport_accessibility, same budget comparison UI, Transformer fusion feature, sha256=5ce8fbd9f64d716ca77ce39d103af126e76252c2f9ed481f507034b6c372ec66
 

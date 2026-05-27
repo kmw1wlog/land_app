@@ -142,11 +142,11 @@ export async function buildHomePathRagContext(input: HomePathChatInput) {
 
 export function classifyIntent(message: string): HomePathChatIntent {
   const text = message.toLowerCase();
+  if (/출처|데이터|근거|공공|kreb|한국부동산원/.test(text)) return "data_source";
   if (/같은\s*예산|비교|대비|어디가\s*더|둘\s*중|vs|versus/.test(text)) return "comparison";
   if (/왜|이유|후보|떴/.test(text)) return "candidate_reason";
   if (/가능|구매력|월급|예산|어디까지/.test(text)) return "purchase_power";
   if (/위험|리스크|안전|dsr|ltv|하락/.test(text)) return "risk_check";
-  if (/출처|데이터|근거|공공/.test(text)) return "data_source";
   if (/추천|매수|사도|수익/.test(text)) return "safety";
   return "general";
 }
@@ -305,8 +305,8 @@ function buildMandatoryUserContextResults(input: {
       text: [
         "사용자가 지금 설명을 요구한 후보이므로 반드시 답변에 포함해야 한다.",
         `${input.activeCandidate.region} ${input.activeCandidate.complexName} ${input.activeCandidate.areaBucket}.`,
-        `기준가 ${input.activeCandidate.referencePrice ? formatKRW(input.activeCandidate.referencePrice) : "데이터 부족"}, 거래 집중도 ${input.activeCandidate.transactionHeat.toFixed(2)}배, 전고점 대비 ${input.activeCandidate.drawdownFromHigh?.toFixed(1) ?? "미상"}%, 전세가율 ${input.activeCandidate.jeonseRatio?.toFixed(1) ?? "미상"}%.`,
-        `주의: ${input.activeCandidate.disclaimer}`
+        `기준가 ${input.activeCandidate.referencePrice ? formatKRW(input.activeCandidate.referencePrice) : "데이터 부족"}, 거래 집중도 ${formatOptionalNumber(input.activeCandidate.transactionHeat, 2, "배")}, 전고점 대비 ${formatOptionalNumber(input.activeCandidate.drawdownFromHigh, 1, "%")}, 전세가율 ${formatOptionalNumber(input.activeCandidate.jeonseRatio, 1, "%")}.`,
+        `주의: ${input.activeCandidate.disclaimer ?? "공공데이터 기반 참고용 진단이며 매수 추천이 아니다."}`
       ].join(" "),
       metadata: {
         contextRole: "active_candidate",
@@ -622,6 +622,7 @@ export function getIntentRetrievalPlan(intent: HomePathChatIntent): RetrievalPla
         { sourceType: "complex_signal", minimum: 2, take: 5, hints: ["후보 실거래", "거래 집중도", "전세가율", "전고점 대비"] },
         { sourceType: "model_artifact", minimum: 2, take: 5, hints: ["Transformer AI 신호", "회복 확률", "거래 재활성화", "하락 리스크"] },
         { sourceType: "fusion_data", minimum: 1, take: 3, hints: ["융합 안정성 점수", "한국부동산원", "HUG", "교통 접근성"] },
+        { sourceType: "kreb_market_index", minimum: 1, take: 3, hints: ["한국부동산원", "지역시장 지수", "R-ONE", "매매가격지수", "전세가격지수"] },
         faq,
         commonSafety
       ]
@@ -822,6 +823,10 @@ function summarizeMetadata(result: SearchResult) {
 function limitContextChunk(text: string) {
   const compact = text.replace(/\s+/g, " ").trim();
   return compact.length > 850 ? `${compact.slice(0, 847)}...` : compact;
+}
+
+function formatOptionalNumber(value: unknown, digits: number, suffix: string) {
+  return typeof value === "number" && Number.isFinite(value) ? `${value.toFixed(digits)}${suffix}` : "미상";
 }
 
 function defaultFinancialPlan(profile: UserProfile): UserFinancialPlan {

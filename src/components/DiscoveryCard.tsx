@@ -109,7 +109,7 @@ export function DiscoveryCard({ card, onNext }: DiscoveryCardProps) {
         <div className="rounded-md border border-black/10 bg-white p-3">
           <div className="flex items-center justify-between gap-2">
             <p className="text-[11px] font-bold text-black/45">융합 공공데이터 근거</p>
-            <span className="rounded bg-black/5 px-2 py-1 text-[10px] font-black text-black/45">가점 체크 보류</span>
+            <span className="rounded bg-moss px-2 py-1 text-[10px] font-black text-white">MOLIT+KREB real</span>
           </div>
           <div className="mt-2 grid gap-2 text-xs font-bold text-black/62">
             {fusionBadges.map((item) => (
@@ -132,7 +132,7 @@ export function DiscoveryCard({ card, onNext }: DiscoveryCardProps) {
             <Metric label="실데이터 축" value={`${fusionMetrics.realProviderCount}/4`} />
           </div>
           <p className="mt-2 text-[11px] font-bold leading-5 text-black/45">
-            데이터 신뢰도는 {fusionMetrics.dataConfidenceLabel}입니다. 한국부동산원·HUG·교통 항목은 실제 공식 데이터 연결 전에는 융합데이터 가점으로 단정하지 않습니다.
+            데이터 신뢰도는 {fusionMetrics.dataConfidenceLabel}입니다. HUG·교통 항목은 시드로 표시하고, 가격 상승 가능성이 아니라 주거 안정성 참고 점수로만 사용합니다.
           </p>
         </div>
 

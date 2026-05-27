@@ -1,5 +1,7 @@
+import { createHash } from "crypto";
 import { mkdirSync, readFileSync, writeFileSync } from "fs";
 import path from "path";
+import { KrebClient, type KrebNormalizedRegionIndex } from "@/server/public-data/fusion/krebClient";
 
 type ProviderSpec = {
   envName: string;
@@ -12,7 +14,7 @@ type ProviderSpec = {
 const spec: ProviderSpec = {
   envName: "KREB_SOURCE_URL",
   rawDir: "data/fusion/raw/kreb",
-  rawFile: "kreb_region_index_raw.csv",
+  rawFile: "kreb_region_index_raw.json",
   outputFile: "data/fusion/kreb_region_index_real.csv",
   requiredColumns: ["month", "region", "lawdCode5", "saleIndex", "rentIndex", "saleMom", "rentMom", "volatilityScore"]
 };
@@ -24,16 +26,59 @@ main(spec).catch((error) => {
 
 async function main(input: ProviderSpec) {
   const source = process.env[input.envName];
+  const apiKey = process.env.KREB_API_KEY;
+  if (apiKey) {
+    const client = new KrebClient();
+    const result = await client.fetchRegionIndexFromApi({
+      apiKey,
+      monthFrom: process.env.KREB_MONTH_FROM ?? process.env.TARGET_MONTH_FROM ?? "202501",
+      monthTo: process.env.KREB_MONTH_TO ?? process.env.TARGET_MONTH_TO ?? "202604"
+    });
+    const rawJson = JSON.stringify(
+      {
+        checkedAt: result.checkedAt,
+        sourceUrl: result.sourceUrl,
+        saleTableId: result.saleTableId,
+        rentTableId: result.rentTableId,
+        monthFrom: result.monthFrom,
+        monthTo: result.monthTo,
+        regions: result.raw.regions
+      },
+      null,
+      2
+    );
+    const normalized = rowsToCsv(result.rows);
+    mkdirSync(path.join(process.cwd(), input.rawDir), { recursive: true });
+    writeFileSync(path.join(process.cwd(), input.rawDir, input.rawFile), rawJson);
+    writeFileSync(path.join(process.cwd(), input.outputFile), normalized);
+    console.log(
+      JSON.stringify(
+        {
+          skipped: false,
+          mode: "rone_api",
+          outputFile: input.outputFile,
+          rawFile: path.join(input.rawDir, input.rawFile),
+          rowCount: result.rows.length,
+          sourceUrl: result.sourceUrl,
+          sha256: sha256(normalized)
+        },
+        null,
+        2
+      )
+    );
+    return;
+  }
+
   if (!source) {
-    console.log(JSON.stringify({ skipped: true, reason: `${input.envName} is empty` }, null, 2));
+    console.log(JSON.stringify({ skipped: true, reason: "KREB_API_KEY and KREB_SOURCE_URL are empty" }, null, 2));
     return;
   }
   const csv = await loadSource(source);
   const normalized = normalizeCsv(csv, input.requiredColumns, source);
   mkdirSync(path.join(process.cwd(), input.rawDir), { recursive: true });
-  writeFileSync(path.join(process.cwd(), input.rawDir, input.rawFile), csv);
+  writeFileSync(path.join(process.cwd(), input.rawDir, "kreb_region_index_raw.csv"), csv);
   writeFileSync(path.join(process.cwd(), input.outputFile), normalized);
-  console.log(JSON.stringify({ skipped: false, outputFile: input.outputFile, sourceUrl: source }, null, 2));
+  console.log(JSON.stringify({ skipped: false, mode: "csv_source", outputFile: input.outputFile, sourceUrl: source, sha256: sha256(normalized) }, null, 2));
 }
 
 async function loadSource(source: string) {
@@ -93,4 +138,28 @@ function splitCsvLine(line: string) {
 
 function escapeCsv(value: string) {
   return /[",\n\r]/.test(value) ? `"${value.replace(/"/g, "\"\"")}"` : value;
+}
+
+function rowsToCsv(rows: KrebNormalizedRegionIndex[]) {
+  const headers = [
+    "month",
+    "region",
+    "lawdCode5",
+    "saleIndex",
+    "rentIndex",
+    "saleMom",
+    "rentMom",
+    "volatilityScore",
+    "sourceType",
+    "sourceUrl",
+    "checkedAt"
+  ] satisfies Array<keyof KrebNormalizedRegionIndex>;
+  return [
+    headers.join(","),
+    ...rows.map((row) => headers.map((header) => escapeCsv(String(row[header] ?? ""))).join(","))
+  ].join("\n") + "\n";
+}
+
+function sha256(value: string) {
+  return createHash("sha256").update(value).digest("hex");
 }

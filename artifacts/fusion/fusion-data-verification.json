@@ -1,25 +1,25 @@
 {
-  "checkedAt": "2026-05-25T08:15:31.600Z",
+  "checkedAt": "2026-05-27T15:55:08.635Z",
   "readiness": {
-    "canCheckMultiAgencyFusion": false,
-    "reason": "현재 실데이터 provider는 MOLIT이고, KREB, HUG, TRANSPORT는 seed/mock이므로 주관기관 융합데이터 가점 체크는 보류한다.",
+    "canCheckMultiAgencyFusion": true,
+    "reason": "MOLIT와 KREB 실데이터가 fused stability score, RAG, UI에 함께 반영된다.",
     "providers": [
-      "MOLIT"
+      "MOLIT",
+      "KREB"
     ],
     "realProviders": [
-      "MOLIT"
+      "MOLIT",
+      "KREB"
     ],
     "seedProviders": [
-      "KREB",
       "HUG",
       "TRANSPORT"
     ],
     "missingForStrongerClaim": [
-      "KREB",
       "HUG",
       "KMAAS/TRANSPORT"
     ],
-    "requiredNextStep": "KREB/HUG/KMAAS/TRANSPORT 중 최소 1개 real dataset을 연결하고 fused score, RAG, UI 사용 위치를 검증해야 한다."
+    "requiredNextStep": "HUG 또는 K-MaaS/교통 real provider를 추가하면 다기관 융합 설득력이 더 강해진다."
   },
   "evidence": [
     {
@@ -36,7 +36,7 @@
         "dealYear",
         "dealMonth"
       ],
-      "collectedAt": "2026-05-25T08:15:31.591Z",
+      "collectedAt": "2026-05-27T15:55:08.630Z",
       "usedIn": [
         "candidate scoring",
         "purchase power context",
@@ -48,14 +48,14 @@
       "licenseNote": "공공데이터포털/국토교통부 공개 API 또는 로컬 스냅샷 기준",
       "rawSnapshotPath": "data/public-data",
       "normalizedSnapshotPath": "prisma/dev.db",
-      "apiCheckedAt": "2026-05-25T08:15:31.591Z",
+      "apiCheckedAt": "2026-05-27T15:55:08.630Z",
       "apiStatus": "ok",
       "note": "DataGoKrClient와 로컬 public-data seed 파이프라인으로 실제 공공데이터 축을 구성한다."
     },
     {
       "provider": "KREB",
-      "datasetName": "한국부동산원 지역 매매/전세 가격지수 시드",
-      "sourceType": "seed",
+      "datasetName": "한국부동산원 지역 매매/전세 가격지수 실데이터",
+      "sourceType": "real",
       "rowCount": 5,
       "fields": [
         "saleIndex",
@@ -64,19 +64,21 @@
         "rentMom",
         "volatilityScore"
       ],
-      "collectedAt": "2026-05-25T08:15:31.591Z",
+      "collectedAt": "2026-05-27T15:55:08.630Z",
       "usedIn": [
         "fused stability score",
         "RAG kreb_market_index",
         "comparison UI",
         "Transformer fusion feature"
       ],
-      "licenseNote": "MVP seed snapshot. 제출 시 real/seed를 구분 표시한다.",
+      "sourceUrl": "https://www.reb.or.kr/r-one/openapi/SttsApiTblData.do",
+      "licenseNote": "공식 CSV/API 스냅샷 기준",
       "rawSnapshotPath": "data/fusion/raw/kreb",
-      "normalizedSnapshotPath": "data/fusion/kreb_region_index_seed.csv",
-      "sha256": "60f53c3f3b4890b8921ca9274cf353a82939ca0e1279d537d4563edac4a9c636",
-      "apiStatus": "skipped",
-      "note": "MVP seed snapshot이다. 실제 R-ONE/API 확보 전에는 가점 실데이터로 계산하지 않는다."
+      "normalizedSnapshotPath": "data/fusion/kreb_region_index_real.csv",
+      "sha256": "707b62bf66946c452101723326cbda2743a3524429ccbd7af72523180fac22c6",
+      "apiCheckedAt": "2026-05-27T15:53:11.258Z",
+      "apiStatus": "ok",
+      "note": "공식 CSV/API를 normalize한 real snapshot이다."
     },
     {
       "provider": "HUG",
@@ -88,7 +90,7 @@
         "jeonseRiskScore",
         "riskGrade"
       ],
-      "collectedAt": "2026-05-25T08:15:31.591Z",
+      "collectedAt": "2026-05-27T15:55:08.630Z",
       "usedIn": [
         "fused stability score",
         "RAG hug_jeonse_risk",
@@ -113,7 +115,7 @@
         "transitAccessibilityScore",
         "commuteAccessScore"
       ],
-      "collectedAt": "2026-05-25T08:15:31.591Z",
+      "collectedAt": "2026-05-27T15:55:08.630Z",
       "usedIn": [
         "fused stability score",
         "RAG transport_accessibility",
@@ -135,20 +137,28 @@
       "month": "2026-04",
       "molitTradeHeat": 1.1,
       "molitJeonseRatio": 62,
-      "krebMarketStability": 60,
+      "krebMarketStability": 67,
       "hugJeonseRiskScore": 28,
       "transitAccessibilityScore": 84,
-      "fusedStabilityScore": 77,
+      "fusedStabilityScore": 78,
       "fusedRiskGrade": "안정",
-      "fusionConfidence": 0.4,
-      "realProviderCount": 1,
-      "seedProviderCount": 3,
+      "fusionConfidence": 0.6,
+      "realProviderCount": 2,
+      "seedProviderCount": 2,
+      "realProviders": [
+        "MOLIT",
+        "KREB"
+      ],
+      "seedProviders": [
+        "HUG",
+        "TRANSPORT"
+      ],
       "sourceType": "seed",
       "evidence": [
-        "MOLIT 실거래",
-        "KREB 지역지수",
-        "HUG 전세 리스크",
-        "TRANSPORT 접근성"
+        "MOLIT 실거래(real)",
+        "KREB 지역지수(real)",
+        "HUG 전세 리스크(seed)",
+        "TRANSPORT 접근성(seed)"
       ]
     },
     {
@@ -157,20 +167,28 @@
       "month": "2026-04",
       "molitTradeHeat": 1.1,
       "molitJeonseRatio": 62,
-      "krebMarketStability": 55,
+      "krebMarketStability": 69,
       "hugJeonseRiskScore": 47,
       "transitAccessibilityScore": 72,
-      "fusedStabilityScore": 69,
+      "fusedStabilityScore": 72,
       "fusedRiskGrade": "확인 필요",
-      "fusionConfidence": 0.4,
-      "realProviderCount": 1,
-      "seedProviderCount": 3,
+      "fusionConfidence": 0.6,
+      "realProviderCount": 2,
+      "seedProviderCount": 2,
+      "realProviders": [
+        "MOLIT",
+        "KREB"
+      ],
+      "seedProviders": [
+        "HUG",
+        "TRANSPORT"
+      ],
       "sourceType": "seed",
       "evidence": [
-        "MOLIT 실거래",
-        "KREB 지역지수",
-        "HUG 전세 리스크",
-        "TRANSPORT 접근성"
+        "MOLIT 실거래(real)",
+        "KREB 지역지수(real)",
+        "HUG 전세 리스크(seed)",
+        "TRANSPORT 접근성(seed)"
       ]
     },
     {
@@ -179,20 +197,28 @@
       "month": "2026-04",
       "molitTradeHeat": 1.1,
       "molitJeonseRatio": 62,
-      "krebMarketStability": 53,
+      "krebMarketStability": 66,
       "hugJeonseRiskScore": 58,
       "transitAccessibilityScore": 76,
-      "fusedStabilityScore": 68,
+      "fusedStabilityScore": 70,
       "fusedRiskGrade": "확인 필요",
-      "fusionConfidence": 0.4,
-      "realProviderCount": 1,
-      "seedProviderCount": 3,
+      "fusionConfidence": 0.6,
+      "realProviderCount": 2,
+      "seedProviderCount": 2,
+      "realProviders": [
+        "MOLIT",
+        "KREB"
+      ],
+      "seedProviders": [
+        "HUG",
+        "TRANSPORT"
+      ],
       "sourceType": "seed",
       "evidence": [
-        "MOLIT 실거래",
-        "KREB 지역지수",
-        "HUG 전세 리스크",
-        "TRANSPORT 접근성"
+        "MOLIT 실거래(real)",
+        "KREB 지역지수(real)",
+        "HUG 전세 리스크(seed)",
+        "TRANSPORT 접근성(seed)"
       ]
     },
     {
@@ -201,20 +227,28 @@
       "month": "2026-04",
       "molitTradeHeat": 1.1,
       "molitJeonseRatio": 62,
-      "krebMarketStability": 57,
+      "krebMarketStability": 68,
       "hugJeonseRiskScore": 34,
       "transitAccessibilityScore": 88,
-      "fusedStabilityScore": 76,
+      "fusedStabilityScore": 78,
       "fusedRiskGrade": "안정",
-      "fusionConfidence": 0.4,
-      "realProviderCount": 1,
-      "seedProviderCount": 3,
+      "fusionConfidence": 0.6,
+      "realProviderCount": 2,
+      "seedProviderCount": 2,
+      "realProviders": [
+        "MOLIT",
+        "KREB"
+      ],
+      "seedProviders": [
+        "HUG",
+        "TRANSPORT"
+      ],
       "sourceType": "seed",
       "evidence": [
-        "MOLIT 실거래",
-        "KREB 지역지수",
-        "HUG 전세 리스크",
-        "TRANSPORT 접근성"
+        "MOLIT 실거래(real)",
+        "KREB 지역지수(real)",
+        "HUG 전세 리스크(seed)",
+        "TRANSPORT 접근성(seed)"
       ]
     },
     {
@@ -223,20 +257,28 @@
       "month": "2026-04",
       "molitTradeHeat": 1.1,
       "molitJeonseRatio": 62,
-      "krebMarketStability": 54,
+      "krebMarketStability": 58,
       "hugJeonseRiskScore": 43,
       "transitAccessibilityScore": 86,
-      "fusedStabilityScore": 73,
+      "fusedStabilityScore": 74,
       "fusedRiskGrade": "확인 필요",
-      "fusionConfidence": 0.4,
-      "realProviderCount": 1,
-      "seedProviderCount": 3,
+      "fusionConfidence": 0.6,
+      "realProviderCount": 2,
+      "seedProviderCount": 2,
+      "realProviders": [
+        "MOLIT",
+        "KREB"
+      ],
+      "seedProviders": [
+        "HUG",
+        "TRANSPORT"
+      ],
       "sourceType": "seed",
       "evidence": [
-        "MOLIT 실거래",
-        "KREB 지역지수",
-        "HUG 전세 리스크",
-        "TRANSPORT 접근성"
+        "MOLIT 실거래(real)",
+        "KREB 지역지수(real)",
+        "HUG 전세 리스크(seed)",
+        "TRANSPORT 접근성(seed)"
       ]
     }
   ]

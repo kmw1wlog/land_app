@@ -1,15 +1,18 @@
-import type { ComplexSignalCandidate } from "@/types";
-
 export function getFusionEvidenceBadges() {
   return [
     { provider: "국토부 실거래", label: "기준가/거래량/전세가율", sourceType: "실데이터" },
-    { provider: "한국부동산원", label: "지역시장 흐름", sourceType: "시드" },
+    { provider: "한국부동산원", label: "지역시장 흐름", sourceType: "실데이터" },
     { provider: "HUG", label: "전세 리스크", sourceType: "시드" },
     { provider: "교통 접근성", label: "직주근접/대중교통", sourceType: "시드" }
   ];
 }
 
-export function estimateFusionMetricsForCandidate(candidate?: Pick<ComplexSignalCandidate, "lawdCode5" | "transactionHeat" | "jeonseRatio" | "drawdownFromHigh"> | null) {
+export function estimateFusionMetricsForCandidate(candidate?: {
+  lawdCode5?: string | null;
+  transactionHeat?: number | null;
+  jeonseRatio?: number | null;
+  drawdownFromHigh?: number | null;
+} | null) {
   const lawd = candidate?.lawdCode5 ?? "";
   const regionDefaults: Record<string, { market: number; jeonseRisk: number; transit: number }> = {
     "27260": { market: 76, jeonseRisk: 28, transit: 84 },
@@ -27,9 +30,9 @@ export function estimateFusionMetricsForCandidate(candidate?: Pick<ComplexSignal
     transitAccessibilityScore: base.transit,
     fusedStabilityScore: fused,
     fusedRiskGrade: fused >= 75 ? "안정" : fused >= 60 ? "확인 필요" : "보수적 검토",
-    fusionConfidence: 0.4,
-    realProviderCount: 1,
-    seedProviderCount: 3,
-    dataConfidenceLabel: "시드 기반"
+    fusionConfidence: 0.6,
+    realProviderCount: 2,
+    seedProviderCount: 2,
+    dataConfidenceLabel: "MOLIT/KREB 실데이터 + HUG/교통 시드"
   };
 }

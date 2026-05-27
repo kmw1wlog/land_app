@@ -33,6 +33,20 @@
     "median_floor",
     "median_built_year"
   ],
+  "available_fusion_features": [
+    "kreb_sale_index",
+    "kreb_rent_index",
+    "kreb_sale_mom",
+    "kreb_rent_mom",
+    "kreb_volatility_score",
+    "hug_jeonse_risk_score",
+    "transit_accessibility_score",
+    "commute_access_score",
+    "fused_stability_score",
+    "fusion_confidence",
+    "fusion_real_provider_count"
+  ],
+  "fusion_feature_note": "The checked-in model checkpoint was trained before the KREB real snapshot refresh. The feature export pipeline now appends these MOLIT+KREB/HUG/TRANSPORT fusion features, and retraining will write them into the primary features array with matching standardization stats.",
   "targets": [
     "future_recovery",
     "transaction_reactivation",

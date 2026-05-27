@@ -1,0 +1,6 @@
+month,region,lawdCode5,saleIndex,rentIndex,saleMom,rentMom,volatilityScore,sourceType,sourceUrl,checkedAt
+2026-04,대구 수성구,27260,100.158,100.347,0.03,0.091,9.3,real,https://www.reb.or.kr/r-one/openapi/SttsApiTblData.do,2026-05-27T15:53:11.258Z
+2026-04,대구 동구,27140,100.254,100.632,0.132,0.143,6.9,real,https://www.reb.or.kr/r-one/openapi/SttsApiTblData.do,2026-05-27T15:53:11.258Z
+2026-04,대구 북구,27230,99.369,99.921,-0.192,-0.089,6.2,real,https://www.reb.or.kr/r-one/openapi/SttsApiTblData.do,2026-05-27T15:53:11.258Z
+2026-04,대구 중구,27110,100.626,100.51,0.164,0.036,8.7,real,https://www.reb.or.kr/r-one/openapi/SttsApiTblData.do,2026-05-27T15:53:11.258Z
+2026-04,서울 성동구,11200,101.756,101.908,0.207,0.553,44.2,real,https://www.reb.or.kr/r-one/openapi/SttsApiTblData.do,2026-05-27T15:53:11.258Z

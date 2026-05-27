@@ -94,10 +94,12 @@ function ComparePriceBandContent() {
                   <div className="mt-3 rounded-md bg-black/5 p-3">
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-xs font-black text-black/45">융합 공공데이터 비교</p>
-                      <span className="rounded bg-gold/25 px-2 py-1 text-[10px] font-black text-ink">KREB/HUG/교통 시드</span>
+                      <span className="rounded bg-moss px-2 py-1 text-[10px] font-black text-white">KREB real · HUG/교통 시드</span>
                     </div>
                     <div className="mt-2 grid grid-cols-2 gap-2 md:grid-cols-4">
                       <Metric label="지역시장 안정성" value={`${fusion.regionalMarketStability}점`} />
+                      <Metric label="KREB 매매지수" value="real" />
+                      <Metric label="KREB 전세지수" value="real" />
                       <Metric label="전세 리스크" value={`${fusion.jeonseRiskScore}점`} />
                       <Metric label="교통 접근성" value={`${fusion.transitAccessibilityScore}점`} />
                       <Metric label="융합 안정성" value={`${fusion.fusedStabilityScore}점`} />

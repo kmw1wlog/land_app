@@ -1,15 +1,44 @@
 import { describe, expect, it } from "vitest";
 import { getFusionCreditReadiness, getFusionDataEvidence } from "@/server/public-data/fusion/dataSourceRegistry";
 import { getIntentRetrievalPlan } from "@/server/rag/contextBuilder";
+import type { FusionDataEvidence } from "@/server/public-data/fusion/types";
 
 describe("MOLIT bonus checklist guardrails", () => {
-  it("keeps the multi-agency fusion bonus unchecked for seed-only partner datasets", () => {
+  it("marks the current MOLIT + KREB real fusion evidence as bonus-ready", () => {
     const readiness = getFusionCreditReadiness(getFusionDataEvidence());
 
+    expect(readiness.canCheckMultiAgencyFusion).toBe(true);
+    expect(readiness.realProviders).toEqual(expect.arrayContaining(["MOLIT", "KREB"]));
+    expect(readiness.seedProviders).toEqual(expect.arrayContaining(["HUG", "TRANSPORT"]));
+    expect(readiness.missingForStrongerClaim).toEqual(expect.arrayContaining(["HUG", "KMAAS/TRANSPORT"]));
+  });
+
+  it("keeps the multi-agency fusion bonus unchecked for seed-only partner datasets", () => {
+    const seedOnlyEvidence: FusionDataEvidence[] = [
+      {
+        provider: "MOLIT",
+        datasetName: "MOLIT real",
+        sourceType: "real",
+        rowCount: 1,
+        fields: ["dealAmount"],
+        collectedAt: "2026-05-27T00:00:00.000Z",
+        usedIn: ["fused stability score", "RAG complex_signal", "UI evidence badge"]
+      },
+      {
+        provider: "KREB",
+        datasetName: "KREB seed",
+        sourceType: "seed",
+        rowCount: 5,
+        fields: ["saleIndex"],
+        collectedAt: "2026-05-27T00:00:00.000Z",
+        usedIn: ["fused stability score", "RAG kreb_market_index", "comparison UI"]
+      }
+    ];
+
+    const readiness = getFusionCreditReadiness(seedOnlyEvidence);
+
     expect(readiness.canCheckMultiAgencyFusion).toBe(false);
-    expect(readiness.seedProviders).toEqual(expect.arrayContaining(["KREB", "HUG", "TRANSPORT"]));
     expect(readiness.realProviders).toEqual(["MOLIT"]);
-    expect(readiness.missingForStrongerClaim).toEqual(expect.arrayContaining(["KREB", "HUG", "KMAAS/TRANSPORT"]));
   });
 
   it("requires fusion evidence in data-source retrieval plans", () => {

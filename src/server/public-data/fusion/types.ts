@@ -93,6 +93,8 @@ export interface FusedRegionSignal {
   fusionConfidence: number;
   realProviderCount: number;
   seedProviderCount: number;
+  realProviders: FusionProvider[];
+  seedProviders: FusionProvider[];
   sourceType: FusionSourceType;
   evidence: string[];
 }

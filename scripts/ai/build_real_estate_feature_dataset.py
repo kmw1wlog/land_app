@@ -312,13 +312,25 @@ def enrich_with_fusion_seed_features(
         kreb = kreb.rename(
             columns={
                 "lawdCode5": "lawd_code5",
+                "saleIndex": "kreb_sale_index",
+                "rentIndex": "kreb_rent_index",
                 "saleMom": "kreb_sale_mom",
                 "rentMom": "kreb_rent_mom",
                 "volatilityScore": "kreb_volatility_score",
             }
         )
         enriched = enriched.merge(
-            kreb[["month", "lawd_code5", "kreb_sale_mom", "kreb_rent_mom", "kreb_volatility_score"]],
+            kreb[
+                [
+                    "month",
+                    "lawd_code5",
+                    "kreb_sale_index",
+                    "kreb_rent_index",
+                    "kreb_sale_mom",
+                    "kreb_rent_mom",
+                    "kreb_volatility_score",
+                ]
+            ],
             on=["month", "lawd_code5"],
             how="left",
         )
@@ -362,6 +374,8 @@ def enrich_with_fusion_seed_features(
             enriched["fusion_confidence"] = np.where(enriched["transit_accessibility_score"].notna(), enriched["fusion_confidence"] + 0.2, enriched["fusion_confidence"])
 
     defaults = {
+        "kreb_sale_index": 0.0,
+        "kreb_rent_index": 0.0,
         "kreb_sale_mom": 0.0,
         "kreb_rent_mom": 0.0,
         "kreb_volatility_score": 45.0,

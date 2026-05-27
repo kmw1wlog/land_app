@@ -9,6 +9,7 @@ import { analyzePropertyForUser } from "@/lib/calculations";
 import { calculateFuturePurchasePower, calculateTargetHomePath } from "@/lib/futurePlan";
 import { explainFeedCard } from "@/lib/feedExplain";
 import { formatKRW, formatMonthly, percent } from "@/lib/format";
+import { estimateFusionMetricsForCandidate, getFusionEvidenceBadges } from "@/lib/fusionPresentation";
 import { useAppStore } from "@/store/useAppStore";
 import { Label } from "./Label";
 import { LeadConsentModal } from "./LeadConsentModal";
@@ -43,6 +44,12 @@ export function PropertyCard({ property, onNext }: PropertyCardProps) {
     additional_purchase: "현재가능형",
     not_feasible: "조건재설계형"
   };
+  const fusionMetrics = estimateFusionMetricsForCandidate({
+    lawdCode5: property.lawdCode5,
+    jeonseRatio: property.jeonseRatio,
+    drawdownFromHigh: property.drawdownFromHigh
+  });
+  const fusionBadges = getFusionEvidenceBadges();
 
   const next = (action: "pass" | "save" | "calculate" | "community" | "contact") => {
     recordSwipe(property.id, action);
@@ -152,12 +159,49 @@ export function PropertyCard({ property, onNext }: PropertyCardProps) {
           </div>
         </div>
 
+        <div className="rounded-md border border-black/10 bg-white p-3">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-[11px] font-bold text-black/45">융합 공공데이터 근거</p>
+            <span className="rounded bg-moss px-2 py-1 text-[10px] font-black text-white">MOLIT+KREB real</span>
+          </div>
+          <div className="mt-2 grid gap-2 text-xs font-bold text-black/62">
+            {fusionBadges.map((item) => (
+              <div key={item.provider} className="flex items-center justify-between gap-2 rounded bg-black/5 px-2 py-2">
+                <span>
+                  {item.provider}: {item.label}
+                </span>
+                <span className={`rounded px-2 py-1 text-[10px] font-black ${item.sourceType === "실데이터" ? "bg-moss text-white" : "bg-gold/25 text-ink"}`}>
+                  {item.sourceType}
+                </span>
+              </div>
+            ))}
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-2 text-center">
+            <Metric label="지역시장 안정성" value={`${fusionMetrics.regionalMarketStability}점`} />
+            <Metric label="전세 리스크" value={`${fusionMetrics.jeonseRiskScore}점`} />
+            <Metric label="교통 접근성" value={`${fusionMetrics.transitAccessibilityScore}점`} />
+            <Metric label="융합 안정성" value={`${fusionMetrics.fusedStabilityScore}점`} />
+            <Metric label="데이터 신뢰도" value={`${Math.round(fusionMetrics.fusionConfidence * 100)}%`} />
+            <Metric label="실데이터 축" value={`${fusionMetrics.realProviderCount}/4`} />
+          </div>
+          <p className="mt-2 text-[11px] font-bold leading-5 text-black/45">
+            한국부동산원 지역지수는 실데이터로 반영하고, HUG·교통 항목은 시드로 구분해 보조 설명에만 사용합니다.
+          </p>
+        </div>
+
         <button
           className="h-10 w-full rounded-md bg-black/5 text-sm font-black text-ink"
           onClick={() => setShowWhy(true)}
         >
           왜 떴지?
         </button>
+        <Link
+          href={`/chat?intent=candidate_reason&prompt=${encodeURIComponent(`${property.region} ${property.name}이 내 상황에서 왜 후보인지, 한국부동산원 KREB real 지표와 공공데이터 근거로 설명해줘.`)}`}
+          className="flex h-10 w-full items-center justify-center rounded-md bg-moss text-sm font-black text-white"
+          onClick={() => setActiveProperty(property.id)}
+        >
+          AI가 이 후보 이유 설명
+        </Link>
 
         <div className="grid grid-cols-5 gap-2">
           <button

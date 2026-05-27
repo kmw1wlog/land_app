@@ -9,15 +9,26 @@ export function hasRealMultiAgencyFusion(evidence: FusionDataEvidence[] = getFus
   const realProviders = new Set(
     evidence.filter((item) => item.sourceType === "real" && item.rowCount > 0).map((item) => item.provider)
   );
-  const usedProviders = new Set(
+  const usedProviderCount = new Map(
     evidence
-      .filter((item) => item.usedIn.some((usedIn) => /fused stability score|RAG|UI/i.test(usedIn)))
-      .map((item) => item.provider)
+      .map((item) => [
+        item.provider,
+        new Set(
+          item.usedIn
+            .map((usedIn) => {
+              if (/fused stability score/i.test(usedIn)) return "fused";
+              if (/RAG/i.test(usedIn)) return "rag";
+              if (/UI/i.test(usedIn)) return "ui";
+              return null;
+            })
+            .filter(Boolean)
+        ).size
+      ])
   );
   return (
     realProviders.has("MOLIT") &&
     ["KREB", "HUG", "KMAAS", "TRANSPORT"].some(
-      (provider) => realProviders.has(provider as FusionProvider) && usedProviders.has(provider as FusionProvider)
+      (provider) => realProviders.has(provider as FusionProvider) && (usedProviderCount.get(provider as FusionProvider) ?? 0) >= 2
     )
   );
 }

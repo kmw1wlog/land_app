@@ -4,18 +4,19 @@ import { validateRealSourceRows } from "@/server/public-data/fusion/fusionEviden
 import type { FusionDataEvidence } from "@/server/public-data/fusion/types";
 
 describe("fusion data evidence", () => {
-  it("records KREB/HUG/TRANSPORT seed snapshots without granting the multi-agency bonus", () => {
+  it("records MOLIT and KREB real snapshots and grants the multi-agency bonus", () => {
     const evidence = getFusionDataEvidence();
     const readiness = getFusionCreditReadiness(evidence);
 
     expect(evidence.find((item) => item.provider === "MOLIT")?.sourceType).toBe("real");
+    expect(evidence.find((item) => item.provider === "KREB")?.sourceType).toBe("real");
     expect(evidence.find((item) => item.provider === "KREB")?.rowCount).toBeGreaterThan(0);
     expect(evidence.find((item) => item.provider === "HUG")?.rowCount).toBeGreaterThan(0);
     expect(evidence.find((item) => item.provider === "TRANSPORT")?.rowCount).toBeGreaterThan(0);
-    expect(readiness.canCheckMultiAgencyFusion).toBe(false);
-    expect(readiness.reason).toContain("가점 체크는 보류");
-    expect(readiness.realProviders).toEqual(["MOLIT"]);
-    expect(readiness.requiredNextStep).toContain("real dataset");
+    expect(readiness.canCheckMultiAgencyFusion).toBe(true);
+    expect(readiness.reason).toContain("MOLIT와 KREB 실데이터");
+    expect(readiness.realProviders).toEqual(["MOLIT", "KREB"]);
+    expect(readiness.seedProviders).toEqual(["HUG", "TRANSPORT"]);
     expect(evidence.find((item) => item.provider === "KREB")?.sha256).toBeTruthy();
   });
 

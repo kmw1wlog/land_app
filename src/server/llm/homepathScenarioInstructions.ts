@@ -174,7 +174,7 @@ function buildUserSituationSummary(input: {
 
   if (input.activeCandidate) {
     lines.push(
-      `- 현재 후보: ${input.activeCandidate.region} ${input.activeCandidate.complexName} ${input.activeCandidate.areaBucket}, 기준가 ${formatKRW(input.activeCandidate.referencePrice ?? 0)}, 거래 집중도 ${input.activeCandidate.transactionHeat.toFixed(2)}배.`
+      `- 현재 후보: ${input.activeCandidate.region} ${input.activeCandidate.complexName} ${input.activeCandidate.areaBucket}, 기준가 ${formatKRW(input.activeCandidate.referencePrice ?? 0)}, 거래 집중도 ${formatOptionalNumber(input.activeCandidate.transactionHeat, 2, "배")}.`
     );
   }
   const interested = [
@@ -202,4 +202,8 @@ function buildUserSituationSummary(input: {
     );
   }
   return lines.join("\n");
+}
+
+function formatOptionalNumber(value: unknown, digits: number, suffix: string) {
+  return typeof value === "number" && Number.isFinite(value) ? `${value.toFixed(digits)}${suffix}` : "미상";
 }

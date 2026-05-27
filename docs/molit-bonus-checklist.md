@@ -11,7 +11,7 @@
 
 ## 주관기관 융합데이터
 
-체크 가능: 아니오
+체크 가능: 예
 
 체크 가능 조건:
 - MOLIT 실거래 데이터는 real
@@ -20,12 +20,12 @@
 
 현재 상태:
 - MOLIT: real
-- KREB: seed
+- KREB: real
 - HUG: seed
 - TRANSPORT/KMAAS: seed
 
-최종 제출 시 체크 여부: false
-필요한 다음 단계: KREB/HUG/KMAAS/TRANSPORT 중 최소 1개 real dataset을 연결하고 fused score, RAG, UI 사용 위치를 검증해야 한다.
-강한 주장에 아직 부족한 provider: KREB, HUG, KMAAS/TRANSPORT
+최종 제출 시 체크 여부: true
+필요한 다음 단계: HUG 또는 K-MaaS/교통 real provider를 추가하면 다기관 융합 설득력이 더 강해진다.
+강한 주장에 아직 부족한 provider: HUG, KMAAS/TRANSPORT
 
 seed/mock만으로는 주관기관 융합데이터 체크하지 않는다. MVP에서는 확장 구현 가능성과 동일 파이프라인 적용 근거로만 제시한다.

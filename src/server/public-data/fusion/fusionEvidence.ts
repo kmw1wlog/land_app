@@ -129,6 +129,12 @@ export function buildFusedRegionSignals() {
       hug: hug?.sourceType,
       transport: transport?.sourceType
     };
+    const providerSources = [
+      { provider: "MOLIT" as const, sourceType: "real" as const },
+      { provider: "KREB" as const, sourceType: kreb.sourceType },
+      { provider: "HUG" as const, sourceType: hug?.sourceType ?? "mock" as const },
+      { provider: transport?.provider === "KMAAS" ? "KMAAS" as const : "TRANSPORT" as const, sourceType: transport?.sourceType ?? "mock" as const }
+    ];
     const score = calculateFusedStabilityScore({
       molitTradeHeat: 1.1,
       molitJeonseRatio: 62,
@@ -154,8 +160,15 @@ export function buildFusedRegionSignals() {
       fusionConfidence: score.fusionConfidence,
       realProviderCount: score.realProviderCount,
       seedProviderCount: score.seedProviderCount,
+      realProviders: providerSources.filter((item) => item.sourceType === "real").map((item) => item.provider),
+      seedProviders: providerSources.filter((item) => item.sourceType === "seed").map((item) => item.provider),
       sourceType: mergeSourceType([kreb.sourceType, hug?.sourceType ?? "mock", transport?.sourceType ?? "mock"]),
-      evidence: ["MOLIT 실거래", "KREB 지역지수", "HUG 전세 리스크", `${transport?.provider === "KMAAS" ? "KMAAS" : "TRANSPORT"} 접근성`]
+      evidence: [
+        "MOLIT 실거래(real)",
+        `KREB 지역지수(${kreb.sourceType})`,
+        `HUG 전세 리스크(${hug?.sourceType ?? "mock"})`,
+        `${transport?.provider === "KMAAS" ? "KMAAS" : "TRANSPORT"} 접근성(${transport?.sourceType ?? "mock"})`
+      ]
     } satisfies FusedRegionSignal;
   });
 }

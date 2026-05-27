@@ -10,9 +10,9 @@ describe("fusion public data APIs", () => {
     const payload = await response.json();
 
     expect(response.status).toBe(200);
-    expect(payload.realProviders).toEqual(expect.arrayContaining(["MOLIT"]));
-    expect(payload.seedProviders).toEqual(expect.arrayContaining(["KREB", "HUG", "TRANSPORT"]));
-    expect(payload.canCheckMultiAgencyFusion).toBe(false);
+    expect(payload.realProviders).toEqual(expect.arrayContaining(["MOLIT", "KREB"]));
+    expect(payload.seedProviders).toEqual(expect.arrayContaining(["HUG", "TRANSPORT"]));
+    expect(payload.canCheckMultiAgencyFusion).toBe(true);
   });
 
   it("returns evidence and provider summaries", async () => {
@@ -21,7 +21,7 @@ describe("fusion public data APIs", () => {
 
     expect(response.status).toBe(200);
     expect(payload.providers.MOLIT.sourceType).toBe("real");
-    expect(payload.providers.KREB.sourceType).toBe("seed");
+    expect(payload.providers.KREB.sourceType).toBe("real");
     expect(payload.evidence.length).toBeGreaterThanOrEqual(4);
   });
 
