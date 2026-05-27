@@ -14,6 +14,8 @@ jobs:
   apply:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -27,9 +29,9 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          curl -fsSL "https://paste.rs/HthAO" | base64 -d | gunzip > /tmp/homepath-rag-user-context.patch
+          base64 -d .github/rag-user-context.patch.gz.b64 | gunzip > /tmp/homepath-rag-user-context.patch
           git apply --index /tmp/homepath-rag-user-context.patch
-          git rm -f .github/workflows/codex-apply-rag-user-context.yml
+          git rm -f .github/rag-user-context.patch.gz.b64 .github/workflows/codex-apply-rag-user-context.yml
           if git diff --cached --quiet; then
             echo "No changes to commit"
             exit 0
@@ -37,4 +39,4 @@ jobs:
           git commit -m "Personalize RAG with user context anchors"
           git push
 
-# trigger: 2026-05-28 user-context-rag
+# trigger: staged-payload-user-context-rag
