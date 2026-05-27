@@ -36,3 +36,5 @@ jobs:
           fi
           git commit -m "Personalize RAG with user context anchors"
           git push
+
+# trigger: 2026-05-28 user-context-rag
