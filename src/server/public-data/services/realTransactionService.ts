@@ -222,6 +222,16 @@ async function fetchTransactions(
       const stats = await saveTransactions(mockTransactions(lawdCode5), options);
       return { ...baseResult, ...stats, status: options.dryRun ? "dry_run" : "ok" };
     }
+    const cachedCount = await countCachedTransactions(endpointKey, lawdCode5, dealYmd);
+    if (cachedCount > 0) {
+      return {
+        ...baseResult,
+        inserted: 0,
+        updated: 0,
+        skipped: cachedCount,
+        status: "ok"
+      };
+    }
     return {
       ...baseResult,
       inserted: 0,
@@ -276,6 +286,16 @@ async function fetchTransactions(
       const stats = await saveTransactions(fallback, options);
       return { ...baseResult, ...stats, status: options.dryRun ? "dry_run" : "ok" };
     }
+    const cachedCount = await countCachedTransactions(endpointKey, lawdCode5, dealYmd);
+    if (cachedCount > 0) {
+      return {
+        ...baseResult,
+        inserted: 0,
+        updated: 0,
+        skipped: cachedCount,
+        status: "ok"
+      };
+    }
 
     return {
       ...baseResult,
@@ -286,6 +306,32 @@ async function fetchTransactions(
       failed: error instanceof Error ? error.message : String(error)
     };
   }
+}
+
+async function countCachedTransactions(
+  endpointKey: TransactionEndpointKey,
+  lawdCode5: string,
+  dealYmd: string
+) {
+  const meta = endpointMeta[endpointKey];
+  const dealYear = Number(dealYmd.slice(0, 4));
+  const dealMonth = Number(dealYmd.slice(4, 6));
+  if (!Number.isFinite(dealYear) || !Number.isFinite(dealMonth)) return 0;
+
+  return prisma.realTransaction.count({
+    where: {
+      lawdCode5,
+      propertyType: meta.propertyType,
+      dealType: meta.dealType,
+      dealYear,
+      dealMonth,
+      NOT: {
+        sourceType: {
+          contains: "mock"
+        }
+      }
+    }
+  });
 }
 
 async function fetchTransactionPage(

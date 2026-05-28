@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { DataGoKrClient } from "@/server/public-data/clients/dataGoKrClient";
 import { JusoClient } from "@/server/public-data/clients/jusoClient";
 import { VWorldClient } from "@/server/public-data/clients/vworldClient";
+import { prisma } from "@/server/db";
 import { getPublicDataMode, getTargetConfig } from "@/server/public-data/utils/env";
 
 export const runtime = "nodejs";
@@ -13,13 +14,16 @@ export async function GET(request: NextRequest) {
   const target = getTargetConfig();
   const mode = getPublicDataMode();
   const probe = request.nextUrl.searchParams.get("probe") === "true";
+  const molitCache = await getMolitCacheStatus();
 
   if (!probe) {
     return NextResponse.json({
       mode,
       dataGoKr: {
         configured: dataGoKr.isConfigured(),
-        status: dataGoKr.isConfigured() ? "ok" : "partial"
+        status: dataGoKr.isConfigured() ? "ok" : molitCache.realTransactionCount > 0 ? "cached" : "partial",
+        configuredEnvName: dataGoKr.configuredEnvName(),
+        cache: molitCache
       },
       vworld: {
         configured: vworld.isConfigured(),
@@ -98,8 +102,14 @@ export async function GET(request: NextRequest) {
     mode,
     dataGoKr: {
       configured: dataGoKr.isConfigured(),
-      probeStatus: dataGoStatus,
-      message: dataGoMessages.join(", ")
+      probeStatus: dataGoKr.isConfigured()
+        ? dataGoStatus
+        : molitCache.realTransactionCount > 0
+          ? "cached"
+          : dataGoStatus,
+      message: dataGoMessages.join(", "),
+      configuredEnvName: dataGoKr.configuredEnvName(),
+      cache: molitCache
     },
     vworld: {
       configured: vworld.isConfigured(),
@@ -112,4 +122,44 @@ export async function GET(request: NextRequest) {
     target,
     warnings
   });
+}
+
+async function getMolitCacheStatus() {
+  const [realTransactionCount, successfulApiLogCount, latestApiLog] = await Promise.all([
+    prisma.realTransaction.count({
+      where: {
+        sourceType: {
+          not: {
+            contains: "mock"
+          }
+        }
+      }
+    }),
+    prisma.apiCallLog.count({
+      where: {
+        provider: "data.go.kr",
+        status: "ok"
+      }
+    }),
+    prisma.apiCallLog.findFirst({
+      where: {
+        provider: "data.go.kr",
+        status: "ok"
+      },
+      orderBy: {
+        createdAt: "desc"
+      },
+      select: {
+        endpoint: true,
+        resultCode: true,
+        createdAt: true
+      }
+    })
+  ]);
+
+  return {
+    realTransactionCount,
+    successfulApiLogCount,
+    latestSuccessfulApiCall: latestApiLog
+  };
 }
