@@ -29,6 +29,12 @@ import type {
 import { calculateInvestmentAmount } from "@/lib/calculations";
 import { properties } from "@/data/dummy";
 import { DEMO_MODE_ENABLED, demoCurrentHome, demoProfile } from "@/lib/demoSubmissionData";
+import {
+  firstHomeCurrentHomeDefaults,
+  goalFinancialPlanDefaults,
+  goalLabels,
+  hasOwnedCurrentHome
+} from "@/lib/userState";
 
 interface AppState {
   profile: UserProfile;
@@ -43,6 +49,7 @@ interface AppState {
   activePropertyId?: string;
   activeCandidate?: ComplexSignalCandidate;
   updateProfile: (profile: Partial<UserProfile>) => void;
+  applyPrimaryGoal: (goal: PrimaryGoal) => void;
   updateFinancialPlan: (plan: Partial<UserFinancialPlan>) => void;
   updateCurrentHome: (home: Partial<CurrentHome>) => void;
   setActiveProperty: (propertyId: string) => void;
@@ -84,17 +91,15 @@ const initialProfile: UserProfile = DEMO_MODE_ENABLED
       cashOnHand: demoProfile.cashOnHand,
       monthlySavings: demoProfile.monthlySavings,
       preferredRegions: demoProfile.preferredRegions,
-      primaryGoal: "move_up"
+      primaryGoal: "buy_home"
     }
   : sampleProfiles[0];
 const initialCurrentHome: CurrentHome = DEMO_MODE_ENABLED
   ? {
       ...sampleHomes[0],
-      address: "대구광역시 수성구 범어동",
-      region: demoCurrentHome.region,
-      propertyType: "apartment",
-      estimatedCurrentPrice: demoCurrentHome.estimatedCurrentPrice,
-      loanBalance: demoCurrentHome.loanBalance
+      ...firstHomeCurrentHomeDefaults(demoProfile.preferredRegions[0] ?? "대구 수성구"),
+      address: "대구광역시 수성구 범어동 임차 거주",
+      region: demoCurrentHome.region
     }
   : sampleHomes[0];
 
@@ -123,15 +128,34 @@ export const useAppStore = create<AppState>()(
       activePropertyId: properties[0]?.id,
       activeCandidate: undefined,
       updateProfile: (profile) =>
-        set((state) => ({
-          profile: {
+        set((state) => {
+          const nextProfile = {
             ...state.profile,
             ...profile,
             preferredRegions:
               profile.preferredRegions ?? state.profile.preferredRegions,
             updatedAt: new Date().toISOString()
-          }
-        })),
+          };
+          const goalPatch = profile.primaryGoal
+            ? buildGoalStatePatch(profile.primaryGoal, state, nextProfile)
+            : {};
+          return {
+            ...goalPatch,
+            profile: nextProfile
+          };
+        }),
+      applyPrimaryGoal: (goal) =>
+        set((state) => {
+          const nextProfile = {
+            ...state.profile,
+            primaryGoal: goal,
+            updatedAt: new Date().toISOString()
+          };
+          return {
+            ...buildGoalStatePatch(goal, state, nextProfile),
+            profile: nextProfile
+          };
+        }),
       updateFinancialPlan: (plan) =>
         set((state) => ({
           financialPlan: {
@@ -321,14 +345,7 @@ export const useAppStore = create<AppState>()(
   )
 );
 
-export const goalLabels: Record<PrimaryGoal, string> = {
-  buy_home: "첫 주거 구매",
-  move_up: "현재 주거 기준점 정리 후 이동",
-  cash_flow: "주거비 부담 줄이기",
-  multi_home: "가족 확장 대비",
-  commercial_real_estate: "생활권/직주근접 검토",
-  just_browsing: "시장 둘러보기"
-};
+export { goalLabels };
 
 export const riskLabels: Record<RiskPreference, string> = {
   stable: "안정 우선",
@@ -345,4 +362,29 @@ function migrateLegacyPersistKey() {
   } catch {
     // Persist migration is best-effort; the app can still boot with defaults.
   }
+}
+
+function buildGoalStatePatch(
+  goal: PrimaryGoal,
+  state: Pick<AppState, "financialPlan" | "currentHome">,
+  profile: UserProfile
+): Partial<Pick<AppState, "financialPlan" | "currentHome" | "activeCandidate">> {
+  const financialDefaults = goalFinancialPlanDefaults(goal, profile);
+  const shouldResetToFirstHome =
+    goal === "buy_home" && hasOwnedCurrentHome(state.currentHome);
+  return {
+    financialPlan: {
+      ...state.financialPlan,
+      ...financialDefaults,
+      targetMonthlyCashFlow: financialDefaults.targetMonthlyCashFlow ?? state.financialPlan.targetMonthlyCashFlow
+    },
+    currentHome: shouldResetToFirstHome
+      ? {
+          ...state.currentHome,
+          ...firstHomeCurrentHomeDefaults(profile.preferredRegions[0] ?? state.financialPlan.targetRegion),
+          updatedAt: new Date().toISOString()
+        }
+      : state.currentHome,
+    activeCandidate: undefined
+  };
 }

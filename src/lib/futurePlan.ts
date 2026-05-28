@@ -6,6 +6,7 @@ import {
   estimateLoanCapacity
 } from "./calculations";
 import { calculateMortgageAffordability, principalFromMonthlyPayment } from "./loanRules";
+import { getMortgageHomeCount, hasOwnedCurrentHome, isFirstHomeBuyer } from "./userState";
 
 export function calculateFutureCash(params: {
   cashOnHand: number;
@@ -83,7 +84,7 @@ export function calculateFuturePurchasePower(
     region: plan.targetRegion,
     cashOnHand: futureCash
   });
-  return futureCash + loanCapacity + Math.max(0, calculateNetCashAfterSellingHome(currentHome));
+  return futureCash + loanCapacity + (hasOwnedCurrentHome(currentHome) ? Math.max(0, calculateNetCashAfterSellingHome(currentHome)) : 0);
 }
 
 export function calculateYearsToReach(shortage: number, profile: UserProfile, plan: UserFinancialPlan) {
@@ -113,10 +114,12 @@ export function calculateTargetHomePath(
     propertyPrice: targetPrice,
     region: targetProperty?.region ?? plan.targetRegion,
     currentHome,
-    homeCount: 1
+    homeCount: getMortgageHomeCount(profile, currentHome),
+    isFirstTimeBuyer: isFirstHomeBuyer(profile, currentHome)
   });
   const salePower = calculateMoveUpBudget(profile, currentHome, targetProperty) + plan.parentalSupport;
-  const jeonseLiquidity = Math.max(currentHome.deposit, currentHome.estimatedCurrentPrice * 0.62 - currentHome.loanBalance);
+  const ownedHome = hasOwnedCurrentHome(currentHome);
+  const jeonseLiquidity = ownedHome ? Math.max(currentHome.deposit, currentHome.estimatedCurrentPrice * 0.62 - currentHome.loanBalance) : currentHome.deposit;
   const jeonseCash = profile.cashOnHand + Math.max(0, jeonseLiquidity) + plan.parentalSupport;
   const jeonsePower =
     jeonseCash +
@@ -124,7 +127,8 @@ export function calculateTargetHomePath(
       propertyPrice: targetPrice,
       region: targetProperty?.region ?? plan.targetRegion,
       cashOnHand: jeonseCash,
-      homeCount: 1
+      homeCount: getMortgageHomeCount(profile, currentHome),
+      isFirstTimeBuyer: isFirstHomeBuyer(profile, currentHome)
     });
   const shortageNow = Math.max(0, targetPrice - nowPower);
   const yearsToReachBySavingOnly = calculateYearsToReach(shortageNow, profile, plan);
@@ -136,17 +140,18 @@ export function calculateTargetHomePath(
     monthlyIncome: profile.monthlyIncome,
     cashOnHand: profile.cashOnHand + plan.parentalSupport,
     riskPreference: profile.riskPreference,
-    homeCount: currentHome ? 1 : 0,
+    homeCount: getMortgageHomeCount(profile, currentHome),
+    isFirstTimeBuyer: isFirstHomeBuyer(profile, currentHome),
     mortgageRate: 0.045
   });
   const monthlyPaymentAtPurchase = purchaseFinancing.monthlyPayment;
 
   let recommendedPath: TargetPathResult["recommendedPath"] = "not_feasible";
   if (nowPower >= targetPrice) recommendedPath = "additional_purchase";
-  else if (salePower >= targetPrice) recommendedPath = "sell_current_home";
-  else if (jeonsePower >= targetPrice) recommendedPath = "convert_to_jeonse";
+  else if (ownedHome && salePower >= targetPrice) recommendedPath = "sell_current_home";
+  else if (ownedHome && jeonsePower >= targetPrice) recommendedPath = "convert_to_jeonse";
   else if (yearsToReachBySavingOnly !== null && yearsToReachBySavingOnly <= plan.targetHorizonYears) recommendedPath = "save_more";
-  else if (currentHome.monthlyRent > 0 || currentHome.estimatedCurrentPrice > 0) recommendedPath = "convert_to_monthly_rent";
+  else if (ownedHome && (currentHome.monthlyRent > 0 || currentHome.estimatedCurrentPrice > 0)) recommendedPath = "convert_to_monthly_rent";
 
   return {
     targetPropertyId: targetProperty?.id,
@@ -162,7 +167,9 @@ export function calculateTargetHomePath(
     recommendedPath,
     explanation: [
       `현재 구매능력은 ${Math.round(nowPower / 10000).toLocaleString("ko-KR")}만 원 수준입니다.`,
-      `현재 집 매도 루트는 ${Math.round(salePower / 10000).toLocaleString("ko-KR")}만 원까지 열립니다.`,
+      ownedHome
+        ? `현재 집 매도 루트는 ${Math.round(salePower / 10000).toLocaleString("ko-KR")}만 원까지 열립니다.`
+        : `첫 구매 기준으로 현재 계약 보증금과 현금을 포함해 ${Math.round(nowPower / 10000).toLocaleString("ko-KR")}만 원 수준을 봅니다.`,
       `목표 시점 ${plan.targetHorizonYears}년 안 도달 가능성을 기준으로 경로를 비교했습니다.`,
       `DSR/LTV 반영 월 부담은 약 ${Math.round(monthlyPaymentAtPurchase / 10000).toLocaleString("ko-KR")}만 원입니다.`
     ]

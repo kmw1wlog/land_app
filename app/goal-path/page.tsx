@@ -12,6 +12,7 @@ import { properties } from "@/data/dummy";
 import { complexSignalToPropertyLike } from "@/lib/candidateAdapter";
 import { calculateRequiredMonthlySavings, calculateTargetHomePath, recommendGoalPathCandidates } from "@/lib/futurePlan";
 import { formatKRW, formatMonthly } from "@/lib/format";
+import { analyzeUserState, goalUi } from "@/lib/userState";
 import { useAppStore } from "@/store/useAppStore";
 import type { Property } from "@/types";
 
@@ -33,6 +34,8 @@ export default function GoalPathPage() {
   const [apiProperties, setApiProperties] = useState<Property[]>(properties);
   const [discoveryComparables, setDiscoveryComparables] = useState<Property[]>([]);
   const [showLeadModal, setShowLeadModal] = useState(false);
+  const userState = analyzeUserState(profile, currentHome, financialPlan);
+  const ui = goalUi[profile.primaryGoal];
   useEffect(() => {
     fetch("/api/feed/properties")
       .then((response) => response.json())
@@ -68,8 +71,8 @@ export default function GoalPathPage() {
 
   return (
     <AppShell
-      title="내 주거 경로"
-      subtitle={activeCandidate ? `${activeCandidate.complexName} ${activeCandidate.areaBucket} 가격대에 접근하는 경로입니다.` : "현재·정리 후·미래 구매력 안에서 어디까지 가능한지 봅니다."}
+      title={ui.pathTitle}
+      subtitle={activeCandidate ? `${activeCandidate.complexName} ${activeCandidate.areaBucket} 가격대에 접근하는 경로입니다.` : ui.pathSubtitle}
     >
       <div className="space-y-4">
         <FutureLadderTimeline profile={profile} currentHome={currentHome} financialPlan={financialPlan} />
@@ -88,7 +91,7 @@ export default function GoalPathPage() {
           <p className="text-xs font-bold text-white/55">주거 경로 안내</p>
           <h2 className="mt-1 text-2xl font-black">{routeLabels[path.recommendedPath]}</h2>
           <p className="mt-2 text-sm leading-6 text-white/70">
-            현재 가능: {path.possibleNow ? "가능" : "준비 필요"} · 현재 집 정리 시:{" "}
+            현재 가능: {path.possibleNow ? "가능" : "준비 필요"} · {userState.isFirstTimeBuyer ? "첫 구매 목표 대비" : "현재 집 정리 시"}:{" "}
             {path.possibleAfterSellingCurrentHome ? "가능" : "부족"}
           </p>
           {activeCandidate ? (
@@ -119,16 +122,26 @@ export default function GoalPathPage() {
             value={path.yearsToReachBySavingOnly === null ? "20년 이상" : `${path.yearsToReachBySavingOnly}년`}
             body="현금과 월 저축액, 소득상승률만 반영한 보수적 경로입니다."
           />
-          <RouteCard
-            title="현재 집 정리 루트"
-            value={path.yearsToReachWithHomeSale === null ? "추가 준비 필요" : `${path.yearsToReachWithHomeSale}년`}
-            body="세후 매도 현금과 미래 대출 여력을 합산해 봅니다."
-          />
-          <RouteCard
-            title="현재 집 전세 기준 전환 루트"
-            value={path.yearsToReachWithJeonseStrategy === null ? "리스크 확인 필요" : `${path.yearsToReachWithJeonseStrategy}년`}
-            body="전세보증금 활용 가능성과 역전세 리스크를 같이 봅니다."
-          />
+          {userState.isFirstTimeBuyer ? (
+            <RouteCard
+              title="보증금 포함 첫 구매 루트"
+              value={path.yearsToReachWithJeonseStrategy === null ? "추가 준비 필요" : `${path.yearsToReachWithJeonseStrategy}년`}
+              body="현재 보증금과 현금을 첫 구매 재원으로 볼 때의 참고 경로입니다."
+            />
+          ) : (
+            <>
+              <RouteCard
+                title="현재 집 정리 루트"
+                value={path.yearsToReachWithHomeSale === null ? "추가 준비 필요" : `${path.yearsToReachWithHomeSale}년`}
+                body="세후 매도 현금과 미래 대출 여력을 합산해 봅니다."
+              />
+              <RouteCard
+                title="현재 집 전세 기준 전환 루트"
+                value={path.yearsToReachWithJeonseStrategy === null ? "리스크 확인 필요" : `${path.yearsToReachWithJeonseStrategy}년`}
+                body="전세보증금 활용 가능성과 역전세 리스크를 같이 봅니다."
+              />
+            </>
+          )}
           <RouteCard
             title="월부담 조정 루트"
             value={`${Math.max(0, (target.expectedMonthlyRent / financialPlan.targetMonthlyCashFlow) * 100).toFixed(1)}% 기여`}

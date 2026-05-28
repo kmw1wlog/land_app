@@ -10,6 +10,7 @@ import { analyzePropertyForUser } from "@/lib/calculations";
 import { calculateFuturePurchasePower } from "@/lib/futurePlan";
 import { formatKRW, formatMonthly, percent } from "@/lib/format";
 import { estimateFusionMetricsForCandidate, getFusionEvidenceBadges } from "@/lib/fusionPresentation";
+import { analyzeUserState } from "@/lib/userState";
 import { useAppStore } from "@/store/useAppStore";
 import { Label } from "./Label";
 import { Metric } from "./Metric";
@@ -31,6 +32,7 @@ export function DiscoveryCard({ card, onNext }: DiscoveryCardProps) {
   const [suggestedUrl, setSuggestedUrl] = useState("");
   const propertyLike = complexSignalToPropertyLike(card);
   const analysis = analyzePropertyForUser(profile, currentHome, propertyLike);
+  const userState = analyzeUserState(profile, currentHome, financialPlan);
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-220, 0, 220], [-6, 0, 6]);
   const future5 = calculateFuturePurchasePower(profile, currentHome, financialPlan, 5) >= (card.referencePrice ?? 0);
@@ -70,7 +72,9 @@ export function DiscoveryCard({ card, onNext }: DiscoveryCardProps) {
           <h2 className="mt-2 text-3xl font-black leading-tight">{card.complexName}</h2>
           <p className="mt-3 text-sm font-bold text-white/78">
             {card.userFit.possibleAfterSellingCurrentHome
-              ? "현재 기준점 정리 시 접근 가능한 단지/면적대"
+              ? userState.isFirstTimeBuyer
+                ? "첫 구매 조건에서 접근 가능한 단지/면적대"
+                : "현재 기준점 정리 시 접근 가능한 단지/면적대"
               : card.userFit.yearsToReach !== null
                 ? `${card.userFit.yearsToReach}년 준비 루트 후보`
                 : "관심지역 거래 집중 후보"}
@@ -152,7 +156,7 @@ export function DiscoveryCard({ card, onNext }: DiscoveryCardProps) {
           <p className="text-[11px] font-bold text-black/45">내 상황</p>
           <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
             <span>현재 {card.userFit.possibleNow ? "가능" : "부족"}</span>
-            <span>정리 후 {card.userFit.possibleAfterSellingCurrentHome ? "접근 가능" : "추가 준비"}</span>
+            <span>{userState.isFirstTimeBuyer ? "첫 구매" : "정리 후"} {card.userFit.possibleAfterSellingCurrentHome ? "접근 가능" : "추가 준비"}</span>
             <span>부족액 {formatKRW(card.userFit.shortageNow ?? analysis.shortage)}</span>
             <span>월부담 {formatMonthly(card.userFit.monthlyBurdenDelta ?? analysis.monthlyDebtPayment)}</span>
             <span>DSR {(card.userFit.dsrRatio ?? analysis.dsrRatio).toFixed(1)}%</span>

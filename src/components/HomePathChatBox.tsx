@@ -3,6 +3,8 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Bot, Send, ShieldCheck, Sparkles } from "lucide-react";
 import { properties } from "@/data/dummy";
+import { analyzeUserState, goalUi } from "@/lib/userState";
+import { formatKRW, formatMonthly } from "@/lib/format";
 import { useAppStore } from "@/store/useAppStore";
 
 type ChatMessage = {
@@ -12,13 +14,6 @@ type ChatMessage = {
   sources?: Array<{ title?: string; sourceType: string; score: number; finalScore?: number; boostReason?: string[]; metadata?: Record<string, unknown> }>;
 };
 
-const SUGGESTED_QUESTIONS = [
-  "내 월급으로 어디까지 가능해?",
-  "왜 이 후보가 떴어?",
-  "같은 예산이면 어디가 더 안전해?",
-  "이 결과는 매수 추천이야?",
-  "데이터 출처는 뭐야?"
-];
 const CHAT_API_STORAGE_KEY = "homepath.chatApiUrl";
 
 export function HomePathChatBox() {
@@ -27,6 +22,8 @@ export function HomePathChatBox() {
   const financialPlan = useAppStore((state) => state.financialPlan);
   const activeCandidate = useAppStore((state) => state.activeCandidate);
   const portfolioItems = useAppStore((state) => state.portfolioItems);
+  const userState = analyzeUserState(profile, currentHome, financialPlan);
+  const ui = goalUi[profile.primaryGoal];
   const interestedHomes = portfolioItems.map((item) => {
     const property = properties.find((entry) => entry.id === item.propertyId);
     return {
@@ -52,7 +49,7 @@ export function HomePathChatBox() {
     {
       role: "assistant",
       content:
-        "홈패스 AI 설명봇입니다. 공공데이터, Transformer 분석 결과, 내 조건을 함께 보고 참고용 설명을 드릴게요. 매수 추천이나 수익 보장은 하지 않습니다."
+        `홈패스 AI 설명봇입니다. ${ui.chatIntro} 공공데이터, Transformer 분석 결과, 내 조건을 함께 보고 참고용 설명을 드릴게요. 매수 추천이나 수익 보장은 하지 않습니다.`
     }
   ]);
   const [loading, setLoading] = useState(false);
@@ -117,6 +114,22 @@ export function HomePathChatBox() {
 
   return (
     <div className="space-y-4">
+      <div className="rounded-lg border border-black/10 bg-white p-4">
+        <p className="text-xs font-black text-black/45">AI가 먼저 확인하는 현재 상태</p>
+        <p className="mt-1 text-base font-black text-ink">{userState.headline}</p>
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <MiniState label="목표" value={userState.goalLabel} />
+          <MiniState label="현재 주거" value={userState.housingLabel} />
+          <MiniState label="월소득" value={formatMonthly(profile.monthlyIncome)} />
+          <MiniState label="현금" value={formatKRW(profile.cashOnHand)} />
+          <MiniState label="목표 지역" value={financialPlan.targetRegion} />
+          <MiniState label="목표 가격" value={formatKRW(financialPlan.targetHomePrice)} />
+        </div>
+        <p className="mt-2 text-[11px] font-bold leading-5 text-black/45">
+          이 값이 답변의 우선순위입니다. RAG에서 찾은 다른 후보는 현재 상태와 관심 주택을 설명하기 위한 비교 근거로만 사용합니다.
+        </p>
+      </div>
+
       {activeCandidate ? (
         <div className="rounded-lg border border-moss/20 bg-moss/10 p-4">
           <p className="flex items-center gap-2 text-xs font-black text-moss">
@@ -125,7 +138,7 @@ export function HomePathChatBox() {
           </p>
           <p className="mt-2 text-lg font-black text-ink">{activeCandidate.complexName}</p>
           <p className="text-sm font-bold text-black/55">
-            {activeCandidate.region} · {activeCandidate.areaBucket} · 거래 집중도 {activeCandidate.transactionHeat.toFixed(1)}배
+            {activeCandidate.region} · {activeCandidate.areaBucket} · 거래 집중도 {formatOptionalNumber(activeCandidate.transactionHeat, 1, "배")}
           </p>
         </div>
       ) : null}
@@ -168,7 +181,7 @@ export function HomePathChatBox() {
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {SUGGESTED_QUESTIONS.map((question) => (
+        {ui.suggestedQuestions.map((question) => (
           <button
             key={question}
             className="rounded-full bg-white px-3 py-2 text-xs font-black text-ink shadow-soft"
@@ -200,6 +213,19 @@ export function HomePathChatBox() {
       </form>
     </div>
   );
+}
+
+function MiniState({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md bg-black/5 p-2">
+      <p className="text-[10px] font-bold text-black/42">{label}</p>
+      <p className="mt-1 text-xs font-black text-ink">{value}</p>
+    </div>
+  );
+}
+
+function formatOptionalNumber(value: unknown, digits: number, suffix: string) {
+  return typeof value === "number" && Number.isFinite(value) ? `${value.toFixed(digits)}${suffix}` : "미상";
 }
 
 function summarizeSourceProviders(sources: NonNullable<ChatMessage["sources"]>) {

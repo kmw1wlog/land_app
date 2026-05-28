@@ -10,6 +10,7 @@ import { calculateFuturePurchasePower, calculateTargetHomePath } from "@/lib/fut
 import { explainFeedCard } from "@/lib/feedExplain";
 import { formatKRW, formatMonthly, percent } from "@/lib/format";
 import { estimateFusionMetricsForCandidate, getFusionEvidenceBadges } from "@/lib/fusionPresentation";
+import { analyzeUserState } from "@/lib/userState";
 import { useAppStore } from "@/store/useAppStore";
 import { Label } from "./Label";
 import { LeadConsentModal } from "./LeadConsentModal";
@@ -33,6 +34,7 @@ export function PropertyCard({ property, onNext }: PropertyCardProps) {
   const rotate = useTransform(x, [-220, 0, 220], [-6, 0, 6]);
   const analysis = analyzePropertyForUser(profile, currentHome, property);
   const path = calculateTargetHomePath(profile, currentHome, financialPlan, property);
+  const userState = analyzeUserState(profile, currentHome, financialPlan);
   const future3 = calculateFuturePurchasePower(profile, currentHome, financialPlan, 3) >= property.salePrice;
   const future5 = calculateFuturePurchasePower(profile, currentHome, financialPlan, 5) >= property.salePrice;
   const future10 = calculateFuturePurchasePower(profile, currentHome, financialPlan, 10) >= property.salePrice;
@@ -96,7 +98,11 @@ export function PropertyCard({ property, onNext }: PropertyCardProps) {
           <p className="text-sm font-bold opacity-85">{property.region}</p>
           <h2 className="mt-1 text-3xl font-black leading-tight">{property.name}</h2>
           <p className="mt-2 text-sm font-bold text-white/82">
-            {analysis.isAffordableNow ? "현재 가능" : analysis.isAffordableAfterSale ? "현재 기준점 정리 시 가능" : `${Math.ceil(analysis.monthsToReach / 12)}년 준비 후보`}
+            {analysis.isAffordableNow
+              ? "현재 가능"
+              : analysis.isAffordableAfterSale
+                ? userState.isFirstTimeBuyer ? "첫 구매 조건 접근 가능" : "현재 기준점 정리 시 가능"
+                : `${Math.ceil(analysis.monthsToReach / 12)}년 준비 후보`}
           </p>
         </div>
       </div>
@@ -114,7 +120,7 @@ export function PropertyCard({ property, onNext }: PropertyCardProps) {
             {analysis.isAffordableNow
               ? "현재 현금/대출 여력으로 가능"
               : analysis.isAffordableAfterSale
-                ? "현재 기준점 정리 시 접근 가능"
+                ? userState.isFirstTimeBuyer ? "첫 구매 조건에서 접근 가능" : "현재 기준점 정리 시 접근 가능"
                 : `${Math.ceil(analysis.monthsToReach / 12)}년 안팎 준비 필요`}
           </p>
           <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
@@ -122,7 +128,7 @@ export function PropertyCard({ property, onNext }: PropertyCardProps) {
             <span>월 부담 {formatMonthly(analysis.monthlyDebtPayment)}</span>
             <span>월 현금흐름 {formatMonthly(analysis.monthlyCashFlow)}</span>
             <span>5년 순자산 {formatKRW(analysis.fiveYearNetWorthChange)}</span>
-            <span>매도 시 {analysis.isAffordableAfterSale ? "가능" : "부족"}</span>
+            <span>{userState.isFirstTimeBuyer ? "첫 구매" : "매도 시"} {analysis.isAffordableAfterSale ? "가능" : "부족"}</span>
             <span>추천 경로 {pathLabel[path.recommendedPath]}</span>
             <span>대출한도 {formatKRW(analysis.loanLimit)}</span>
             <span>DSR {analysis.dsrRatio.toFixed(1)}%</span>

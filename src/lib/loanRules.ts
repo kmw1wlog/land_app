@@ -150,5 +150,6 @@ function notesFor(input: MortgageRuleInput, stressRate: number, termYears: numbe
   ];
   if (cap !== null) notes.push(`수도권/규제지역 주담대 가격구간별 한도 ${Math.round(cap / 100000000)}억 원을 반영했습니다.`);
   if ((input.homeCount ?? 0) >= 2 && cap === 0) notes.push("다주택자의 수도권/규제지역 추가 주택구입 대출 제한을 반영했습니다.");
+  if (input.isFirstTimeBuyer) notes.push("첫 주택 구매자 기준 LTV 우대 가능성을 반영한 참고 계산입니다.");
   return notes;
 }

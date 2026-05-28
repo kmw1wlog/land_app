@@ -8,6 +8,7 @@ import type {
 } from "@/types";
 import { clamp } from "./format";
 import { calculateMortgageAffordability, monthlyAmortizedPayment } from "./loanRules";
+import { getMortgageHomeCount, hasOwnedCurrentHome, isFirstHomeBuyer } from "./userState";
 
 const SIMPLE_TAX_RATE = 0.18;
 const BROKER_FEE_RATE = 0.006;
@@ -28,12 +29,14 @@ export function estimateLoanCapacity(
     cashOnHand?: number;
     currentHome?: CurrentHome;
     homeCount?: number;
+    isFirstTimeBuyer?: boolean;
   } = {}
 ): number {
-  const annualExistingDebtService = options.currentHome
+  const ownedCurrentHome = hasOwnedCurrentHome(options.currentHome) ? options.currentHome : undefined;
+  const annualExistingDebtService = ownedCurrentHome
     ? monthlyAmortizedPayment(
-        options.currentHome.loanBalance,
-        (options.currentHome.interestRate || DEFAULT_RATE * 100) / 100,
+        ownedCurrentHome.loanBalance,
+        (ownedCurrentHome.interestRate || DEFAULT_RATE * 100) / 100,
         30
       ) * 12
     : 0;
@@ -44,7 +47,8 @@ export function estimateLoanCapacity(
     cashOnHand: options.cashOnHand ?? userProfile.cashOnHand,
     annualExistingDebtService,
     riskPreference: userProfile.riskPreference,
-    homeCount: options.homeCount,
+    homeCount: options.homeCount ?? getMortgageHomeCount(userProfile, options.currentHome),
+    isFirstTimeBuyer: options.isFirstTimeBuyer ?? isFirstHomeBuyer(userProfile, options.currentHome),
     mortgageRate: DEFAULT_RATE
   });
 
@@ -59,6 +63,7 @@ export function calculatePurchasePower(
     cashOnHand?: number;
     currentHome?: CurrentHome;
     homeCount?: number;
+    isFirstTimeBuyer?: boolean;
   } = {}
 ): number {
   const cash = options.cashOnHand ?? userProfile.cashOnHand;
@@ -81,14 +86,15 @@ export function calculateMoveUpBudget(
   currentHome: CurrentHome,
   targetProperty?: Property
 ): number {
-  const saleCash = Math.max(0, calculateNetCashAfterSellingHome(currentHome));
+  const saleCash = hasOwnedCurrentHome(currentHome) ? Math.max(0, calculateNetCashAfterSellingHome(currentHome)) : 0;
   return (
     saleCash +
     estimateLoanCapacity(userProfile, {
       propertyPrice: targetProperty?.salePrice ?? Math.max(currentHome.estimatedCurrentPrice, DEFAULT_PRICE_FOR_CAPACITY),
       region: targetProperty?.region ?? currentHome.region,
       cashOnHand: userProfile.cashOnHand + saleCash,
-      homeCount: 0
+      currentHome,
+      homeCount: hasOwnedCurrentHome(currentHome) ? 0 : getMortgageHomeCount(userProfile, currentHome)
     })
   );
 }
@@ -123,6 +129,7 @@ export function calculateRecommendationScore(
     cashOnHand: userProfile.cashOnHand,
     riskPreference: userProfile.riskPreference,
     homeCount: 0,
+    isFirstTimeBuyer: userProfile.primaryGoal === "buy_home",
     mortgageRate: DEFAULT_RATE
   });
   const investmentAmount = calculateInvestmentAmount(property);
@@ -154,10 +161,12 @@ export function analyzePropertyForUser(
   property: Property
 ): PropertyAnalysis {
   const investmentAmount = calculateInvestmentAmount(property);
-  const annualExistingDebtService = currentHome
+  const ownedCurrentHome = hasOwnedCurrentHome(currentHome) ? currentHome : undefined;
+  const currentHomeIsOwned = Boolean(ownedCurrentHome);
+  const annualExistingDebtService = ownedCurrentHome
     ? monthlyAmortizedPayment(
-        currentHome.loanBalance,
-        (currentHome.interestRate || DEFAULT_RATE * 100) / 100,
+        ownedCurrentHome.loanBalance,
+        (ownedCurrentHome.interestRate || DEFAULT_RATE * 100) / 100,
         30
       ) * 12
     : 0;
@@ -168,17 +177,19 @@ export function analyzePropertyForUser(
     cashOnHand: userProfile.cashOnHand,
     annualExistingDebtService,
     riskPreference: userProfile.riskPreference,
-    homeCount: currentHome ? 1 : 0,
+    homeCount: getMortgageHomeCount(userProfile, currentHome),
+    isFirstTimeBuyer: isFirstHomeBuyer(userProfile, currentHome),
     mortgageRate: DEFAULT_RATE
   });
-  const saleCash = currentHome ? Math.max(0, calculateNetCashAfterSellingHome(currentHome)) : 0;
+  const saleCash = currentHomeIsOwned && currentHome ? Math.max(0, calculateNetCashAfterSellingHome(currentHome)) : 0;
   const afterSaleFinancing = calculateMortgageAffordability({
     propertyPrice: property.salePrice,
     region: property.region,
     monthlyIncome: userProfile.monthlyIncome,
     cashOnHand: userProfile.cashOnHand + saleCash,
     riskPreference: userProfile.riskPreference,
-    homeCount: 0,
+    homeCount: currentHomeIsOwned ? 0 : getMortgageHomeCount(userProfile, currentHome),
+    isFirstTimeBuyer: isFirstHomeBuyer(userProfile, currentHome),
     mortgageRate: DEFAULT_RATE
   });
   const gapShortage = Math.max(0, investmentAmount - userProfile.cashOnHand);
@@ -228,7 +239,8 @@ export function calculateScenarioResults(
   currentHome: CurrentHome,
   targetProperty?: Property
 ): ScenarioResult[] {
-  const saleCash = calculateNetCashAfterSellingHome(currentHome);
+  const ownedHome = hasOwnedCurrentHome(currentHome);
+  const saleCash = ownedHome ? calculateNetCashAfterSellingHome(currentHome) : 0;
   const loanCapacity = estimateLoanCapacity(userProfile, {
     currentHome,
     region: currentHome.region,
@@ -236,11 +248,11 @@ export function calculateScenarioResults(
   });
   const target = targetProperty;
   const targetAnalysis = target ? analyzePropertyForUser(userProfile, currentHome, target) : undefined;
-  const baseNetWorth = currentHome.estimatedCurrentPrice - currentHome.loanBalance + userProfile.cashOnHand;
+  const baseNetWorth = (ownedHome ? currentHome.estimatedCurrentPrice - currentHome.loanBalance : currentHome.deposit) + userProfile.cashOnHand;
 
   const rows: Array<Omit<ScenarioResult, "risk" | "fitScore"> & { fitScoreSeed: number }> = [
     {
-      label: "계속 보유",
+      label: ownedHome ? "계속 보유" : "현재 임차 유지",
       scenarioType: "hold",
       initialCashNeeded: 0,
       monthlyCashFlow: -currentHome.loanBalance * (currentHome.interestRate / 100 / 12),
@@ -248,18 +260,18 @@ export function calculateScenarioResults(
       afterTaxNetWorth: baseNetWorth,
       fiveYearExpectedReturn: currentHome.estimatedCurrentPrice * 0.08,
       fitScoreSeed: userProfile.primaryGoal === "buy_home" ? 62 : 72,
-      notes: ["가격 회복을 기다리는 선택지", "월 부담과 기회비용을 같이 본다"]
+      notes: ownedHome ? ["가격 회복을 기다리는 선택지", "월 부담과 기회비용을 같이 본다"] : ["현재 주거비를 유지하며 현금과 저축 속도를 본다", "보유 주택 매도 현금은 없는 기준이다"]
     },
     {
-      label: "지금 매도",
+      label: ownedHome ? "지금 매도" : "첫 구매 준비",
       scenarioType: "sell_now",
       initialCashNeeded: 0,
       monthlyCashFlow: userProfile.monthlySavings,
       debtBurden: 0,
       afterTaxNetWorth: saleCash + userProfile.cashOnHand,
       fiveYearExpectedReturn: saleCash * 0.035,
-      fitScoreSeed: userProfile.primaryGoal === "move_up" ? 78 : 58,
-      notes: ["세후 확보 현금을 만든다", "실제 세금은 추후 정밀 계산 필요"]
+      fitScoreSeed: userProfile.primaryGoal === "buy_home" ? 82 : userProfile.primaryGoal === "move_up" ? 78 : 58,
+      notes: ownedHome ? ["세후 확보 현금을 만든다", "실제 세금은 추후 정밀 계산 필요"] : ["목표가 대비 부족액과 월저축 속도를 먼저 본다", "첫 구매 대출 한도는 금융기관 확인이 필요하다"]
     },
     {
       label: "월세 전환",
@@ -286,7 +298,7 @@ export function calculateScenarioResults(
       notes: ["보증금으로 유동성을 확보한다", "역전세 리스크를 별도 확인한다"]
     },
     {
-      label: "갈아타기",
+      label: ownedHome ? "갈아타기" : "첫 주택 구매",
       scenarioType: "move_up",
       initialCashNeeded: targetAnalysis?.shortage ?? Math.max(0, 600_000_000 - saleCash - loanCapacity),
       monthlyCashFlow: -(targetAnalysis?.monthlyDebtPayment ?? loanCapacity * MONTHLY_INTEREST_FACTOR),
@@ -295,8 +307,8 @@ export function calculateScenarioResults(
       fiveYearExpectedReturn: target
         ? target.salePrice * (target.growthScore / 100) * 0.75
         : 52_000_000,
-      fitScoreSeed: userProfile.primaryGoal === "move_up" ? 86 : 72,
-      notes: ["상급지 또는 목적 개선을 노린다", "월 부담 증가액을 먼저 확인한다"]
+      fitScoreSeed: userProfile.primaryGoal === "buy_home" ? 86 : userProfile.primaryGoal === "move_up" ? 86 : 72,
+      notes: ownedHome ? ["상급지 또는 목적 개선을 노린다", "월 부담 증가액을 먼저 확인한다"] : ["첫 집 목표 가격과 월 부담을 먼저 맞춘다", "보증금 반환 시점과 잔금 일정을 따로 확인한다"]
     },
     {
       label: "추가 매수",

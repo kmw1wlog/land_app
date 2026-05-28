@@ -12,6 +12,7 @@ import { properties } from "@/data/dummy";
 import { calculateMoveUpBudget, calculatePurchasePower } from "@/lib/calculations";
 import { buildMixedFeed } from "@/lib/feedMixer";
 import { formatKRW } from "@/lib/format";
+import { analyzeUserState, goalUi } from "@/lib/userState";
 import { useAppStore } from "@/store/useAppStore";
 import type { ComplexSignalCandidate, Property } from "@/types";
 
@@ -26,6 +27,19 @@ export default function FeedPage() {
   const currentHome = useAppStore((state) => state.currentHome);
   const financialPlan = useAppStore((state) => state.financialPlan);
   const savedCount = useAppStore((state) => state.portfolioItems.length);
+  const userState = analyzeUserState(profile, currentHome, financialPlan);
+  const ui = goalUi[profile.primaryGoal];
+  const purchasePowerNow = calculatePurchasePower(profile, {
+    currentHome,
+    homeCount: userState.mortgageHomeCount,
+    isFirstTimeBuyer: userState.isFirstTimeBuyer,
+    propertyPrice: financialPlan.targetHomePrice,
+    region: financialPlan.targetRegion
+  });
+  const secondaryMetricValue =
+    profile.primaryGoal === "buy_home"
+      ? Math.max(0, financialPlan.targetHomePrice - purchasePowerNow)
+      : calculateMoveUpBudget(profile, currentHome);
 
   useEffect(() => {
     let active = true;
@@ -73,8 +87,8 @@ export default function FeedPage() {
 
   return (
     <AppShell
-      title="오늘의 주거 구매력 피드"
-      subtitle="지도보다 먼저, 현재 조건과 정리 후 여력을 기준으로 실거래 분석 후보를 보여줍니다."
+      title={ui.feedTitle}
+      subtitle={ui.feedSubtitle}
       action={
         <div className="rounded-md bg-white px-3 py-2 text-right shadow-sm">
           <p className="text-[11px] font-bold text-black/45">저장 후보</p>
@@ -86,8 +100,8 @@ export default function FeedPage() {
         <MoveUpLadderSummary profile={profile} currentHome={currentHome} financialPlan={financialPlan} />
 
         <div className="grid grid-cols-2 gap-2">
-          <Metric label="현재 매수 여력" value={formatKRW(calculatePurchasePower(profile))} />
-          <Metric label="정리 후 구매력" value={formatKRW(calculateMoveUpBudget(profile, currentHome))} />
+          <Metric label={ui.primaryMetricLabel} value={formatKRW(purchasePowerNow)} />
+          <Metric label={ui.secondaryMetricLabel} value={formatKRW(secondaryMetricValue)} />
         </div>
 
         <EstimateNotice />
@@ -112,11 +126,11 @@ export default function FeedPage() {
         <div className="flex items-center justify-between rounded-md bg-white/70 px-3 py-2">
           <div className="flex items-center gap-2 text-sm font-black text-ink">
             <Target size={17} className="text-coral" />
-            현재 구매력 중심 70%
+            {ui.feedMixLabel.split(" · ")[0]}
           </div>
           <div className="flex items-center gap-2 text-sm font-black text-ink">
             <Flame size={17} className="text-gold" />
-            정리 후·미래 접근 30%
+            {ui.feedMixLabel.split(" · ")[1] ?? "미래 접근 30%"}
           </div>
         </div>
 
@@ -124,7 +138,7 @@ export default function FeedPage() {
           <p className="text-[11px] font-bold text-black/45">이번 추천 근거</p>
           <p className="mt-1 text-sm font-black text-ink">{currentDiscovery?.cardType ?? current.feedCardType}</p>
           <p className="mt-1 text-xs leading-5 text-black/55">
-            {currentDiscovery ? "공공 실거래가를 바탕으로 현재 조건, 정리 후 여력, 미래 구매력을 함께 본 분석 후보입니다." : current.reason} · source: {feedSource} · 표시 {filteredDiscoveryCards.length || ranked.length}개
+            {currentDiscovery ? `${userState.shortSummary}에서 공공 실거래가, KREB real 지표, 미래 구매력을 함께 본 분석 후보입니다.` : current.reason} · source: {feedSource} · 표시 {filteredDiscoveryCards.length || ranked.length}개
           </p>
           {warnings.length ? <p className="mt-1 text-xs leading-5 text-coral">{warnings[0]}</p> : null}
           <p className="mt-1 text-xs leading-5 text-black/45">

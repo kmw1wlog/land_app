@@ -30,9 +30,9 @@ export async function POST(request: NextRequest) {
     const instructionContext = buildHomePathInstructionContext({
       message,
       intent: context.intent,
-      profile: body.profile,
-      currentHome: body.currentHome,
-      financialPlan: body.financialPlan,
+      profile: context.profile,
+      currentHome: context.currentHome,
+      financialPlan: context.financialPlan,
       activeCandidate: body.activeCandidate,
       portfolioItems: body.portfolioItems,
       interestedHomes: body.interestedHomes

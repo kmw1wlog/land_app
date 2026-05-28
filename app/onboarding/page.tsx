@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { goalLabels, riskLabels, useAppStore } from "@/store/useAppStore";
+import { analyzeUserState, goalUi } from "@/lib/userState";
 import type { PrimaryGoal, RiskPreference } from "@/types";
 
 const goals = Object.entries(goalLabels) as Array<[PrimaryGoal, string]>;
@@ -14,8 +15,11 @@ export default function OnboardingPage() {
   const financialPlan = useAppStore((state) => state.financialPlan);
   const currentHome = useAppStore((state) => state.currentHome);
   const updateProfile = useAppStore((state) => state.updateProfile);
+  const applyPrimaryGoal = useAppStore((state) => state.applyPrimaryGoal);
   const updateFinancialPlan = useAppStore((state) => state.updateFinancialPlan);
   const updateCurrentHome = useAppStore((state) => state.updateCurrentHome);
+  const userState = analyzeUserState(profile, currentHome, financialPlan);
+  const ui = goalUi[profile.primaryGoal];
 
   return (
     <main className="mx-auto min-h-screen max-w-[480px] bg-paper px-5 py-6 shadow-soft">
@@ -32,6 +36,9 @@ export default function OnboardingPage() {
       <section className="space-y-6">
         <div>
           <h2 className="text-sm font-black text-ink">현재 주거 목표</h2>
+          <p className="mt-1 text-xs leading-5 text-black/55">
+            선택한 목표는 앱 상단, 피드 구성, 구매력 계산, AI 답변 지침에 바로 반영됩니다.
+          </p>
           <div className="mt-3 grid grid-cols-2 gap-2">
             {goals.map(([key, label]) => (
               <button
@@ -41,11 +48,18 @@ export default function OnboardingPage() {
                     ? "border-moss bg-moss text-white"
                     : "border-black/10 bg-white text-black/65"
                 }`}
-                onClick={() => updateProfile({ primaryGoal: key })}
+                onClick={() => applyPrimaryGoal(key)}
               >
                 {label}
               </button>
             ))}
+          </div>
+          <div className="mt-3 rounded-md bg-moss/10 p-3">
+            <p className="text-xs font-black text-moss">{ui.headerBadge}</p>
+            <p className="mt-1 text-sm font-bold leading-5 text-ink">{userState.headline}</p>
+            <p className="mt-1 text-xs leading-5 text-black/55">
+              {ui.chatIntro}
+            </p>
           </div>
         </div>
 
@@ -94,29 +108,59 @@ export default function OnboardingPage() {
         <div className="rounded-lg border border-black/10 bg-white p-4">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="text-moss" size={18} />
-            <h2 className="text-sm font-black text-ink">현재 주거 기준점</h2>
+            <h2 className="text-sm font-black text-ink">{userState.isFirstTimeBuyer ? "현재 임차 기준점" : "현재 주거 기준점"}</h2>
           </div>
+          <p className="mt-1 text-xs leading-5 text-black/55">
+            {userState.isFirstTimeBuyer
+              ? "첫 주택 구매 모드에서는 보유 주택 매도가 아니라 보증금, 월 주거비, 현금 여력을 기준으로 계산합니다."
+              : "현재 보유 주택의 추정가와 대출잔액을 기준으로 정리 후 이동 가능성을 계산합니다."}
+          </p>
           <div className="mt-3 grid grid-cols-2 gap-3">
             <TextField
               label="지역"
               value={currentHome.region}
               onChange={(value) => updateCurrentHome({ region: value })}
             />
-            <NumberField
-              label="추정가"
-              value={currentHome.estimatedCurrentPrice}
-              onChange={(value) => updateCurrentHome({ estimatedCurrentPrice: value })}
-            />
-            <NumberField
-              label="취득가"
-              value={currentHome.purchasePrice}
-              onChange={(value) => updateCurrentHome({ purchasePrice: value })}
-            />
-            <NumberField
-              label="대출잔액"
-              value={currentHome.loanBalance}
-              onChange={(value) => updateCurrentHome({ loanBalance: value })}
-            />
+            {userState.isFirstTimeBuyer ? (
+              <>
+                <NumberField
+                  label="보증금"
+                  value={currentHome.deposit}
+                  onChange={(value) => updateCurrentHome({ deposit: value, estimatedCurrentPrice: 0, purchasePrice: 0, loanBalance: 0, occupancyType: "monthly_rent" })}
+                />
+                <NumberField
+                  label="월 주거비"
+                  value={currentHome.monthlyRent}
+                  onChange={(value) => {
+                    updateCurrentHome({ monthlyRent: value, occupancyType: "monthly_rent" });
+                    updateProfile({ currentRent: value });
+                  }}
+                />
+                <div className="rounded-md bg-black/5 p-3">
+                  <p className="text-xs font-bold text-black/50">보유 주택</p>
+                  <p className="mt-2 text-sm font-black text-ink">없음 기준</p>
+                  <p className="mt-1 text-[11px] leading-4 text-black/45">대출 계산 주택수 0으로 반영</p>
+                </div>
+              </>
+            ) : (
+              <>
+                <NumberField
+                  label="추정가"
+                  value={currentHome.estimatedCurrentPrice}
+                  onChange={(value) => updateCurrentHome({ estimatedCurrentPrice: value })}
+                />
+                <NumberField
+                  label="취득가"
+                  value={currentHome.purchasePrice}
+                  onChange={(value) => updateCurrentHome({ purchasePrice: value })}
+                />
+                <NumberField
+                  label="대출잔액"
+                  value={currentHome.loanBalance}
+                  onChange={(value) => updateCurrentHome({ loanBalance: value })}
+                />
+              </>
+            )}
           </div>
         </div>
 

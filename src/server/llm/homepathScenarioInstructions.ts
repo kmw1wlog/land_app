@@ -1,6 +1,7 @@
 import type { ComplexSignalCandidate, CurrentHome, UserFinancialPlan, UserProfile, VirtualPortfolioItem } from "@/types";
 import type { HomePathChatIntent, HomePathInterestHome } from "@/server/rag/contextBuilder";
 import { formatKRW, formatMonthly } from "@/lib/format";
+import { analyzeUserState, hasOwnedCurrentHome } from "@/lib/userState";
 
 export type HomePathInstructionScenario =
   | "current_home_explanation"
@@ -47,6 +48,7 @@ export function buildHomePathInstructionContext(input: {
 
 const MANDATORY_RULES = [
   "RAG 근거가 있더라도 답변의 최종 기준은 사용자 입력값, 계산 결과, 검색 context, 상황별 지침의 교집합이다.",
+  "답변 시작 전 primaryGoal, 현재 주거 점유 형태, 보유 주택 여부, 첫 주택 구매자 여부를 확인하고 그 판정을 한 줄 결론에 반영한다.",
   "사용자 상황 context와 관심 주택 context는 검색 결과보다 먼저 반영한다. 다른 후보는 관심 주택을 해석하기 위한 비교 근거로만 쓴다.",
   "사용자가 입력한 집, 소득, 저축, 대출, 목표 예산은 추론으로 덮어쓰지 말고 계산 결과의 한계를 함께 말한다.",
   "매수하라, 팔아라, 지금 들어가라 같은 결론형 지시 대신 확인 조건과 선택지를 제시한다.",
@@ -68,6 +70,7 @@ const scenarioInstructionLines: Record<HomePathInstructionScenario, string[]> = 
   ],
   purchase_power: [
     "- 구매력 질문 상황: 현재 구매력, 현재 집 정리 후 예산, 5년 뒤 추정 구매력을 구분해서 설명한다.",
+    "- 첫 주택 구매 상황이면 '현재 집 정리 후'라는 말을 쓰지 말고 첫 매수 여력, 목표가 대비 부족액, 보증금/현금/월저축 기준으로 설명한다.",
     "- 월소득과 월저축 대비 무리한 상환 부담 여부를 말하되 DSR/LTV 승인을 보장하지 않는다.",
     "- 예산이 부족하면 기간, 저축률, 목표 지역/면적 조정 같은 행동 단위 대안을 제시한다."
   ],
@@ -115,7 +118,7 @@ function resolveInstructionScenarios(input: {
   if (input.activeCandidate || input.intent === "candidate_reason" || /후보|왜|떴|단지/.test(text)) {
     scenarios.add("candidate_explanation");
   }
-  if (input.intent === "purchase_power" || /구매력|월급|소득|예산|가능|어디까지/.test(text)) {
+  if (input.profile?.primaryGoal === "buy_home" || input.intent === "purchase_power" || /구매력|월급|소득|예산|가능|어디까지/.test(text)) {
     scenarios.add("purchase_power");
   }
   if (input.intent === "comparison" || /같은\s*예산|비교|어디가\s*더|안전/.test(text)) {
@@ -151,6 +154,10 @@ function buildUserSituationSummary(input: {
 }) {
   const lines: string[] = [];
   if (input.profile) {
+    const userState = input.currentHome ? analyzeUserState(input.profile, input.currentHome, input.financialPlan) : null;
+    lines.push(
+      `- 사용자 상태 판정: ${userState ? `${userState.goalLabel}, ${userState.housingLabel}, 첫 주택 구매자 기준=${userState.isFirstTimeBuyer ? "예" : "아니오"}, 대출 계산 주택수=${userState.mortgageHomeCount}` : "현재 주거 정보 부족"}.`
+    );
     lines.push(
       `- 사용자 재정: 월소득 ${formatMonthly(input.profile.monthlyIncome)}, 월저축 ${formatMonthly(input.profile.monthlySavings)}, 현금 ${formatKRW(input.profile.cashOnHand)}, 위험성향 ${input.profile.riskPreference}.`
     );
@@ -162,6 +169,9 @@ function buildUserSituationSummary(input: {
     lines.push(
       `- 현재 집: ${input.currentHome.region}, 추정가 ${formatKRW(input.currentHome.estimatedCurrentPrice)}, 매입가 ${formatKRW(input.currentHome.purchasePrice)}, 대출잔액 ${formatKRW(input.currentHome.loanBalance)}, 점유 ${input.currentHome.occupancyType}.`
     );
+    if (!hasOwnedCurrentHome(input.currentHome)) {
+      lines.push("- 현재 집 해석: 보유 주택이 아니라 임차/무주택 기준점으로 보고, 매도 후 예산을 만들었다고 단정하지 않는다.");
+    }
   } else {
     lines.push("- 현재 집: 입력된 현재 집 정보가 없으면 보유 주택 기준 판단을 단정하지 않는다.");
   }

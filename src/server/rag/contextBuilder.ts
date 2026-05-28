@@ -3,6 +3,7 @@ import { sampleHomes, sampleProfiles } from "@/data/dummy";
 import { calculateMoveUpBudget, calculateNetCashAfterSellingHome, calculatePurchasePower } from "@/lib/calculations";
 import { calculateFuturePurchasePower } from "@/lib/futurePlan";
 import { formatKRW, formatMonthly } from "@/lib/format";
+import { analyzeUserState, hasOwnedCurrentHome } from "@/lib/userState";
 import { embedText } from "./embedding";
 import { getDefaultVectorStore } from "./turboVector/store";
 import type { RagSourceType, SearchResult } from "./turboVector/types";
@@ -90,6 +91,9 @@ export async function buildHomePathRagContext(input: HomePathChatInput) {
   if (input.useRag === false) {
     return {
       intent,
+      profile,
+      currentHome,
+      financialPlan,
       calculations,
       retrievalPlan,
       retrieved: [],
@@ -133,6 +137,9 @@ export async function buildHomePathRagContext(input: HomePathChatInput) {
 
   return {
     intent,
+    profile,
+    currentHome,
+    financialPlan,
     calculations,
     retrievalPlan,
     retrieved: results,
@@ -145,7 +152,7 @@ export function classifyIntent(message: string): HomePathChatIntent {
   if (/출처|데이터|근거|공공|kreb|한국부동산원/.test(text)) return "data_source";
   if (/같은\s*예산|비교|대비|어디가\s*더|둘\s*중|vs|versus/.test(text)) return "comparison";
   if (/왜|이유|후보|떴/.test(text)) return "candidate_reason";
-  if (/가능|구매력|월급|예산|어디까지/.test(text)) return "purchase_power";
+  if (/첫\s*주택|첫\s*집|첫\s*구매|가능|구매력|월급|예산|어디까지/.test(text)) return "purchase_power";
   if (/위험|리스크|안전|dsr|ltv|하락/.test(text)) return "risk_check";
   if (/추천|매수|사도|수익/.test(text)) return "safety";
   return "general";
@@ -161,21 +168,26 @@ function buildCalculationSummary(input: {
     currentHome: input.currentHome,
     propertyPrice: input.activeCandidate?.referencePrice ?? input.financialPlan.targetHomePrice,
     region: input.activeCandidate?.region ?? input.financialPlan.targetRegion,
-    homeCount: input.currentHome ? 1 : 0
+    homeCount: analyzeUserState(input.profile, input.currentHome, input.financialPlan).mortgageHomeCount,
+    isFirstTimeBuyer: analyzeUserState(input.profile, input.currentHome, input.financialPlan).isFirstTimeBuyer
   });
   const moveUpBudget = calculateMoveUpBudget(input.profile, input.currentHome);
   const fiveYearPower = calculateFuturePurchasePower(input.profile, input.currentHome, input.financialPlan, 5);
-  const netCashAfterSale = calculateNetCashAfterSellingHome(input.currentHome);
+  const currentHomeIsOwned = hasOwnedCurrentHome(input.currentHome);
+  const netCashAfterSale = currentHomeIsOwned ? calculateNetCashAfterSellingHome(input.currentHome) : 0;
   const targetPrice = input.activeCandidate?.referencePrice ?? input.financialPlan.targetHomePrice;
+  const userState = analyzeUserState(input.profile, input.currentHome, input.financialPlan);
   return {
     purchasePowerNow,
     moveUpBudget,
     fiveYearPower,
     netCashAfterSale,
     targetPrice,
+    userState,
     summary:
-      `현재 구매력 ${formatKRW(purchasePowerNow)}, 현재 집 정리 후 예산 ${formatKRW(moveUpBudget)}, ` +
-      `5년 뒤 추정 구매력 ${formatKRW(fiveYearPower)}, 현재 집 정리 후 순현금 ${formatKRW(netCashAfterSale)}, ` +
+      `${userState.goalLabel} / ${userState.housingLabel}. 현재 구매력 ${formatKRW(purchasePowerNow)}, ` +
+      `${currentHomeIsOwned ? `현재 집 정리 후 예산 ${formatKRW(moveUpBudget)}, 현재 집 정리 후 순현금 ${formatKRW(netCashAfterSale)}, ` : `목표가 대비 부족액 ${formatKRW(Math.max(0, targetPrice - purchasePowerNow))}, `}` +
+      `5년 뒤 추정 구매력 ${formatKRW(fiveYearPower)}, ` +
       `월소득 ${formatMonthly(input.profile.monthlyIncome)}, 월저축 ${formatMonthly(input.profile.monthlySavings)}.`
   };
 }
@@ -265,6 +277,7 @@ function buildMandatoryUserContextResults(input: {
   calculations: ReturnType<typeof buildCalculationSummary>;
   anchors: UserRagAnchor[];
 }): SearchResult[] {
+  const userState = analyzeUserState(input.profile, input.currentHome, input.financialPlan);
   const results: SearchResult[] = [
     {
       id: "user-context:situation",
@@ -273,6 +286,7 @@ function buildMandatoryUserContextResults(input: {
       title: "사용자 상황 고정 context",
       text: [
         "이 정보는 RAG 검색 결과와 무관하게 항상 답변에 먼저 반영해야 하는 사용자 상황이다.",
+        `현재 상태 판정: ${userState.goalLabel}, ${userState.housingLabel}, 첫 주택 구매자 기준=${userState.isFirstTimeBuyer ? "예" : "아니오"}, 대출 계산 주택수=${userState.mortgageHomeCount}.`,
         `월소득 ${formatMonthly(input.profile.monthlyIncome)}, 월저축 ${formatMonthly(input.profile.monthlySavings)}, 현금 ${formatKRW(input.profile.cashOnHand)}, 위험성향 ${input.profile.riskPreference}.`,
         `선호지역 ${input.profile.preferredRegions.join(", ") || "미입력"}, 목표 ${input.financialPlan.targetRegion} ${formatKRW(input.financialPlan.targetHomePrice)}, 목표기간 ${input.financialPlan.targetHorizonYears}년.`,
         `현재 집 ${input.currentHome.region}, 추정가 ${formatKRW(input.currentHome.estimatedCurrentPrice)}, 매입가 ${formatKRW(input.currentHome.purchasePrice)}, 대출잔액 ${formatKRW(input.currentHome.loanBalance)}, 점유 ${input.currentHome.occupancyType}.`,
@@ -281,6 +295,11 @@ function buildMandatoryUserContextResults(input: {
       metadata: {
         contextRole: "user_situation",
         pinned: true,
+        primaryGoal: input.profile.primaryGoal,
+        goalLabel: userState.goalLabel,
+        housingPosition: userState.position,
+        isFirstTimeBuyer: userState.isFirstTimeBuyer,
+        mortgageHomeCount: userState.mortgageHomeCount,
         region: input.currentHome.region,
         targetRegion: input.financialPlan.targetRegion,
         targetPrice: input.financialPlan.targetHomePrice,

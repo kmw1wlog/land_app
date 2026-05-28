@@ -13,6 +13,17 @@ import { properties, sampleHomes, sampleProfiles } from "@/data/dummy";
 describe("MVP calculation engine", () => {
   const profile = sampleProfiles[0];
   const currentHome = sampleHomes[0];
+  const ownedHome = {
+    ...sampleHomes[0],
+    occupancyType: "owner_occupied" as const,
+    region: "노원구",
+    purchasePrice: 310_000_000,
+    estimatedCurrentPrice: 420_000_000,
+    loanBalance: 150_000_000,
+    interestRate: 4.2,
+    deposit: 0,
+    monthlyRent: 0
+  };
   const property = properties[0];
 
   it("estimates loan capacity with DSR/LTV style caps", () => {
@@ -30,15 +41,22 @@ describe("MVP calculation engine", () => {
   });
 
   it("deducts loan balance and simplified selling costs from home sale proceeds", () => {
-    const netCash = calculateNetCashAfterSellingHome(currentHome);
+    const netCash = calculateNetCashAfterSellingHome(ownedHome);
     expect(netCash).toBeGreaterThan(200_000_000);
-    expect(netCash).toBeLessThan(currentHome.estimatedCurrentPrice);
+    expect(netCash).toBeLessThan(ownedHome.estimatedCurrentPrice);
   });
 
   it("creates a move-up budget from sale cash plus loan capacity", () => {
-    expect(calculateMoveUpBudget(profile, currentHome, property)).toBeGreaterThan(
-      calculateNetCashAfterSellingHome(currentHome)
+    expect(calculateMoveUpBudget({ ...profile, primaryGoal: "move_up" }, ownedHome, property)).toBeGreaterThan(
+      calculateNetCashAfterSellingHome(ownedHome)
     );
+  });
+
+  it("treats the default sample user as a first-home buyer, not a current-home seller", () => {
+    const analysis = analyzePropertyForUser(profile, currentHome, property);
+    expect(profile.primaryGoal).toBe("buy_home");
+    expect(currentHome.occupancyType).toBe("monthly_rent");
+    expect(analysis.regulationNotes.join(" ")).toContain("첫 주택 구매자");
   });
 
   it("calculates jeonse-gap investment amount including purchase costs", () => {

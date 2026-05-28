@@ -11,6 +11,7 @@ import { properties } from "@/data/dummy";
 import { calculateNetCashAfterSellingHome, calculateScenarioResults } from "@/lib/calculations";
 import { calculateFuturePurchasePower } from "@/lib/futurePlan";
 import { formatKRW, formatMonthly } from "@/lib/format";
+import { analyzeUserState, goalUi, hasOwnedCurrentHome } from "@/lib/userState";
 import { useAppStore } from "@/store/useAppStore";
 import type { ScenarioResult } from "@/types";
 
@@ -55,6 +56,9 @@ export default function MyHomePage() {
   const [propertyTypeDraft, setPropertyTypeDraft] = useState(currentHome.propertyType);
   const [publicData, setPublicData] = useState<PublicDataPanelState>({ loading: false });
   const [showAdvancedPublicData, setShowAdvancedPublicData] = useState(false);
+  const userState = analyzeUserState(profile, currentHome, financialPlan);
+  const ui = goalUi[profile.primaryGoal];
+  const ownedHome = hasOwnedCurrentHome(currentHome);
   const scenarioRows = useMemo(
     () => calculateScenarioResults(profile, currentHome, properties[0]),
     [profile, currentHome]
@@ -63,7 +67,7 @@ export default function MyHomePage() {
   const badgeByScenario = (type: ScenarioResult["scenarioType"]) => {
     const scenario = scenarioRows.find((row) => row.scenarioType === type);
     if (!scenario) return "";
-    if (type === "sell_now") return `세후 ${formatKRW(calculateNetCashAfterSellingHome(currentHome))}`;
+    if (type === "sell_now") return ownedHome ? `세후 ${formatKRW(calculateNetCashAfterSellingHome(currentHome))}` : "보유 없음";
     if (type === "convert_to_monthly_rent") return `월 ${formatMonthly(scenario.monthlyCashFlow)}`;
     if (type === "convert_to_jeonse") return `유동성 ${formatKRW(Math.max(currentHome.deposit, currentHome.estimatedCurrentPrice * 0.62 - currentHome.loanBalance))}`;
     if (type === "move_up") return `최대 ${formatKRW(calculateFuturePurchasePower(profile, currentHome, financialPlan, 5))}`;
@@ -122,8 +126,8 @@ export default function MyHomePage() {
 
   return (
     <AppShell
-      title="내 주거 기준점"
-      subtitle="보유 주택, 전세 보증금, 월세 기준을 현재 조건으로 환산해 주거 이동 가능성을 계산합니다."
+      title={ui.myHomeTitle}
+      subtitle={ui.myHomeSubtitle}
     >
       <div className="space-y-4">
         <EstimateNotice />
@@ -141,7 +145,9 @@ export default function MyHomePage() {
         <section className="rounded-lg border border-black/10 bg-white p-4">
           <h2 className="text-base font-black text-ink">공공데이터 연결</h2>
           <p className="mt-1 text-xs leading-5 text-black/55">
-            주소를 정규화하고, 실거래 comparable 기반 현재가 추정값을 가져옵니다.
+            {userState.isFirstTimeBuyer
+              ? "첫 구매 모드에서는 관심 지역 또는 현재 임차 지역을 정규화해 목표 생활권과 실거래 후보를 확인합니다."
+              : "주소를 정규화하고, 실거래 comparable 기반 현재가 추정값을 가져옵니다."}
           </p>
           <input
             className="mt-3 h-11 w-full rounded-md border border-black/10 px-3 text-sm font-bold outline-none focus:border-moss"
@@ -347,16 +353,16 @@ export default function MyHomePage() {
         <section className="rounded-lg border border-black/10 bg-white p-4">
           <div className="flex items-center gap-2">
             <Home size={18} className="text-moss" />
-            <h2 className="text-base font-black text-ink">{currentHome.region} 현재 기준점</h2>
+            <h2 className="text-base font-black text-ink">{currentHome.region} {userState.isFirstTimeBuyer ? "임차 기준점" : "현재 기준점"}</h2>
           </div>
           <div className="mt-3 grid grid-cols-2 gap-2">
-            <Metric label="현재 기준 추정가" value={formatKRW(currentHome.estimatedCurrentPrice)} />
-            <Metric label="대출잔액" value={formatKRW(currentHome.loanBalance)} />
+            <Metric label={userState.isFirstTimeBuyer ? "보증금" : "현재 기준 추정가"} value={formatKRW(userState.isFirstTimeBuyer ? currentHome.deposit : currentHome.estimatedCurrentPrice)} />
+            <Metric label={userState.isFirstTimeBuyer ? "월 주거비" : "대출잔액"} value={userState.isFirstTimeBuyer ? formatMonthly(currentHome.monthlyRent || profile.currentRent) : formatKRW(currentHome.loanBalance)} />
             <Metric
-              label="정리 후 현금"
-              value={formatKRW(calculateNetCashAfterSellingHome(currentHome))}
+              label={userState.isFirstTimeBuyer ? "보유 주택" : "정리 후 현금"}
+              value={userState.isFirstTimeBuyer ? "없음 기준" : formatKRW(calculateNetCashAfterSellingHome(currentHome))}
             />
-            <Metric label="금리" value={`${currentHome.interestRate.toFixed(1)}%`} />
+            <Metric label={userState.isFirstTimeBuyer ? "목표 지역" : "금리"} value={userState.isFirstTimeBuyer ? financialPlan.targetRegion : `${currentHome.interestRate.toFixed(1)}%`} />
           </div>
         </section>
 
@@ -364,7 +370,7 @@ export default function MyHomePage() {
           <div className="absolute left-1/2 top-1/2 z-10 w-36 -translate-x-1/2 -translate-y-1/2 rounded-lg bg-ink p-4 text-center text-white shadow-soft">
             <p className="text-xs font-bold text-white/55">현재 주거 기준</p>
             <p className="mt-1 text-xl font-black">{currentHome.region}</p>
-            <p className="mt-1 text-sm">{formatKRW(currentHome.estimatedCurrentPrice)}</p>
+            <p className="mt-1 text-sm">{userState.isFirstTimeBuyer ? "임차/무주택" : formatKRW(currentHome.estimatedCurrentPrice)}</p>
           </div>
           <div className="absolute inset-0">
             <div className="absolute left-1/2 top-1/2 h-[1px] w-[82%] -translate-x-1/2 bg-black/10" />
@@ -390,13 +396,18 @@ export default function MyHomePage() {
           <button
             className="absolute bottom-3 right-3 flex h-10 items-center gap-1 rounded-md bg-white px-3 text-xs font-black text-black/65"
             onClick={() =>
-              updateCurrentHome({
-                estimatedCurrentPrice: currentHome.estimatedCurrentPrice + 10_000_000
-              })
+              userState.isFirstTimeBuyer
+                ? updateCurrentHome({
+                    deposit: currentHome.deposit + 10_000_000,
+                    occupancyType: "monthly_rent"
+                  })
+                : updateCurrentHome({
+                    estimatedCurrentPrice: currentHome.estimatedCurrentPrice + 10_000_000
+                  })
             }
           >
             <Pencil size={14} />
-            추정가 +1천
+            {userState.isFirstTimeBuyer ? "보증금 +1천" : "추정가 +1천"}
           </button>
         </section>
 
