@@ -7,15 +7,13 @@ import { demoCandidate, demoCommunityDraft, demoComparables, demoCurrentHome, de
 import { formatKRW, formatMonthly } from "@/lib/format";
 
 const steps = [
-  "Hero",
-  "내 상황 입력",
-  "구매력 요약",
-  "실거래 후보 카드",
-  "같은 돈 비교",
-  "융합데이터",
-  "커뮤니티",
+  "문제 제기",
+  "온보딩 입력",
+  "구매력 계산",
+  "후보·융합 안정성",
   "AI 설명봇",
-  "Final"
+  "같은 예산 비교",
+  "마무리"
 ];
 
 export default function DemoSubmissionPage() {
@@ -59,11 +57,9 @@ export default function DemoSubmissionPage() {
           {step === 1 ? <InputStep /> : null}
           {step === 2 ? <LadderStep /> : null}
           {step === 3 ? <CandidateStep /> : null}
-          {step === 4 ? <CompareStep /> : null}
-          {step === 5 ? <FusionDataStep /> : null}
-          {step === 6 ? <CommunityStep /> : null}
-          {step === 7 ? <AiChatStep /> : null}
-          {step === 8 ? <FinalStep /> : null}
+          {step === 4 ? <AiChatStep /> : null}
+          {step === 5 ? <CompareStep /> : null}
+          {step === 6 ? <FinalStep /> : null}
         </div>
       </section>
 
@@ -94,12 +90,12 @@ function HeroStep() {
       <div>
         <p className="text-lg font-black text-moss">홈패스 · 공공데이터 기반 주거 구매력 진단</p>
         <h1 className="mt-5 text-7xl font-black leading-[1.04] tracking-normal text-ink">
-          지금 내 조건으로
+          정보는 많은데,
           <br />
-          어디까지 가능할까?
+          내 조건의 답은 부족합니다.
         </h1>
         <p className="mt-8 max-w-2xl text-2xl font-bold leading-10 text-black/60">
-          청년·사회초년생의 주거 구매력과 갈아타기 리스크를 공공 실거래 데이터로 설명 가능한 경로로 보여줍니다.
+          실거래가와 매물은 많지만, 내 월급과 현금으로 어디까지 가능한지는 직접 계산해야 했습니다.
         </p>
         <p className="mt-5 max-w-2xl text-base font-bold leading-7 text-black/45">
           본 서비스는 매수 추천이나 수익 보장이 아닌 의사결정 보조 도구입니다.
@@ -152,25 +148,41 @@ function LadderStep() {
 
 function CandidateStep() {
   return (
-    <DemoPanel eyebrow="Step 3" title="공공 실거래 기반 분석 후보를 보여줍니다" icon={<Building2 size={34} />}>
-      <div className="rounded-[1.5rem] bg-ink p-7 text-white">
-        <div className="flex flex-wrap gap-3">
-          <Tag>{demoCandidate.label}</Tag>
-          <Tag>거래 집중 후보</Tag>
-          <Tag>{demoCandidate.area}</Tag>
+    <DemoPanel eyebrow="Step 3" title="실거래 후보와 융합 안정성 점수를 함께 봅니다" icon={<Building2 size={34} />}>
+      <div className="grid gap-6 lg:grid-cols-[1.15fr_.85fr]">
+        <div className="rounded-[1.5rem] bg-ink p-7 text-white">
+          <div className="flex flex-wrap gap-3">
+            <Tag>{demoCandidate.label}</Tag>
+            <Tag>거래 집중 후보</Tag>
+            <Tag>{demoCandidate.area}</Tag>
+          </div>
+          <h2 className="mt-8 text-5xl font-black">{demoCandidate.complexName}</h2>
+          <p className="mt-2 text-xl font-bold text-white/60">{demoCandidate.region}</p>
+          <div className="mt-8 grid grid-cols-5 gap-4">
+            <DemoMetric label="기준가" value={formatKRW(demoCandidate.referencePrice)} dark />
+            <DemoMetric label="거래 집중도" value={`${demoCandidate.transactionHeat}배`} dark />
+            <DemoMetric label="전고점 대비" value={`${demoCandidate.drawdownFromHigh}%`} dark />
+            <DemoMetric label="전세가율" value={`${demoCandidate.jeonseRatio}%`} dark />
+            <DemoMetric label="DSR/LTV" value={`${demoCandidate.dsr}% / ${demoCandidate.ltv}%`} dark />
+          </div>
+          <p className="mt-6 text-sm font-bold leading-6 text-white/62">
+            국토교통부 실거래 기반 분석 후보입니다. 실제 매물은 외부 사이트에서 확인하세요.
+          </p>
         </div>
-        <h2 className="mt-8 text-5xl font-black">{demoCandidate.complexName}</h2>
-        <p className="mt-2 text-xl font-bold text-white/60">{demoCandidate.region}</p>
-        <div className="mt-8 grid grid-cols-5 gap-4">
-          <DemoMetric label="기준가" value={formatKRW(demoCandidate.referencePrice)} dark />
-          <DemoMetric label="거래 집중도" value={`${demoCandidate.transactionHeat}배`} dark />
-          <DemoMetric label="전고점 대비" value={`${demoCandidate.drawdownFromHigh}%`} dark />
-          <DemoMetric label="전세가율" value={`${demoCandidate.jeonseRatio}%`} dark />
-          <DemoMetric label="DSR/LTV" value={`${demoCandidate.dsr}% / ${demoCandidate.ltv}%`} dark />
+        <div className="rounded-[1.5rem] bg-white p-6 shadow-soft">
+          <p className="text-sm font-black text-moss">MOLIT real + KREB real</p>
+          <h3 className="mt-3 text-4xl font-black leading-tight">융합 안정성 점수 78점</h3>
+          <p className="mt-4 text-lg font-bold leading-8 text-black/60">
+            국토교통부 실거래와 한국부동산원 지역지수를 결합해 개별 거래와 지역시장 흐름을 함께 봅니다.
+          </p>
+          <div className="mt-5 grid gap-3 text-base font-black">
+            <span className="rounded-xl bg-moss/10 p-4 text-moss">MOLIT 실거래: real</span>
+            <span className="rounded-xl bg-moss/10 p-4 text-moss">KREB 지역시장: real</span>
+            <span className="rounded-xl bg-gold/20 p-4 text-ink">HUG 전세 리스크: seed</span>
+            <span className="rounded-xl bg-gold/20 p-4 text-ink">교통 접근성: seed</span>
+          </div>
+          <p className="mt-5 rounded-xl bg-black/5 p-4 text-base font-black text-black/55">데이터 신뢰도 0.6 / 1.0</p>
         </div>
-        <p className="mt-6 text-sm font-bold leading-6 text-white/62">
-          실거래 기반 분석 후보입니다. 실제 매물은 외부 사이트에서 확인하세요.
-        </p>
       </div>
     </DemoPanel>
   );
@@ -264,23 +276,25 @@ function CommunityStep() {
 
 function AiChatStep() {
   return (
-    <DemoPanel eyebrow="Step 7" title="Qwen + TurboVector-RAG로 후보 이유를 설명합니다" icon={<Bot size={34} />}>
+    <DemoPanel eyebrow="Step 4" title="Transformer + TurboQuant-RAG + Qwen으로 설명합니다" icon={<Bot size={34} />}>
       <div className="grid gap-6 lg:grid-cols-[.8fr_1.2fr]">
         <div className="rounded-[1.5rem] bg-ink p-6 text-white shadow-soft">
           <p className="text-sm font-black text-gold">질문</p>
           <h2 className="mt-4 text-4xl font-black leading-tight">왜 이 후보가 떴나요?</h2>
           <p className="mt-5 text-lg font-bold leading-8 text-white/65">
-            후보 단지, Transformer 회복 신호, 공공 실거래 근거, 안전 문구를 TurboVector-lite 압축 벡터로 검색합니다.
+            후보 단지, 사용자 구매력, Transformer 신호, 융합 공공데이터 근거, 안전 문구를 TurboQuant-inspired RAG로 검색합니다.
           </p>
           <div className="mt-5 grid grid-cols-2 gap-3 text-center text-sm font-black">
-            <span className="rounded-xl bg-white/10 px-4 py-3">RAG 근거 4개</span>
-            <span className="rounded-xl bg-white/10 px-4 py-3">fallback 아님</span>
+            <span className="rounded-xl bg-white/10 px-4 py-3">fusion_data</span>
+            <span className="rounded-xl bg-white/10 px-4 py-3">kreb_market_index</span>
+            <span className="rounded-xl bg-white/10 px-4 py-3">model_artifact</span>
+            <span className="rounded-xl bg-white/10 px-4 py-3">safety_policy</span>
           </div>
         </div>
         <div className="rounded-[1.5rem] bg-white p-6 shadow-soft">
           <p className="text-sm font-black text-moss">Qwen 응답 예시</p>
           <div className="mt-4 whitespace-pre-wrap rounded-xl bg-moss/10 p-5 text-lg font-bold leading-8 text-black/65">
-            {`결론: 현재 조건에서는 조건부 가능 후보로 볼 수 있습니다.\n\n근거 3개:\n1. 최근 실거래 기준가와 정리 후 구매력의 간격이 비교적 작습니다.\n2. 거래 집중도와 90일 거래량이 후보 노출 기준을 통과했습니다.\n3. Transformer 분석에서 회복/거래 재활성화 신호가 함께 감지됐습니다.\n\n주의점: 실제 매물, 권리관계, 대출 조건은 별도 확인해야 합니다.\n\n다음 행동: 같은 예산 후보와 DSR/LTV, 전세가율, 최근 거래량을 비교하세요.\n\n참고용 추정이며 의사결정 보조입니다. 매수 추천, 수익 보장, 대출 승인 보장이 아닙니다.`}
+            {`결론: 현재 조건에서는 조건부 가능 후보로 볼 수 있습니다.\n\n근거 3개:\n1. 최근 실거래 기준가와 정리 후 구매력의 간격이 비교적 작습니다.\n2. MOLIT real 거래량과 KREB real 지역지수가 안정성 점수에 함께 반영됐습니다.\n3. Transformer 분석에서 회복/거래 재활성화 신호가 함께 감지됐습니다.\n\n주의점: 실제 매물, 권리관계, 대출 조건은 별도 확인해야 합니다.\n\n다음 행동: 같은 예산 후보와 DSR/LTV, 전세가율, 최근 거래량을 비교하세요.\n\n참고용 추정이며 의사결정 보조입니다. 매수 추천, 수익 보장, 대출 승인 보장이 아닙니다.`}
           </div>
         </div>
       </div>
@@ -298,6 +312,9 @@ function FinalStep() {
         내 조건을 설명하는 앱.
       </h1>
       <p className="mt-8 text-3xl font-black text-moss">홈패스 · 공공데이터 기반 주거 구매력 진단</p>
+      <p className="mx-auto mt-7 max-w-4xl rounded-2xl bg-white/75 p-6 text-xl font-black leading-8 text-black/55 shadow-soft">
+        매수 추천이 아니며, 수익 보장·대출 승인 보장이 아닙니다. 청년·사회초년생의 무리한 주거 선택을 줄이는 공공데이터 기반 의사결정 보조 서비스입니다.
+      </p>
     </div>
   );
 }

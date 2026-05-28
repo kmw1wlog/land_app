@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-05-25T08:16:34.009Z",
+  "checkedAt": "2026-05-28T17:02:49.658Z",
   "description": "TurboQuant-inspired RAG verification for HomePath compact SQLite retrieval.",
   "pipeline": [
     "embedding",
@@ -21,7 +21,7 @@
       "recallAt10": 1,
       "meanCosineError": 0.001,
       "storageBytesPerVector": 400,
-      "searchLatencyMs": 1.305
+      "searchLatencyMs": 1.42
     },
     {
       "name": "RHT + normal codebook",
@@ -29,7 +29,7 @@
       "recallAt10": 1,
       "meanCosineError": 0.001,
       "storageBytesPerVector": 528,
-      "searchLatencyMs": 1.12
+      "searchLatencyMs": 1.418
     },
     {
       "name": "RHT + residual correction",
@@ -37,7 +37,7 @@
       "recallAt10": 1,
       "meanCosineError": 0.0014,
       "storageBytesPerVector": 528,
-      "searchLatencyMs": 1.07
+      "searchLatencyMs": 1.3
     }
   ]
 }

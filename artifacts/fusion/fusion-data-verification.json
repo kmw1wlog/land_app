@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-05-28T09:06:58.673Z",
+  "checkedAt": "2026-05-28T17:02:42.444Z",
   "readiness": {
     "canCheckMultiAgencyFusion": true,
     "reason": "MOLIT와 KREB 실데이터가 fused stability score, RAG, UI에 함께 반영된다.",
@@ -36,7 +36,7 @@
         "dealYear",
         "dealMonth"
       ],
-      "collectedAt": "2026-05-28T09:06:58.662Z",
+      "collectedAt": "2026-05-28T17:02:42.438Z",
       "usedIn": [
         "candidate scoring",
         "purchase power context",
@@ -48,7 +48,7 @@
       "licenseNote": "공공데이터포털/국토교통부 공개 API 또는 로컬 스냅샷 기준",
       "rawSnapshotPath": "data/public-data",
       "normalizedSnapshotPath": "prisma/dev.db",
-      "apiCheckedAt": "2026-05-28T09:06:58.662Z",
+      "apiCheckedAt": "2026-05-28T17:02:42.438Z",
       "apiStatus": "ok",
       "note": "DataGoKrClient와 로컬 public-data seed 파이프라인으로 실제 공공데이터 축을 구성한다."
     },
@@ -64,7 +64,7 @@
         "rentMom",
         "volatilityScore"
       ],
-      "collectedAt": "2026-05-28T09:06:58.662Z",
+      "collectedAt": "2026-05-28T17:02:42.438Z",
       "usedIn": [
         "fused stability score",
         "RAG kreb_market_index",
@@ -90,7 +90,7 @@
         "jeonseRiskScore",
         "riskGrade"
       ],
-      "collectedAt": "2026-05-28T09:06:58.662Z",
+      "collectedAt": "2026-05-28T17:02:42.438Z",
       "usedIn": [
         "fused stability score",
         "RAG hug_jeonse_risk",
@@ -115,7 +115,7 @@
         "transitAccessibilityScore",
         "commuteAccessScore"
       ],
-      "collectedAt": "2026-05-28T09:06:58.662Z",
+      "collectedAt": "2026-05-28T17:02:42.438Z",
       "usedIn": [
         "fused stability score",
         "RAG transport_accessibility",

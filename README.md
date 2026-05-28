@@ -33,13 +33,13 @@ HomePath는 국토교통 공공데이터, 사용자 구매력 계산, Transforme
 - 오피스텔 매매/전월세 실거래가
 - 건축물대장
 - 법정동코드
-- 한국부동산원 지역시장 지수 seed snapshot
+- 한국부동산원 지역시장 지수 real snapshot
 - HUG 전세 리스크 seed snapshot
 - 교통 접근성/직주근접 seed snapshot
 
 공공 실거래 데이터를 단지·면적대·층수대 단위로 재가공해 최근 실거래 기준가, 거래 집중도, 전고점 대비 하락률, 전세가율, 유동성 점수, 대장성 점수를 생성합니다.
 
-MVP에서는 국토교통 실거래 데이터와 함께 한국부동산원·HUG·교통 접근성 데이터 구조를 시드 스냅샷으로 구현했으며, 실제 API/공식 데이터 연동 시 동일한 fusion pipeline으로 확장됩니다. seed/mock만으로는 주관기관 융합데이터 가점 체크를 하지 않고, `docs/fusion-data-evidence.md`에서 provider별 real/seed 상태를 따로 증빙합니다.
+MVP에서는 국토교통 실거래 데이터와 한국부동산원 KREB 지역시장 지수 real snapshot을 함께 사용하고, HUG·교통 접근성 데이터는 seed snapshot으로 확장 구조를 구현했습니다. seed/mock만으로는 주관기관 융합데이터 가점 체크를 하지 않고, `docs/fusion-data-evidence.md`에서 provider별 real/seed 상태를 따로 증빙합니다.
 
 ## AI 활용 방향
 
@@ -53,7 +53,7 @@ MVP에서는 국토교통 실거래 데이터와 함께 한국부동산원·HUG�
 
 ```text
 국토교통 실거래/전월세/법정동/건축물 데이터
-한국부동산원 지역시장 지수 + HUG 전세 리스크 + 교통 접근성 seed
+한국부동산원 KREB 지역시장 지수 real + HUG 전세 리스크 seed + 교통 접근성 seed
 → 단지·면적대 feature 생성
 → 융합 안정성 점수
 → Time-Series Transformer 안정성 신호
@@ -136,12 +136,24 @@ python3 scripts/ai/real_estate_transformer_model.py \
 - `npm run android:debug-apk`: debug APK 빌드
 - `npm run android:release-aab`: Play Store용 release AAB 빌드
 - `npm run record:demo`: 제출용 데모 녹화 스크립트
+- `npm run demo:video`: 60초 제출용 시연 영상 MP4/WebM 생성
 - `npm run create:demo-voiceover`: 제출용 보이스오버 생성 보조 스크립트
 - `npm run ai:transformer:export`: `prisma/dev.db` 실거래 데이터를 월별 feature CSV로 변환
 - `npm run ai:transformer:train`: 공공 실거래 feature 기반 Transformer 모델 학습 프로토타입
 - `npm run rag:reindex`: 문서, FAQ, 안전 정책, Transformer artifact, 단지 signal을 TurboVector-lite RAG index로 재생성
 - `npm run rag:verify:qwen`: RAG context와 로컬 Qwen 응답 여부를 검증하고 verification artifact를 갱신
 - `npm run llm:qwen:serve`: 이 PC에서 OpenAI-compatible Qwen endpoint를 실행
+
+## 제출 별첨 자료
+
+- 시제품 URL: `https://land-app-mu.vercel.app/`
+- 제출용 데모 페이지: `/demo-submission`
+- 60초 시연 영상:
+  - `public/demo/homepath-molit-demo-60s.mp4`
+  - `public/demo/homepath-molit-demo-60s.webm`
+- MVP 화면 콜라주: `public/demo/homepath-mvp-screen-collage.png`
+- 별첨 구성 문서: `docs/molit-submission-appendix.md`
+- 영상 시나리오 문서: `docs/demo-video-scenario.md`
 
 ## 로컬 Qwen/RAG 시연
 
