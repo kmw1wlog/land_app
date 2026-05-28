@@ -1,7 +1,8 @@
 import { seedTransactionsForTargets } from "@/server/public-data/services/realTransactionService";
+import { existsSync } from "fs";
 
-process.loadEnvFile?.(".env.local");
-process.loadEnvFile?.(".env");
+if (existsSync(".env.local")) process.loadEnvFile?.(".env.local");
+if (existsSync(".env")) process.loadEnvFile?.(".env");
 
 type Args = {
   from: string;

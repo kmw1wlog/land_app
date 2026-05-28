@@ -286,6 +286,8 @@ function buildReasons(input: {
 }) {
   const reasons = [
     input.regionFit >= 90 ? "관심지역과 일치합니다." : "관심지역과 유사한 생활권/가격대 후보입니다.",
+    "국토부 실거래 데이터로 기준가, 거래량, 전세가율을 계산했습니다.",
+    "한국부동산원 KREB 지역지수 real snapshot을 지역시장 안정성 보조 근거로 함께 씁니다.",
     `최근 30일 거래 ${input.snapshot.volume30d}건, 90일 거래 ${input.snapshot.volume90d}건입니다.`,
     `거래 집중도는 평소 대비 ${(input.snapshot.transactionHeat ?? 0).toFixed(1)}배 수준입니다.`
   ];
@@ -294,7 +296,7 @@ function buildReasons(input: {
   if ((input.snapshot.jeonseRatio ?? 0) > 0) reasons.push(`전세가율은 ${(input.snapshot.jeonseRatio ?? 0).toFixed(1)}%로 추정됩니다.`);
   if (input.moveUpBandLabel) reasons.push(`${input.moveUpBandLabel} 가격대에 걸쳐 있습니다.`);
   if (input.cardType === "officetel_cash_flow") reasons.push("오피스텔 현금흐름 후보로 분류했습니다.");
-  return reasons.slice(0, 6);
+  return reasons.slice(0, 7);
 }
 
 function toNumber(value: bigint | number | null | undefined) {

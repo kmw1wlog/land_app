@@ -178,8 +178,10 @@ export interface VirtualPortfolioItem {
   complexSignalId?: string;
   complexName?: string;
   region?: string;
+  lawdCode5?: string | null;
   areaBucket?: AreaBucket;
   floorBand?: FloorBand;
+  propertyType?: "apartment" | "officetel";
   referencePrice?: number;
   referenceDate?: string;
   reason?: string;

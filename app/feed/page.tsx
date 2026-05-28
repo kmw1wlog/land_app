@@ -27,6 +27,7 @@ export default function FeedPage() {
   const currentHome = useAppStore((state) => state.currentHome);
   const financialPlan = useAppStore((state) => state.financialPlan);
   const savedCount = useAppStore((state) => state.portfolioItems.length);
+  const setDefaultInterestCandidate = useAppStore((state) => state.setDefaultInterestCandidate);
   const userState = analyzeUserState(profile, currentHome, financialPlan);
   const ui = goalUi[profile.primaryGoal];
   const purchasePowerNow = calculatePurchasePower(profile, {
@@ -58,12 +59,13 @@ export default function FeedPage() {
       })
     })
       .then((response) => response.json())
-      .then((data: { source?: string; cards?: ComplexSignalCandidate[]; properties?: Property[]; warnings?: string[] }) => {
+      .then((data: { source?: string; cards?: ComplexSignalCandidate[]; properties?: Property[]; defaultInterestCandidate?: ComplexSignalCandidate; warnings?: string[] }) => {
         if (!active) return;
         if (data.cards?.length) {
           setDiscoveryCards(data.cards);
           setFeedProperties(data.properties?.length ? data.properties : properties);
           setFeedSource(data.source ?? "complex_signal");
+          setDefaultInterestCandidate(data.defaultInterestCandidate ?? data.cards[0]);
           setWarnings(data.warnings ?? []);
         }
         setIndex(0);
@@ -74,7 +76,7 @@ export default function FeedPage() {
     return () => {
       active = false;
     };
-  }, [profile, currentHome, financialPlan]);
+  }, [profile, currentHome, financialPlan, setDefaultInterestCandidate]);
 
   const ranked = useMemo(() => buildMixedFeed(feedProperties, profile, currentHome), [feedProperties, profile, currentHome]);
   const filteredDiscoveryCards = useMemo(

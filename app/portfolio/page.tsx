@@ -13,13 +13,15 @@ import { calculateTargetHomePath } from "@/lib/futurePlan";
 import { formatKRW, formatMonthly } from "@/lib/format";
 import { buildMoveUpTargetBands } from "@/lib/moveUpBands";
 import { useAppStore } from "@/store/useAppStore";
-import type { Property, VirtualPortfolioItem } from "@/types";
+import type { ComplexSignalCandidate, Property, VirtualPortfolioItem } from "@/types";
 
 export default function PortfolioPage() {
   const profile = useAppStore((state) => state.profile);
   const financialPlan = useAppStore((state) => state.financialPlan);
   const currentHome = useAppStore((state) => state.currentHome);
   const items = useAppStore((state) => state.portfolioItems);
+  const defaultInterestCandidate = useAppStore((state) => state.defaultInterestCandidate);
+  const setDefaultInterestCandidate = useAppStore((state) => state.setDefaultInterestCandidate);
   const removeFromPortfolio = useAppStore((state) => state.removeFromPortfolio);
   const [apiProperties, setApiProperties] = useState<Property[]>(properties);
   const [leadProperty, setLeadProperty] = useState<Property | null>(null);
@@ -31,6 +33,42 @@ export default function PortfolioPage() {
       })
       .catch(() => setApiProperties(properties));
   }, []);
+
+  useEffect(() => {
+    if (items.length || defaultInterestCandidate) return;
+    let active = true;
+    fetch("/api/discovery/feed", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        profile,
+        currentHome,
+        financialPlan,
+        preferredRegions: profile.preferredRegions,
+        includeSimilarRegions: true,
+        propertyTypes: ["apartment", "officetel"],
+        goal: profile.primaryGoal,
+        limit: 12
+      })
+    })
+      .then((response) => response.json())
+      .then((payload: { defaultInterestCandidate?: ComplexSignalCandidate; cards?: ComplexSignalCandidate[] }) => {
+        if (!active) return;
+        const candidate = payload.defaultInterestCandidate ?? payload.cards?.[0];
+        if (candidate) setDefaultInterestCandidate(candidate);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [items.length, defaultInterestCandidate, profile, currentHome, financialPlan, setDefaultInterestCandidate]);
+
+  const defaultHydratedEntry = defaultInterestCandidate
+    ? (() => {
+        const item = defaultPortfolioItemFromCandidate(defaultInterestCandidate, profile.userId);
+        return { item, property: portfolioSignalToProperty(item) };
+      })()
+    : null;
   const hydratedItems =
     items.length > 0
       ? items
@@ -41,20 +79,22 @@ export default function PortfolioPage() {
           .filter((entry): entry is { item: typeof items[number]; property: Property } =>
             Boolean(entry.property)
           )
-      : apiProperties.slice(0, 3).map((property) => ({
-          item: {
-            id: `demo-${property.id}`,
-            userId: profile.userId,
-            propertyId: property.id,
-            virtualPurchasePrice: property.salePrice,
-            virtualPurchaseDate: new Date().toISOString(),
-            virtualInvestmentAmount: property.salePrice - property.jeonsePrice,
-            memo: "관심 주거 후보",
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          },
-          property
-        }));
+      : defaultHydratedEntry
+        ? [defaultHydratedEntry]
+        : apiProperties.slice(0, 1).map((property) => ({
+            item: {
+              id: `default-${property.id}`,
+              userId: profile.userId,
+              propertyId: property.id,
+              virtualPurchasePrice: property.salePrice,
+              virtualPurchaseDate: new Date().toISOString(),
+              virtualInvestmentAmount: property.salePrice - property.jeonsePrice,
+              memo: "저장 전 기본 관심 후보",
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            },
+            property
+          }));
 
   const totalMonthlyCashFlow = hydratedItems.reduce((sum, entry) => {
     return sum + analyzePropertyForUser(profile, currentHome, entry.property).monthlyCashFlow;
@@ -91,7 +131,7 @@ export default function PortfolioPage() {
             <p className="text-sm font-black text-moss">{formatKRW(averageReferencePrice)}</p>
           </div>
           <div className="mt-3 grid grid-cols-3 gap-2">
-            <Metric label="담은 후보" value={`${hydratedItems.length}개`} />
+            <Metric label={items.length ? "담은 후보" : "기본 후보"} value={`${hydratedItems.length}개`} />
             <Metric label="5년 뒤 접근" value={`${fiveYearAccessibleCount}개`} />
             <Metric label="1.5배 후보" value={`${onePointFiveCount}개`} />
           </div>
@@ -116,7 +156,7 @@ export default function PortfolioPage() {
         </section>
 
         <div className="grid grid-cols-2 gap-2">
-          <Metric label="담은 후보" value={`${hydratedItems.length}개`} />
+          <Metric label={items.length ? "담은 후보" : "기본 후보"} value={`${hydratedItems.length}개`} />
           <Metric
             label="예상 월 현금흐름"
             value={formatMonthly(totalMonthlyCashFlow)}
@@ -151,6 +191,11 @@ export default function PortfolioPage() {
                     </button>
                   ) : null}
                 </div>
+                {items.length === 0 ? (
+                  <p className="mt-2 rounded-md bg-moss/10 p-3 text-xs font-bold leading-5 text-moss">
+                    아직 관심을 누르기 전이라, 사용자 조건과 관심지역에 가장 가까운 실거래 기반 후보 1개만 기본 context로 보여줍니다. 관심 저장 후에는 저장 후보들이 AI/RAG 맥락에 추가됩니다.
+                  </p>
+                ) : null}
                 <div className="mt-3 grid grid-cols-2 gap-2">
                   <Metric label="기준 매수가" value={formatKRW(item.virtualPurchasePrice)} />
                   <Metric label="실투자금" value={formatKRW(analysis.investmentAmount)} />
@@ -224,6 +269,32 @@ function buildNaverSearchUrl(property: Property) {
   return `https://search.naver.com/search.naver?query=${encodeURIComponent(`${property.region} ${property.name} 부동산`)}`;
 }
 
+function defaultPortfolioItemFromCandidate(candidate: ComplexSignalCandidate, userId: string): VirtualPortfolioItem {
+  const price = candidate.referencePrice ?? candidate.recentMedianPrice ?? 0;
+  return {
+    id: `default-interest-${candidate.id}`,
+    userId,
+    propertyId: candidate.id,
+    sourceType: "complex_signal",
+    complexSignalId: candidate.id,
+    complexName: candidate.complexName,
+    region: candidate.region,
+    lawdCode5: candidate.lawdCode5,
+    areaBucket: candidate.areaBucket,
+    floorBand: candidate.floorBand,
+    propertyType: candidate.propertyType,
+    referencePrice: price,
+    referenceDate: candidate.latestTradeDate ?? new Date().toISOString(),
+    reason: "사용자 조건과 관심지역에 가장 일치하는 실거래 기반 후보",
+    virtualPurchasePrice: price,
+    virtualPurchaseDate: new Date().toISOString(),
+    virtualInvestmentAmount: Math.max(0, price - (candidate.recentJeonseMedian ?? 0)),
+    memo: "저장 전 기본 관심 후보",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+}
+
 function portfolioSignalToProperty(item: VirtualPortfolioItem): Property {
   const price = item.referencePrice ?? item.virtualPurchasePrice;
   const areaM2 = item.areaBucket === "59" ? 59 : item.areaBucket === "74" ? 74 : item.areaBucket === "101" ? 101 : 84;
@@ -232,7 +303,8 @@ function portfolioSignalToProperty(item: VirtualPortfolioItem): Property {
     name: `${item.complexName ?? "실거래 단지"} ${item.areaBucket ?? ""}`.trim(),
     address: item.region ?? "",
     region: item.region ?? "관심지역",
-    propertyType: item.areaBucket?.startsWith("officetel") ? "officetel" : "apartment",
+    lawdCode5: item.lawdCode5,
+    propertyType: item.propertyType ?? (item.areaBucket?.startsWith("officetel") ? "officetel" : "apartment"),
     salePrice: price,
     jeonsePrice: Math.round(price * 0.6),
     expectedMonthlyRent: item.areaBucket?.startsWith("officetel") ? Math.round(price * 0.003) : 0,

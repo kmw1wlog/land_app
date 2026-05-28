@@ -118,12 +118,13 @@ export async function buildHomePathRagContext(input: HomePathChatInput) {
   const anchorSearches = await Promise.all(
     buildAnchorQueries(anchors, profile, currentHome, financialPlan, calculations).map(async (anchorQuery) => {
       const anchorEmbedding = await embedText(anchorQuery);
-      const [complexSignals, modelArtifacts, fusionSignals] = await Promise.all([
+      const [complexSignals, modelArtifacts, fusionSignals, krebSignals] = await Promise.all([
         store.search({ queryEmbedding: anchorEmbedding, topK: 8, filters: { sourceType: "complex_signal" } }),
         store.search({ queryEmbedding: anchorEmbedding, topK: 5, filters: { sourceType: "model_artifact" } }),
-        store.search({ queryEmbedding: anchorEmbedding, topK: 3, filters: { sourceType: "fusion_data" } })
+        store.search({ queryEmbedding: anchorEmbedding, topK: 3, filters: { sourceType: "fusion_data" } }),
+        store.search({ queryEmbedding: anchorEmbedding, topK: 3, filters: { sourceType: "kreb_market_index" } })
       ]);
-      return [...complexSignals, ...modelArtifacts, ...fusionSignals];
+      return [...complexSignals, ...modelArtifacts, ...fusionSignals, ...krebSignals];
     })
   );
   const rawResults = [
@@ -149,11 +150,11 @@ export async function buildHomePathRagContext(input: HomePathChatInput) {
 
 export function classifyIntent(message: string): HomePathChatIntent {
   const text = message.toLowerCase();
-  if (/출처|데이터|근거|공공|kreb|한국부동산원/.test(text)) return "data_source";
   if (/같은\s*예산|비교|대비|어디가\s*더|둘\s*중|vs|versus/.test(text)) return "comparison";
   if (/왜|이유|후보|떴/.test(text)) return "candidate_reason";
   if (/첫\s*주택|첫\s*집|첫\s*구매|가능|구매력|월급|예산|어디까지/.test(text)) return "purchase_power";
   if (/위험|리스크|안전|dsr|ltv|하락/.test(text)) return "risk_check";
+  if (/출처|데이터\s*(뭐|무엇|어디|출처)|공공\s*데이터|kreb|한국부동산원/.test(text)) return "data_source";
   if (/추천|매수|사도|수익/.test(text)) return "safety";
   return "general";
 }
@@ -654,6 +655,7 @@ export function getIntentRetrievalPlan(intent: HomePathChatIntent): RetrievalPla
         { sourceType: "faq", minimum: 2, take: 4, hints: ["구매력", "월소득", "월저축", "예산", "DSR", "LTV"] },
         { sourceType: "complex_signal", minimum: 2, take: 4, hints: ["기준가", "내 예산", "현재 집 정리 후 예산"] },
         { sourceType: "fusion_data", minimum: 1, take: 3, hints: ["융합 안정성", "주거 안정성", "데이터 확인 가능성"] },
+        { sourceType: "kreb_market_index", minimum: 1, take: 3, hints: ["한국부동산원", "KREB", "지역시장", "매매가격지수", "전세가격지수"] },
         { sourceType: "doc", minimum: 1, take: 3, hints: ["구매력 계산", "미래 구매력", "갈아타기"] },
         commonSafety
       ]
@@ -705,6 +707,7 @@ export function getIntentRetrievalPlan(intent: HomePathChatIntent): RetrievalPla
     sourceMinimums: [
       { sourceType: "complex_signal", minimum: 2, take: 4, hints: ["후보", "기준가", "거래", "전세가율"] },
       { sourceType: "fusion_data", minimum: 1, take: 3, hints: ["융합 안정성", "한국부동산원", "HUG", "교통"] },
+      { sourceType: "kreb_market_index", minimum: 1, take: 3, hints: ["KREB", "한국부동산원", "지역시장 지수"] },
       { sourceType: "faq", minimum: 1, take: 3, hints: ["FAQ", "홈패스 설명"] },
       { sourceType: "model_artifact", minimum: 1, take: 3, hints: ["Transformer AI 신호"] },
       commonSafety
@@ -771,8 +774,8 @@ function buildRagQuery(input: {
   const activeCandidate = input.input.activeCandidate;
   const intentKeywords: Record<HomePathChatIntent, string[]> = {
     candidate_reason: ["후보 이유", "거래 집중도", "전세가율", "AI 후보점수", "회복 확률", "하락 리스크", "융합 안정성"],
-    purchase_power: ["구매력", "월소득", "월저축", "현재 집 정리 후 예산", "미래 구매력", "DSR", "LTV", "주거 안정성"],
-    comparison: ["같은 예산 비교", "안정성", "거래 회복", "가격 낙폭", "전세가율", "현금흐름", "교통 접근성"],
+    purchase_power: ["구매력", "월소득", "월저축", "현재 집 정리 후 예산", "미래 구매력", "DSR", "LTV", "주거 안정성", "국토부 실거래", "KREB 지역지수"],
+    comparison: ["같은 예산 비교", "안정성", "거래 회복", "가격 낙폭", "전세가율", "현금흐름", "교통 접근성", "KREB 지역시장"],
     risk_check: ["리스크", "안전", "하락", "대출 부담", "실거래 부재", "전세가율", "HUG", "한국부동산원"],
     data_source: ["데이터 출처", "공공 실거래", "법정동 코드", "건축물대장", "한국부동산원", "HUG", "교통 접근성", "Transformer artifact"],
     safety: ["매수 추천 아님", "수익 보장 금지", "대출 승인 보장 금지", "의사결정 보조"],

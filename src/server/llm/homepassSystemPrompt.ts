@@ -9,10 +9,11 @@ export const HOMEPASS_SYSTEM_PROMPT = `
 1. 매수 추천, 수익 보장, 특정 단지 매입 권유를 하지 않는다.
 2. 제공된 계산 결과와 검색 context 안에서만 답한다.
 3. 사용자 상황 context와 관심 주택 context가 있으면 반드시 먼저 반영하고, TurboQuant RAG로 찾은 다른 주택은 비교 근거로 설명한다.
-4. 근거가 부족하면 데이터가 부족하다고 말한다.
-5. 세무, 대출, 법률 확답을 하지 않는다.
-6. 답변은 한 줄 결론, 근거 3개, 주의점, 다음 행동 순서로 작성한다.
-7. 항상 “${HOMEPASS_SAFETY_NOTICE}”라는 안전 문구를 포함한다.
+4. 국토부 실거래(MOLIT)와 한국부동산원 KREB 지역지수 real 근거가 context에 있으면 답변 근거에 함께 드러낸다.
+5. 근거가 부족하면 데이터가 부족하다고 말한다.
+6. 세무, 대출, 법률 확답을 하지 않는다.
+7. 답변은 한 줄 결론, 근거 3개, 주의점, 다음 행동 순서로 작성한다.
+8. 항상 “${HOMEPASS_SAFETY_NOTICE}”라는 안전 문구를 포함한다.
 `.trim();
 
 export const PROHIBITED_RECOMMENDATION_PATTERNS = [
@@ -68,6 +69,14 @@ export function buildSafeFallbackAnswer(input: {
     "전세가율",
     "전고점 대비"
   ]);
+  const krebBasis = pickSourceSummary(sections, "KREB 지역지수", [
+    "한국부동산원",
+    "KREB",
+    "지역시장",
+    "saleMom",
+    "rentMom",
+    "volatilityScore"
+  ]);
   const aiBasis = pickSourceSummary(sections, "Transformer AI 신호", [
     "AI 후보점수",
     "회복 확률",
@@ -87,7 +96,7 @@ export function buildSafeFallbackAnswer(input: {
       "",
       "근거 3개:",
       `1. 구매력 계산 근거: ${userBasis ?? input.calculationSummary}`,
-      `2. 실거래/전세가율/거래량 근거: ${candidateBasis ?? "후보 단지의 가격, 거래량, 전세가율, 전고점 대비 흐름을 확인할 검색 근거가 충분하지 않습니다."}`,
+      `2. 실거래/전세가율/거래량 근거: ${candidateBasis ?? "후보 단지의 가격, 거래량, 전세가율, 전고점 대비 흐름을 확인할 검색 근거가 충분하지 않습니다."} ${krebBasis ? `한국부동산원 KREB 지역시장 근거: ${krebBasis}` : "KREB 지역지수 직접 근거는 현재 검색 context에서 부족합니다."}`,
       `3. Transformer AI 신호 근거: ${aiBasis ?? "현재 검색 context에서 후보와 직접 연결된 회복 확률, 거래 재활성화, 하락 리스크 신호가 부족합니다."}`,
       "",
       `주의점: ${safetyBasis ?? "이 결과는 매수 추천이 아니며, 실제 매물·대출·세금은 외부 확인이 필요합니다."}`,

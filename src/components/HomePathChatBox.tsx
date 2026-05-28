@@ -6,6 +6,7 @@ import { properties } from "@/data/dummy";
 import { analyzeUserState, goalUi } from "@/lib/userState";
 import { formatKRW, formatMonthly } from "@/lib/format";
 import { useAppStore } from "@/store/useAppStore";
+import type { ComplexSignalCandidate } from "@/types";
 
 type ChatMessage = {
   role: "user" | "assistant";
@@ -22,28 +23,51 @@ export function HomePathChatBox() {
   const financialPlan = useAppStore((state) => state.financialPlan);
   const activeCandidate = useAppStore((state) => state.activeCandidate);
   const portfolioItems = useAppStore((state) => state.portfolioItems);
+  const defaultInterestCandidate = useAppStore((state) => state.defaultInterestCandidate);
+  const setDefaultInterestCandidate = useAppStore((state) => state.setDefaultInterestCandidate);
   const userState = analyzeUserState(profile, currentHome, financialPlan);
   const ui = goalUi[profile.primaryGoal];
-  const interestedHomes = portfolioItems.map((item) => {
-    const property = properties.find((entry) => entry.id === item.propertyId);
-    return {
-      id: item.id,
-      propertyId: item.propertyId,
-      complexSignalId: item.complexSignalId,
-      sourceType: item.sourceType,
-      complexName: item.complexName ?? property?.name,
-      name: property?.name,
-      region: item.region ?? property?.region,
-      lawdCode5: property?.lawdCode5,
-      areaBucket: item.areaBucket,
-      floorBand: item.floorBand,
-      propertyType: property?.propertyType,
-      referencePrice: item.referencePrice ?? item.virtualPurchasePrice ?? property?.salePrice,
-      virtualPurchasePrice: item.virtualPurchasePrice,
-      memo: item.memo,
-      reason: item.reason
-    };
-  });
+  const interestedHomes = portfolioItems.length
+    ? portfolioItems.map((item) => {
+        const property = properties.find((entry) => entry.id === item.propertyId);
+        return {
+          id: item.id,
+          propertyId: item.propertyId,
+          complexSignalId: item.complexSignalId,
+          sourceType: item.sourceType,
+          complexName: item.complexName ?? property?.name,
+          name: property?.name,
+          region: item.region ?? property?.region,
+          lawdCode5: item.lawdCode5 ?? property?.lawdCode5,
+          areaBucket: item.areaBucket,
+          floorBand: item.floorBand,
+          propertyType: item.propertyType ?? property?.propertyType,
+          referencePrice: item.referencePrice ?? item.virtualPurchasePrice ?? property?.salePrice,
+          virtualPurchasePrice: item.virtualPurchasePrice,
+          memo: item.memo,
+          reason: item.reason
+        };
+      })
+    : defaultInterestCandidate
+      ? [
+          {
+            id: `default-interest:${defaultInterestCandidate.id}`,
+            propertyId: defaultInterestCandidate.id,
+            complexSignalId: defaultInterestCandidate.id,
+            sourceType: "default_interest",
+            complexName: defaultInterestCandidate.complexName,
+            region: defaultInterestCandidate.region,
+            lawdCode5: defaultInterestCandidate.lawdCode5,
+            areaBucket: defaultInterestCandidate.areaBucket,
+            floorBand: defaultInterestCandidate.floorBand,
+            propertyType: defaultInterestCandidate.propertyType,
+            referencePrice: defaultInterestCandidate.referencePrice,
+            virtualPurchasePrice: defaultInterestCandidate.referencePrice ?? undefined,
+            memo: "저장 전 기본 관심 후보",
+            reason: "사용자 조건과 관심지역에 가장 일치하는 실거래 기반 후보"
+          }
+        ]
+      : [];
   const [input, setInput] = useState(activeCandidate ? `${activeCandidate.complexName} 왜 후보로 떴어?` : "");
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -61,6 +85,35 @@ export function HomePathChatBox() {
     const prompt = params.get("prompt")?.trim();
     if (prompt) setInput(prompt);
   }, []);
+
+  useEffect(() => {
+    if (portfolioItems.length || defaultInterestCandidate) return;
+    let active = true;
+    fetch("/api/discovery/feed", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        profile,
+        currentHome,
+        financialPlan,
+        preferredRegions: profile.preferredRegions,
+        includeSimilarRegions: true,
+        propertyTypes: ["apartment", "officetel"],
+        goal: profile.primaryGoal,
+        limit: 12
+      })
+    })
+      .then((response) => response.json())
+      .then((payload: { defaultInterestCandidate?: ComplexSignalCandidate; cards?: ComplexSignalCandidate[] }) => {
+        if (!active) return;
+        const candidate = payload.defaultInterestCandidate ?? payload.cards?.[0];
+        if (candidate) setDefaultInterestCandidate(candidate);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [profile, currentHome, financialPlan, portfolioItems.length, defaultInterestCandidate, setDefaultInterestCandidate]);
 
   async function ask(message: string) {
     const text = message.trim();
@@ -148,6 +201,14 @@ export function HomePathChatBox() {
           <p className="text-xs font-black text-black/45">관심 주택 context</p>
           <p className="mt-1 text-sm font-bold text-black/60">
             저장한 후보 {portfolioItems.length}개를 고정 근거로 넣고, 같은 예산대의 다른 후보를 RAG로 비교합니다.
+          </p>
+        </div>
+      ) : defaultInterestCandidate ? (
+        <div className="rounded-lg border border-moss/20 bg-moss/10 p-4">
+          <p className="text-xs font-black text-moss">기본 관심 후보 context</p>
+          <p className="mt-1 text-base font-black text-ink">{defaultInterestCandidate.complexName}</p>
+          <p className="mt-1 text-sm font-bold text-black/60">
+            관심 저장 전에는 이 1개 후보를 기준점으로 넣고, TurboQuant RAG가 같은 예산대 후보와 KREB 지역지수를 함께 가져옵니다.
           </p>
         </div>
       ) : null}

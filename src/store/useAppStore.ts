@@ -48,12 +48,14 @@ interface AppState {
   portfolioItems: VirtualPortfolioItem[];
   activePropertyId?: string;
   activeCandidate?: ComplexSignalCandidate;
+  defaultInterestCandidate?: ComplexSignalCandidate;
   updateProfile: (profile: Partial<UserProfile>) => void;
   applyPrimaryGoal: (goal: PrimaryGoal) => void;
   updateFinancialPlan: (plan: Partial<UserFinancialPlan>) => void;
   updateCurrentHome: (home: Partial<CurrentHome>) => void;
   setActiveProperty: (propertyId: string) => void;
   setActiveCandidate: (candidate: ComplexSignalCandidate) => void;
+  setDefaultInterestCandidate: (candidate?: ComplexSignalCandidate) => void;
   recordSwipe: (propertyId: string, action: SwipeEvent["action"]) => void;
   saveToPortfolio: (propertyId: string, memo?: string) => void;
   saveCandidateToPortfolio: (candidate: ComplexSignalCandidate, memo?: string) => void;
@@ -127,6 +129,7 @@ export const useAppStore = create<AppState>()(
       portfolioItems: [],
       activePropertyId: properties[0]?.id,
       activeCandidate: undefined,
+      defaultInterestCandidate: undefined,
       updateProfile: (profile) =>
         set((state) => {
           const nextProfile = {
@@ -173,6 +176,12 @@ export const useAppStore = create<AppState>()(
         })),
       setActiveProperty: (propertyId) => set({ activePropertyId: propertyId }),
       setActiveCandidate: (candidate) => set({ activeCandidate: candidate, activePropertyId: candidate.id }),
+      setDefaultInterestCandidate: (candidate) =>
+        set((state) => {
+          if (!candidate) return { defaultInterestCandidate: undefined };
+          if (state.defaultInterestCandidate?.id === candidate.id) return state;
+          return { defaultInterestCandidate: candidate };
+        }),
       recordSwipe: (propertyId, action) =>
         set((state) => ({
           swipeEvents: [
@@ -226,8 +235,10 @@ export const useAppStore = create<AppState>()(
                 complexSignalId: candidate.id,
                 complexName: candidate.complexName,
                 region: candidate.region,
+                lawdCode5: candidate.lawdCode5,
                 areaBucket: candidate.areaBucket,
                 floorBand: candidate.floorBand,
+                propertyType: candidate.propertyType,
                 referencePrice: price,
                 referenceDate: candidate.latestTradeDate ?? new Date().toISOString(),
                 reason: candidate.reasons[0],
@@ -368,7 +379,7 @@ function buildGoalStatePatch(
   goal: PrimaryGoal,
   state: Pick<AppState, "financialPlan" | "currentHome">,
   profile: UserProfile
-): Partial<Pick<AppState, "financialPlan" | "currentHome" | "activeCandidate">> {
+): Partial<Pick<AppState, "financialPlan" | "currentHome" | "activeCandidate" | "defaultInterestCandidate">> {
   const financialDefaults = goalFinancialPlanDefaults(goal, profile);
   const shouldResetToFirstHome =
     goal === "buy_home" && hasOwnedCurrentHome(state.currentHome);
@@ -385,6 +396,7 @@ function buildGoalStatePatch(
           updatedAt: new Date().toISOString()
         }
       : state.currentHome,
-    activeCandidate: undefined
+    activeCandidate: undefined,
+    defaultInterestCandidate: undefined
   };
 }
