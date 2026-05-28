@@ -1,6 +1,62 @@
 # External Verification Results
 
-Updated: 2026-05-11
+Updated: 2026-05-28
+
+## Public Data API Live Probe
+
+Source bundle:
+
+```text
+public-data-api-with-keys-20260528.zip
+```
+
+The key values were used only in local `.env.local` for verification and are not committed.
+
+Commands:
+
+```bash
+npm run check:public-apis
+npm run probe:building-ledger
+npm run smoke:address-flow
+curl http://127.0.0.1:3002/api/public-data/health
+curl "http://127.0.0.1:3002/api/public-data/health?probe=true"
+```
+
+Results:
+
+```text
+Data.go.kr configured: true
+Configured env name: DATA_GO_KR_SERVICE_KEY
+Public-data mode: mixed
+Health probe: apartmentTrade ok, apartmentRent ok
+VWorld probe: ok
+Juso probe: skipped because DISABLE_JUSO=true and the provided JUSO_CONFIRM_KEY value is empty
+```
+
+Real transaction endpoint probe:
+
+```text
+apartmentTrade: ok
+apartmentRent: ok
+officetelTrade: ok
+officetelRent: ok
+rowHouseTrade: ok
+rowHouseRent: ok
+detachedHouseTrade: ok
+detachedHouseRent: ok
+commercialTrade: ok
+landTrade: ok
+```
+
+Address and valuation smoke:
+
+```text
+address source: legal_dong_db
+lawdCode5: 27260
+seed summary: inserted 99, updated 757, failed 0
+transactionCount: 3960
+valuation method: tier2_lawd_area_24m
+```
 
 ## Building Ledger Endpoint
 

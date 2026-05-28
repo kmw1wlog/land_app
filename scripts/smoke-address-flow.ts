@@ -1,9 +1,14 @@
-import { normalizeAddress } from "@/server/public-data/services/addressNormalizeService";
-import { seedTransactionsForTargets } from "@/server/public-data/services/realTransactionService";
-import { estimateCurrentHomeValue } from "@/server/public-data/services/valuationService";
-import { prisma } from "@/server/db";
+import { existsSync } from "fs";
+
+if (existsSync(".env.local")) process.loadEnvFile?.(".env.local");
+if (existsSync(".env")) process.loadEnvFile?.(".env");
 
 async function main() {
+  const { normalizeAddress } = await import("@/server/public-data/services/addressNormalizeService");
+  const { seedTransactionsForTargets } = await import("@/server/public-data/services/realTransactionService");
+  const { estimateCurrentHomeValue } = await import("@/server/public-data/services/valuationService");
+  const { prisma } = await import("@/server/db");
+
   const address = process.env.SMOKE_ADDRESS || "대구광역시 수성구 범어동 1";
   const complexName = process.env.SMOKE_COMPLEX_NAME || "어나드범어";
   const areaM2 = Number(process.env.SMOKE_AREA_M2 || 84.9);
@@ -57,13 +62,10 @@ async function main() {
       2
     )
   );
+  await prisma.$disconnect();
 }
 
-main()
-  .catch((error) => {
-    console.error(error);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+main().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});
