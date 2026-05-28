@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { generateHomePathChatAnswer } from "@/server/llm/qwenClient";
+import { generateHomePathChatAnswer, resolveModelPlan } from "@/server/llm/qwenClient";
 import { HOMEPASS_SAFETY_NOTICE } from "@/server/llm/homepassSystemPrompt";
 
 describe("Qwen RAG fallback", () => {
@@ -24,5 +24,45 @@ describe("Qwen RAG fallback", () => {
     expect(result.fallbackUsed).toBe(true);
     expect(result.answer).toContain(HOMEPASS_SAFETY_NOTICE);
     expect(result.answer).not.toContain("수익 보장입니다");
+  });
+
+  it("routes long RAG answers to the long-answer model", () => {
+    const previousLongModel = process.env.LLM_LONG_MODEL;
+    process.env.LLM_LONG_MODEL = "qwen3.6-plus";
+
+    const plan = resolveModelPlan({
+      configuredModel: "qwen3.6-flash",
+      endpointType: "remote",
+      intent: "candidate_reason",
+      userMessage: "이 후보가 왜 떴는지 근거까지 자세히 설명해줘.",
+      contextText: "국토부 실거래와 KREB 지역지수 context\n".repeat(180)
+    });
+
+    if (previousLongModel === undefined) delete process.env.LLM_LONG_MODEL;
+    else process.env.LLM_LONG_MODEL = previousLongModel;
+
+    expect(plan.primaryModel).toBe("qwen3.6-plus");
+    expect(plan.maxTokens).toBeGreaterThanOrEqual(1800);
+    expect(plan.reason).toBe("long_rag_context");
+  });
+
+  it("routes risk and source questions to the reasoning model", () => {
+    const previousReasoningModel = process.env.LLM_REASONING_MODEL;
+    process.env.LLM_REASONING_MODEL = "qwen3.7-max";
+
+    const plan = resolveModelPlan({
+      configuredModel: "qwen3.6-flash",
+      endpointType: "remote",
+      intent: "risk_check",
+      userMessage: "이 지역 리스크와 데이터 출처를 설명해줘.",
+      contextText: "짧은 context"
+    });
+
+    if (previousReasoningModel === undefined) delete process.env.LLM_REASONING_MODEL;
+    else process.env.LLM_REASONING_MODEL = previousReasoningModel;
+
+    expect(plan.primaryModel).toBe("qwen3.7-max");
+    expect(plan.maxTokens).toBeGreaterThanOrEqual(1600);
+    expect(plan.reason).toBe("reasoning_or_risk_answer");
   });
 });

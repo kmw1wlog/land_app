@@ -42,7 +42,8 @@ export async function POST(request: NextRequest) {
       userMessage: message,
       calculationSummary: context.calculations.summary,
       contextText: context.contextText,
-      instructionContext: instructionContext.text
+      instructionContext: instructionContext.text,
+      intent: context.intent
     });
 
     return NextResponse.json(
@@ -53,6 +54,8 @@ export async function POST(request: NextRequest) {
         usedConfiguredModel: generation.usedConfiguredModel,
         usedLocalModel: generation.usedLocalModel,
         fallbackUsed: generation.fallbackUsed,
+        finishReason: generation.finishReason,
+        modelRouting: generation.modelRouting,
         intent: context.intent,
         retrievalPlan: context.retrievalPlan,
         calculations: context.calculations,

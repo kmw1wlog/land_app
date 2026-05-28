@@ -22,6 +22,7 @@ async function main() {
     calculationSummary: withRagContext.calculations.summary,
     contextText: withRagContext.contextText,
     instructionContext: withRagInstructions.text,
+    intent: withRagContext.intent,
     timeoutMs: 90_000
   });
   const withoutRagAnswer = await generateHomePathChatAnswer({
@@ -29,6 +30,7 @@ async function main() {
     calculationSummary: withoutRagContext.calculations.summary,
     contextText: withoutRagContext.contextText,
     instructionContext: withoutRagInstructions.text,
+    intent: withoutRagContext.intent,
     timeoutMs: 90_000
   });
 
@@ -56,6 +58,8 @@ async function main() {
       usedConfiguredModel: withRagAnswer.usedConfiguredModel,
       endpointType: withRagAnswer.endpointType,
       fallbackUsed: withRagAnswer.fallbackUsed,
+      finishReason: withRagAnswer.finishReason,
+      modelRouting: withRagAnswer.modelRouting,
       instructionScenarios: withRagInstructions.scenarios,
       answer: withRagAnswer.answer,
       error: withRagAnswer.error
@@ -67,6 +71,8 @@ async function main() {
       usedConfiguredModel: withoutRagAnswer.usedConfiguredModel,
       endpointType: withoutRagAnswer.endpointType,
       fallbackUsed: withoutRagAnswer.fallbackUsed,
+      finishReason: withoutRagAnswer.finishReason,
+      modelRouting: withoutRagAnswer.modelRouting,
       instructionScenarios: withoutRagInstructions.scenarios,
       answer: withoutRagAnswer.answer,
       error: withoutRagAnswer.error
@@ -162,6 +168,8 @@ function toMarkdown(record: Awaited<ReturnType<typeof buildRecordShape>>) {
     `- usedConfiguredModel: ${record.withRag.usedConfiguredModel}`,
     `- endpointType: ${record.withRag.endpointType}`,
     `- fallbackUsed: ${record.withRag.fallbackUsed}`,
+    `- finishReason: ${record.withRag.finishReason ?? "unknown"}`,
+    `- modelRouting: ${formatRouting(record.withRag.modelRouting)}`,
     `- error: ${record.withRag.error ?? "none"}`,
     "",
     "Sources:",
@@ -180,6 +188,8 @@ function toMarkdown(record: Awaited<ReturnType<typeof buildRecordShape>>) {
     `- usedConfiguredModel: ${record.withoutRag.usedConfiguredModel}`,
     `- endpointType: ${record.withoutRag.endpointType}`,
     `- fallbackUsed: ${record.withoutRag.fallbackUsed}`,
+    `- finishReason: ${record.withoutRag.finishReason ?? "unknown"}`,
+    `- modelRouting: ${formatRouting(record.withoutRag.modelRouting)}`,
     `- error: ${record.withoutRag.error ?? "none"}`,
     "",
     "Answer:",
@@ -189,6 +199,11 @@ function toMarkdown(record: Awaited<ReturnType<typeof buildRecordShape>>) {
     "```",
     ""
   ].join("\n");
+}
+
+function formatRouting(routing: { selected?: string; reason?: string; maxTokens?: number; attemptedModels?: string[] } | undefined) {
+  if (!routing) return "none";
+  return `${routing.selected ?? "unknown"} (${routing.reason ?? "unknown"}, maxTokens=${routing.maxTokens ?? "unknown"}, attempted=${routing.attemptedModels?.join(" > ") ?? "unknown"})`;
 }
 
 function buildRecordShape() {
@@ -204,6 +219,8 @@ function buildRecordShape() {
       usedConfiguredModel?: boolean;
       endpointType?: string;
       fallbackUsed: boolean;
+      finishReason?: string;
+      modelRouting?: { selected?: string; reason?: string; maxTokens?: number; attemptedModels?: string[] };
       answer: string;
       error?: string;
     };
@@ -213,6 +230,8 @@ function buildRecordShape() {
       usedConfiguredModel?: boolean;
       endpointType?: string;
       fallbackUsed: boolean;
+      finishReason?: string;
+      modelRouting?: { selected?: string; reason?: string; maxTokens?: number; attemptedModels?: string[] };
       answer: string;
       error?: string;
     };
