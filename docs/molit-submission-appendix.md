@@ -27,7 +27,8 @@
 ## 별첨 3. GitHub 및 최신 개발 현황
 
 - GitHub URL: <https://github.com/kmw1wlog/land_app>
-- 현재 기준 커밋: `ed1ee869f9f5c254b1919278516a5b6cb5a658d1`
+- 최신 커밋 해시: GitHub `main` 브랜치 HEAD 또는 `git rev-parse HEAD`로 확인
+- 이번 별첨 산출물 최초 반영 커밋: `f0c36b3`
 - 검증 시각: 2026-05-29 02:04 KST
 - 재현 명령 및 현재 결과:
   - `npm test`: 통과, 24 files / 79 tests
