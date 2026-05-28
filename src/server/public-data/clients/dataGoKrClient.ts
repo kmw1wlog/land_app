@@ -1,16 +1,25 @@
-import { isConfigured, normalizeServiceKeyForUrlSearchParams } from "../utils/env";
+import {
+  dataGoKrServiceKeyEnvNames,
+  isConfigured,
+  normalizeServiceKeyForUrlSearchParams,
+  resolveDataGoKrBaseUrl,
+  resolveDataGoKrServiceKey
+} from "../utils/env";
 import { logApiCall } from "../services/apiCallLogService";
 import { stableHash } from "../utils/hash";
 import { parseXml } from "../utils/xml";
 
-const DEFAULT_BASE_URL = "https://apis.data.go.kr";
-
 export class DataGoKrClient {
-  private readonly serviceKey = process.env.DATA_GO_KR_SERVICE_KEY;
-  private readonly baseUrl = process.env.DATA_GO_KR_BASE_URL || DEFAULT_BASE_URL;
+  private readonly serviceKeyConfig = resolveDataGoKrServiceKey();
+  private readonly serviceKey = this.serviceKeyConfig.value;
+  private readonly baseUrl = resolveDataGoKrBaseUrl();
 
   isConfigured(): boolean {
     return isConfigured(this.serviceKey);
+  }
+
+  configuredEnvName(): string | null {
+    return this.isConfigured() ? this.serviceKeyConfig.name ?? null : null;
   }
 
   async getXml<T = unknown>(
@@ -38,7 +47,7 @@ export class DataGoKrClient {
     params: Record<string, string | number>
   ): Promise<{ body: string; url: string }> {
     if (!this.serviceKey) {
-      throw new Error("DATA_GO_KR_SERVICE_KEY is not configured");
+      throw new Error(`Data.go.kr service key is not configured. Supported env names: ${dataGoKrServiceKeyEnvNames().join(", ")}`);
     }
 
     const url = new URL(endpoint.startsWith("http") ? endpoint : `${this.baseUrl}${endpoint}`);

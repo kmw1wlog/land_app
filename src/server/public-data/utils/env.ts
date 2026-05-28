@@ -1,7 +1,48 @@
 import type { PublicDataTargetConfig } from "../types";
 
+const DATA_GO_KR_SERVICE_KEY_ENV_NAMES = [
+  "DATA_GO_KR_SERVICE_KEY",
+  "DATAGO_SERVICE_KEY",
+  "DATAGOKR_SERVICE_KEY",
+  "PUBLIC_DATA_SERVICE_KEY",
+  "PUBLIC_DATA_API_KEY",
+  "MOLIT_SERVICE_KEY",
+  "MOLIT_API_KEY",
+  "MOLIT_OPENAPI_SERVICE_KEY",
+  "GOV_DATA_SERVICE_KEY",
+  "OPENAPI_SERVICE_KEY",
+  "SERVICE_KEY"
+] as const;
+
 export function isConfigured(value: string | undefined): boolean {
   return Boolean(value && value.trim() && !value.includes("replace_with"));
+}
+
+export function resolveFirstConfiguredEnv(names: readonly string[]): { value?: string; name?: string } {
+  for (const name of names) {
+    const value = process.env[name];
+    if (isConfigured(value)) return { value: value?.trim(), name };
+  }
+  return {};
+}
+
+export function resolveDataGoKrServiceKey() {
+  return resolveFirstConfiguredEnv(DATA_GO_KR_SERVICE_KEY_ENV_NAMES);
+}
+
+export function dataGoKrServiceKeyEnvNames() {
+  return [...DATA_GO_KR_SERVICE_KEY_ENV_NAMES];
+}
+
+export function resolveDataGoKrBaseUrl() {
+  return (
+    resolveFirstConfiguredEnv([
+      "DATA_GO_KR_BASE_URL",
+      "DATAGO_BASE_URL",
+      "PUBLIC_DATA_BASE_URL",
+      "MOLIT_OPENAPI_BASE_URL"
+    ]).value || "https://apis.data.go.kr"
+  );
 }
 
 export function getTargetConfig(): PublicDataTargetConfig {

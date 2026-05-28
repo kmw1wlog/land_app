@@ -1,8 +1,9 @@
 import { DataGoKrClient } from "../src/server/public-data/clients/dataGoKrClient";
 import { getPath } from "../src/server/public-data/utils/xml";
+import { existsSync } from "fs";
 
-process.loadEnvFile?.(".env.local");
-process.loadEnvFile?.(".env");
+if (existsSync(".env.local")) process.loadEnvFile?.(".env.local");
+if (existsSync(".env")) process.loadEnvFile?.(".env");
 
 const candidates = [
   process.env.DATA_GO_KR_BUILDING_LEDGER_TITLE_ENDPOINT,

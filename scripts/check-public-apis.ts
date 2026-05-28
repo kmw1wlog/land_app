@@ -1,7 +1,8 @@
 import { DataGoKrClient } from "../src/server/public-data/clients/dataGoKrClient";
+import { existsSync } from "fs";
 
-process.loadEnvFile?.(".env.local");
-process.loadEnvFile?.(".env");
+if (existsSync(".env.local")) process.loadEnvFile?.(".env.local");
+if (existsSync(".env")) process.loadEnvFile?.(".env");
 
 type ApiProbe = {
   key: string;

@@ -1,11 +1,35 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { monthRange } from "@/server/public-data/utils/dateRange";
-import { normalizeServiceKeyForUrlSearchParams } from "@/server/public-data/utils/env";
+import {
+  resolveDataGoKrBaseUrl,
+  resolveDataGoKrServiceKey,
+  normalizeServiceKeyForUrlSearchParams
+} from "@/server/public-data/utils/env";
 import { parseKoreanMoneyToWon } from "@/server/public-data/utils/money";
 import { buildPnu, normalizeBunJi, splitPnu } from "@/server/public-data/utils/pnu";
 import { median } from "@/server/public-data/services/valuationService";
 
 describe("public data utilities", () => {
+  const envKeys = [
+    "DATA_GO_KR_SERVICE_KEY",
+    "MOLIT_API_KEY",
+    "PUBLIC_DATA_API_KEY",
+    "DATA_GO_KR_BASE_URL",
+    "MOLIT_OPENAPI_BASE_URL"
+  ];
+  const originalEnv = new Map(envKeys.map((key) => [key, process.env[key]]));
+
+  afterEach(() => {
+    for (const key of envKeys) {
+      const value = originalEnv.get(key);
+      if (value === undefined) {
+        delete process.env[key];
+      } else {
+        process.env[key] = value;
+      }
+    }
+  });
+
   it("normalizes raw and encoded service keys without double encoding", () => {
     const raw = "abc/def+ghi=";
     const encoded = "abc%2Fdef%2Bghi%3D";
@@ -17,6 +41,24 @@ describe("public data utilities", () => {
 
     expect(rawUrl.toString()).toContain("serviceKey=abc%2Fdef%2Bghi%3D");
     expect(encodedUrl.toString()).toContain("serviceKey=abc%2Fdef%2Bghi%3D");
+  });
+
+  it("resolves legacy MOLIT/data.go.kr service key aliases", () => {
+    delete process.env.DATA_GO_KR_SERVICE_KEY;
+    delete process.env.PUBLIC_DATA_API_KEY;
+    process.env.MOLIT_API_KEY = "legacy-molit-key";
+
+    expect(resolveDataGoKrServiceKey()).toEqual({
+      name: "MOLIT_API_KEY",
+      value: "legacy-molit-key"
+    });
+  });
+
+  it("resolves legacy MOLIT base URL aliases", () => {
+    delete process.env.DATA_GO_KR_BASE_URL;
+    process.env.MOLIT_OPENAPI_BASE_URL = "https://example.molit.local";
+
+    expect(resolveDataGoKrBaseUrl()).toBe("https://example.molit.local");
   });
 
   it("normalizes bun/ji to four digits", () => {

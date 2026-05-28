@@ -26,37 +26,61 @@ type TransactionEndpointKey =
   | "commercialTrade"
   | "landTrade";
 
-const endpoints: Record<TransactionEndpointKey, string> = {
-  apartmentTrade:
-    process.env.DATA_GO_KR_APARTMENT_TRADE_ENDPOINT ||
+const endpointEnvNames: Record<TransactionEndpointKey, string[]> = {
+  apartmentTrade: ["DATA_GO_KR_APARTMENT_TRADE_ENDPOINT", "MOLIT_APARTMENT_TRADE_ENDPOINT", "PUBLIC_DATA_APARTMENT_TRADE_ENDPOINT"],
+  apartmentRent: ["DATA_GO_KR_APARTMENT_RENT_ENDPOINT", "MOLIT_APARTMENT_RENT_ENDPOINT", "PUBLIC_DATA_APARTMENT_RENT_ENDPOINT"],
+  officetelTrade: ["DATA_GO_KR_OFFICETEL_TRADE_ENDPOINT", "MOLIT_OFFICETEL_TRADE_ENDPOINT", "PUBLIC_DATA_OFFICETEL_TRADE_ENDPOINT"],
+  officetelRent: ["DATA_GO_KR_OFFICETEL_RENT_ENDPOINT", "MOLIT_OFFICETEL_RENT_ENDPOINT", "PUBLIC_DATA_OFFICETEL_RENT_ENDPOINT"],
+  rowHouseTrade: ["DATA_GO_KR_ROWHOUSE_TRADE_ENDPOINT", "MOLIT_ROWHOUSE_TRADE_ENDPOINT", "PUBLIC_DATA_ROWHOUSE_TRADE_ENDPOINT"],
+  rowHouseRent: ["DATA_GO_KR_ROWHOUSE_RENT_ENDPOINT", "MOLIT_ROWHOUSE_RENT_ENDPOINT", "PUBLIC_DATA_ROWHOUSE_RENT_ENDPOINT"],
+  detachedHouseTrade: ["DATA_GO_KR_DETACHED_TRADE_ENDPOINT", "MOLIT_DETACHED_TRADE_ENDPOINT", "PUBLIC_DATA_DETACHED_TRADE_ENDPOINT"],
+  detachedHouseRent: ["DATA_GO_KR_DETACHED_RENT_ENDPOINT", "MOLIT_DETACHED_RENT_ENDPOINT", "PUBLIC_DATA_DETACHED_RENT_ENDPOINT"],
+  commercialTrade: ["DATA_GO_KR_COMMERCIAL_TRADE_ENDPOINT", "MOLIT_COMMERCIAL_TRADE_ENDPOINT", "PUBLIC_DATA_COMMERCIAL_TRADE_ENDPOINT"],
+  landTrade: ["DATA_GO_KR_LAND_TRADE_ENDPOINT", "MOLIT_LAND_TRADE_ENDPOINT", "PUBLIC_DATA_LAND_TRADE_ENDPOINT"]
+};
+
+const defaultEndpoints: Record<TransactionEndpointKey, string[]> = {
+  apartmentTrade: [
     "/1613000/RTMSDataSvcAptTrade/getRTMSDataSvcAptTrade",
-  apartmentRent:
-    process.env.DATA_GO_KR_APARTMENT_RENT_ENDPOINT ||
+    "/1613000/RTMSDataSvcAptTradeDev/getRTMSDataSvcAptTradeDev",
+    "http://openapi.molit.go.kr:8081/OpenAPI_ToolInstallPackage/service/rest/RTMSOBJSvc/getRTMSDataSvcAptTrade"
+  ],
+  apartmentRent: [
     "/1613000/RTMSDataSvcAptRent/getRTMSDataSvcAptRent",
-  officetelTrade:
-    process.env.DATA_GO_KR_OFFICETEL_TRADE_ENDPOINT ||
+    "http://openapi.molit.go.kr:8081/OpenAPI_ToolInstallPackage/service/rest/RTMSOBJSvc/getRTMSDataSvcAptRent"
+  ],
+  officetelTrade: [
     "/1613000/RTMSDataSvcOffiTrade/getRTMSDataSvcOffiTrade",
-  officetelRent:
-    process.env.DATA_GO_KR_OFFICETEL_RENT_ENDPOINT ||
+    "http://openapi.molit.go.kr:8081/OpenAPI_ToolInstallPackage/service/rest/RTMSOBJSvc/getRTMSDataSvcOffiTrade"
+  ],
+  officetelRent: [
     "/1613000/RTMSDataSvcOffiRent/getRTMSDataSvcOffiRent",
-  rowHouseTrade:
-    process.env.DATA_GO_KR_ROWHOUSE_TRADE_ENDPOINT ||
+    "http://openapi.molit.go.kr:8081/OpenAPI_ToolInstallPackage/service/rest/RTMSOBJSvc/getRTMSDataSvcOffiRent"
+  ],
+  rowHouseTrade: [
     "/1613000/RTMSDataSvcRHTrade/getRTMSDataSvcRHTrade",
-  rowHouseRent:
-    process.env.DATA_GO_KR_ROWHOUSE_RENT_ENDPOINT ||
+    "http://openapi.molit.go.kr:8081/OpenAPI_ToolInstallPackage/service/rest/RTMSOBJSvc/getRTMSDataSvcRHTrade"
+  ],
+  rowHouseRent: [
     "/1613000/RTMSDataSvcRHRent/getRTMSDataSvcRHRent",
-  detachedHouseTrade:
-    process.env.DATA_GO_KR_DETACHED_TRADE_ENDPOINT ||
+    "http://openapi.molit.go.kr:8081/OpenAPI_ToolInstallPackage/service/rest/RTMSOBJSvc/getRTMSDataSvcRHRent"
+  ],
+  detachedHouseTrade: [
     "/1613000/RTMSDataSvcSHTrade/getRTMSDataSvcSHTrade",
-  detachedHouseRent:
-    process.env.DATA_GO_KR_DETACHED_RENT_ENDPOINT ||
+    "http://openapi.molit.go.kr:8081/OpenAPI_ToolInstallPackage/service/rest/RTMSOBJSvc/getRTMSDataSvcSHTrade"
+  ],
+  detachedHouseRent: [
     "/1613000/RTMSDataSvcSHRent/getRTMSDataSvcSHRent",
-  commercialTrade:
-    process.env.DATA_GO_KR_COMMERCIAL_TRADE_ENDPOINT ||
+    "http://openapi.molit.go.kr:8081/OpenAPI_ToolInstallPackage/service/rest/RTMSOBJSvc/getRTMSDataSvcSHRent"
+  ],
+  commercialTrade: [
     "/1613000/RTMSDataSvcNrgTrade/getRTMSDataSvcNrgTrade",
-  landTrade:
-    process.env.DATA_GO_KR_LAND_TRADE_ENDPOINT ||
-    "/1613000/RTMSDataSvcLandTrade/getRTMSDataSvcLandTrade"
+    "http://openapi.molit.go.kr:8081/OpenAPI_ToolInstallPackage/service/rest/RTMSOBJSvc/getRTMSDataSvcNrgTrade"
+  ],
+  landTrade: [
+    "/1613000/RTMSDataSvcLandTrade/getRTMSDataSvcLandTrade",
+    "http://openapi.molit.go.kr:8081/OpenAPI_ToolInstallPackage/service/rest/RTMSOBJSvc/getRTMSDataSvcLandTrade"
+  ]
 };
 
 const endpointMeta: Record<
@@ -204,7 +228,7 @@ async function fetchTransactions(
       updated: 0,
       skipped: 0,
       status: "error",
-      failed: "DATA_GO_KR_SERVICE_KEY is not configured"
+      failed: "Data.go.kr service key is not configured"
     };
   }
 
@@ -213,14 +237,14 @@ async function fetchTransactions(
     let pageNo = 1;
     let totalPages = 1;
     do {
-      const response = await client.getXml(endpoints[endpointKey], {
+      const response = await fetchTransactionPage(client, endpointKey, {
         LAWD_CD: lawdCode5,
         DEAL_YMD: dealYmd,
         numOfRows: TRANSACTION_PAGE_SIZE,
         pageNo
       });
-      rawItems.push(...asArray(getPath(response.parsed, ["response", "body", "items", "item"])));
-      const totalCount = Number(getPath(response.parsed, ["response", "body", "totalCount"]) ?? rawItems.length);
+      rawItems.push(...extractTransactionItems(response.parsed));
+      const totalCount = extractTotalCount(response.parsed, rawItems.length);
       totalPages = Math.max(1, Math.ceil(totalCount / TRANSACTION_PAGE_SIZE));
       pageNo += 1;
     } while (pageNo <= totalPages && pageNo <= MAX_TRANSACTION_PAGES);
@@ -262,6 +286,58 @@ async function fetchTransactions(
       failed: error instanceof Error ? error.message : String(error)
     };
   }
+}
+
+async function fetchTransactionPage(
+  client: DataGoKrClient,
+  endpointKey: TransactionEndpointKey,
+  params: Record<string, string | number>
+) {
+  const errors: string[] = [];
+
+  for (const endpoint of endpointCandidates(endpointKey)) {
+    try {
+      return await client.getXml(endpoint, params);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      errors.push(`${endpoint}: ${message}`);
+    }
+  }
+
+  throw new Error(`All ${endpointKey} endpoints failed. ${errors.join(" | ").slice(0, 1200)}`);
+}
+
+function endpointCandidates(endpointKey: TransactionEndpointKey): string[] {
+  const configured = endpointEnvNames[endpointKey].flatMap((name) =>
+    splitEndpointList(process.env[name])
+  );
+  return Array.from(new Set([...configured, ...defaultEndpoints[endpointKey]]));
+}
+
+function splitEndpointList(value: string | undefined): string[] {
+  return (value ?? "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function extractTransactionItems(parsed: unknown): unknown[] {
+  return [
+    getPath(parsed, ["response", "body", "items", "item"]),
+    getPath(parsed, ["body", "items", "item"]),
+    getPath(parsed, ["items", "item"]),
+    getPath(parsed, ["response", "body", "item"]),
+    getPath(parsed, ["item"])
+  ].flatMap((item) => asArray(item));
+}
+
+function extractTotalCount(parsed: unknown, fallback: number): number {
+  const totalCount =
+    getPath(parsed, ["response", "body", "totalCount"]) ??
+    getPath(parsed, ["body", "totalCount"]) ??
+    getPath(parsed, ["totalCount"]);
+  const parsedTotalCount = Number(totalCount);
+  return Number.isFinite(parsedTotalCount) ? parsedTotalCount : fallback;
 }
 
 function normalizeTransactionItem(
